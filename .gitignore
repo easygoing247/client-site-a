@@ -1,0 +1,40 @@
+# build output
+dist/
+.output/
+
+# dependencies
+node_modules/
+
+# astro
+.astro/
+
+# generated types
+src/env.d.ts.bak
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# environment variables
+.env
+.env.production
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Decap CMS local backend
+.netlify/
+
+# Cloudflare Wrangler ローカルキャッシュ
+.wrangler/
+
+# 案件初期化・素材作成時の作業用スクラッチ（テンプレート成果物ではない）
+000_master-template-creation/
+_legacy/
+claude-asset-extractor/

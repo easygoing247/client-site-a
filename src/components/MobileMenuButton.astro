@@ -1,0 +1,20 @@
+---
+// ============================================================================
+// MobileMenuButton.astro
+// スマホ表示専用：ハンバーガーボタン（ヘッダーの横並び行の中に配置する）
+// 開閉ロジック本体は MobileNavDrawer.astro 側の <script> にまとめてある。
+// ============================================================================
+---
+
+<button
+  id="menu-btn"
+  type="button"
+  aria-label="メニューを開く"
+  aria-expanded="false"
+  aria-controls="mobile-nav"
+  class="md:hidden p-2 bg-transparent border-none cursor-pointer flex flex-col justify-center flex-none"
+>
+  <span class="block w-6 h-0.5 bg-secondary mb-1.5" id="bar1"></span>
+  <span class="block w-6 h-0.5 bg-secondary mb-1.5" id="bar2"></span>
+  <span class="block w-6 h-0.5 bg-secondary" id="bar3"></span>
+</button>

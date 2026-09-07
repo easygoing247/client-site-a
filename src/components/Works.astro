@@ -1,0 +1,53 @@
+---
+// ============================================================================
+// Works.astro — 「実績・活用事例」（features.enableWorks で表示制御）
+// ============================================================================
+import { Image } from 'astro:assets';
+import { site } from '../lib/site';
+import { resolveImage } from '../lib/images';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+---
+
+{
+  site.features.enableWorks && (
+    <section id="works" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="works-heading">
+      <div class="max-w-[1100px] mx-auto">
+        <div class="text-center mb-10">
+          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+            {site.works.eyebrow}
+          </div>
+          <h2 id="works-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+            {site.works.heading}
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {site.works.items.map((item) => (
+            <article class="bg-white rounded-card overflow-hidden border border-surface-border">
+              <Image
+                src={resolveImage(item.image)}
+                alt={`${item.title}の実績イメージ`}
+                class="w-full h-[170px] object-cover block"
+                width={450}
+                height={170}
+                format="webp"
+                loading="lazy"
+              />
+              <div class="p-4">
+                <h3 class="font-bold text-[15px] mb-1">{item.title}</h3>
+                <p class="text-[12px] text-ink-soft mb-[10px]">{item.industry}</p>
+                <span class="inline-block text-[11px] font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full">
+                  {item.tag}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

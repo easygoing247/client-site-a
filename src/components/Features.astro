@@ -1,0 +1,44 @@
+---
+// ============================================================================
+// Features.astro — 「選ばれる3つの理由」
+// ============================================================================
+import { Image } from 'astro:assets';
+import { site } from '../lib/site';
+import { resolveImage } from '../lib/images';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+---
+
+{
+  site.features.enableFeatures && (
+    <section id="features" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="features-heading">
+      <div class="max-w-[1100px] mx-auto">
+        <div class="text-center mb-10">
+          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+            {site.features_section.eyebrow}
+          </div>
+          <h2 id="features-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+            {site.features_section.heading}
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-9">
+          {site.features_section.items.map((item) => (
+            <div class="text-center">
+              <div class="w-[72px] h-[72px] rounded-full bg-primary-light flex items-center justify-center mx-auto mb-[18px]">
+                <Image src={resolveImage(item.icon)} alt="" aria-hidden="true" class="w-8 h-8 object-contain" width={32} height={32} />
+              </div>
+              <h3 class="text-[13px] font-bold text-primary mb-2">
+                {item.number}｜{item.title}
+              </h3>
+              <p class="text-[14px] leading-[1.8] text-ink-soft m-0">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

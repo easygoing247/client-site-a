@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>管理画面 | Decap CMS</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <!--
+      Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
+      本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
+    -->
+    <style>
+      /*
+        Decap CMS 本体のデフォルトCSSは、エントリ編集画面のツールバー／
+        エディター領域（左：フォーム／右：プレビューの2カラム分割）に
+        min-width: 800px を強制しており、スマホ幅では横スクロールの原因になる。
+        クラス名はビルドごとに変わるハッシュ付き（例: css-hn3jn7-EditorContainer）
+        のため、部分一致セレクタで安定して打ち消す。
+        分割ビュー自体は react-split-pane 由来の固定クラス（.SplitPane, .Pane1,
+        .Pane2, .Resizer）を持つため、そちらは通常のクラス名で指定できる。
+      */
+      html,
+      body {
+        overflow-x: hidden;
+        max-width: 100%;
+      }
+
+      /*
+        リスト項目（機能フラグの並び替えリスト等）のドラッグハンドルは、
+        タッチ操作だとブラウザ標準の縦スクロールジェスチャーと競合し、
+        ドラッグ移動が効かない／画面が一緒にスクロールしてしまう問題がある。
+        ハンドル要素にだけ touch-action:none を指定し、ブラウザ側の
+        スクロールジェスチャーに奪われず react-sortable-hoc 側の
+        ドラッグ処理へタッチイベントを渡す。
+      */
+      [class*='DragIconContainer'] {
+        touch-action: none;
+      }
+
+      /*
+        管理画面クイックナビ（項目一覧）ボタン・メニュー。
+        スマホ・タブレット・PCいずれの画面幅でも表示する。位置（right/left）は
+        JS側（updateNavButtonPosition）でPC時のプレビューペインの実際の表示
+        状態に応じて動的に調整するため、ここでは初期値のみ指定する。
+      */
+      #cms-quick-nav-btn {
+        display: none;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        width: 52px;
+        height: 52px;
+        border-radius: 999px;
+        background: #1e40af;
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+        font-size: 22px;
+        line-height: 1;
+        z-index: 9000;
+        cursor: pointer;
+      }
+
+      #cms-quick-nav-btn.visible {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #cms-quick-nav-menu {
+        display: none;
+        position: fixed;
+        right: 16px;
+        bottom: 78px;
+        width: min(78vw, 320px);
+        max-height: 60vh;
+        overflow-y: auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+        z-index: 9000;
+        padding: 6px;
+      }
+
+      #cms-quick-nav-menu.open {
+        display: block;
+      }
+
+      #cms-quick-nav-menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 11px 12px;
+        border: none;
+        background: none;
+        font-size: 13px;
+        color: #1f2937;
+        border-bottom: 1px solid #eef0f4;
+        cursor: pointer;
+      }
+
+      #cms-quick-nav-menu button:last-child {
+        border-bottom: none;
+      }
+
+      #cms-quick-nav-menu button:active {
+        background: #f1f5fb;
+      }
+
+      @media (max-width: 799px) {
+        [class*='ToolbarContainer'],
+        [class*='EditorContainer'] {
+          min-width: 0 !important;
+          width: 100% !important;
+        }
+
+        /*
+          左右分割レイアウトを解除し、フォームのみを全幅表示する。
+          .SplitPane の height:auto は一見不要に見えるが、これを外すと
+          .SplitPane 自身が持つ inline の overflow:hidden ＋ 固定高さ（100%）
+          によってフォームの内容がその高さ（ツールバー分を除いた表示領域）で
+          クリップされ、下の方の項目が一切表示・到達不能になる不具合が起きる
+          ことを確認済み（削除厳禁）。
+          このheight:autoにより .SplitPane 自身がコンテンツの全高まで
+          広がり、その分だけ祖先の [class*="EditorContainer"]（overflow:hidden）
+          側でスクロール可能領域として認識されるようになり、JSからの
+          scrollTop操作でスクロールできる仕組みになっている。
+          なお [class*="EditorContainer"] は overflow:hidden のまま変更しない
+          こと。auto に変更すると同様にDecap内部のサイズ計測が崩れ、内容が
+          圧縮表示される不具合を確認済み。実機でのスワイプ操作は、後述の
+          スクリプト内で scrollTop を直接書き換える自前のタッチスクロール
+          処理を実装して対応している。
+        */
+        .SplitPane {
+          position: relative !important;
+          display: block !important;
+          height: auto !important;
+        }
+
+        .Pane1 {
+          width: 100% !important;
+          max-width: 100% !important;
+          flex: 0 0 100% !important;
+        }
+
+        .Pane2,
+        .Resizer {
+          display: none !important;
+        }
+
+        /*
+          プレビューペインを非表示にした際、プレビュー切替／更新／スクロール同期
+          ボタン群（ToolbarSectionMain の2番目の子要素）だけが極端に狭い幅に
+          押し込まれ、ラベル文字が1文字ずつ縦積みで表示されてしまうため、
+          プレビュー本体と合わせてこのボタン群も非表示にする。
+          （1番目の子要素＝公開状態バッジは残す）
+        */
+        [class*='ToolbarSectionMain'] > div:last-child {
+          display: none !important;
+        }
+
+        /*
+          プレビュー表示切替／スクロール同期切替の丸型フローティングボタン
+          （EditorToggle）も、プレビューペイン自体を非表示にしている以上不要
+          なため、画面端にはみ出さないよう非表示にする。
+        */
+        [class*='EditorToggle'] {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <script>
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on('init', (user) => {
+          if (!user) {
+            window.netlifyIdentity.on('login', () => {
+              document.location.href = '/admin/';
+            });
+          }
+        });
+      }
+    </script>
+
+    <!--
+      以下は Decap CMS 本体のReactアプリに対する後付けのDOM拡張スクリプト。
+      Decap本体を改造せず、レンダリング結果のDOMを監視・補完する形で
+      「スマホ用クイックナビ」と「見出し⇄機能フラグ／セクション表示順序の
+      表示文言 同期」を実現している。
+      Decap CMSのクラス名はビルドごとに変わるハッシュ付きのため、個別の
+      ハッシュ文字列には依存せず、部分一致セレクタとDOM構造（ControlContainer
+      の入れ子段数）で要素を特定している。
+    -->
+    <script>
+      (function () {
+        // ------------------------------------------------------------------
+        // 共通ヘルパー：エントリ編集フォームの「トップレベル項目」を判定する。
+        // Decap CMSは各フィールド（オブジェクト／リスト／単一フィールドいずれも）
+        // を [class*="ControlContainer"] でラップして入れ子にするため、
+        // ある要素からフォームのルート（[class*="ControlPaneContainer"]）まで
+        // ControlContainer が何回出現するかを数えれば「入れ子の深さ」が分かる。
+        // 深さ1＝管理画面に並ぶ大項目（会社・サイト基本情報、機能フラグ 等）。
+        // ------------------------------------------------------------------
+        function getFormRoot() {
+          return document.querySelector('[class*="ControlPaneContainer"]');
+        }
+
+        // Decapのエディター画面は独自のスクロール実装（[class*="EditorContainer"]を
+        // overflow:hiddenにし、scrollTopをJSから直接操作する方式）になっており、
+        // ネイティブの scrollIntoView() ではスクロールしない。実際にスクロールする
+        // コンテナを探して、その scrollTop を書き換える。
+        // クラス名の一致だけでなく「実際にスクロール可能（scrollHeightが
+        // clientHeightより大きい）」ことも確認し、Decap本体側の細かなバージョン
+        // 差異があっても正しいコンテナを取り違えないようにする。
+        function findScrollContainer() {
+          var candidates = [
+            document.querySelector('[class*="EditorContainer"]'),
+            document.querySelector('.Pane1'),
+            document.scrollingElement,
+            document.documentElement,
+          ];
+          for (var i = 0; i < candidates.length; i++) {
+            var el = candidates[i];
+            if (el && el.scrollHeight - el.clientHeight > 4) return el;
+          }
+          return null;
+        }
+
+        function animateScrollTop(container, destination) {
+          // requestAnimationFrame はブラウザの描画タイミングに依存するため、
+          // 省電力タブや一部のプレビュー環境で発火が遅延・停止することがある。
+          // setInterval であれば描画状態に関わらず一定間隔で確実に進むため、
+          // スクロールアニメーションにはこちらを使う。
+          var start = container.scrollTop;
+          var change = destination - start;
+          var duration = 420;
+          var stepMs = 16;
+          var startTime = Date.now();
+          function easeInOutQuad(t) {
+            return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          }
+          var timer = setInterval(function () {
+            var elapsed = Date.now() - startTime;
+            var progress = Math.min(1, elapsed / duration);
+            container.scrollTop = start + change * easeInOutQuad(progress);
+            if (progress >= 1) clearInterval(timer);
+          }, stepMs);
+        }
+
+        function scrollToElement(target) {
+          if (!target) return;
+          try {
+            var container = findScrollContainer();
+            if (!container) throw new Error('scroll container not found');
+            // この画面は [class*="EditorContainer"] が overflow:hidden かつ
+            // scrollTopをJSから直接書き換える独自スクロール実装のため、
+            // CSSの scroll-behavior/Element.scrollTo の smooth 指定が効かない。
+            // setInterval で scrollTop を手動アニメーションさせる。
+            var containerRect = container.getBoundingClientRect();
+            var targetRect = target.getBoundingClientRect();
+            var destination = container.scrollTop + (targetRect.top - containerRect.top) - 12;
+            animateScrollTop(container, Math.max(0, destination));
+          } catch (e) {
+            // 想定外の構造の場合はネイティブのスクロールにフォールバックする
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+
+        // ==================================================================
+        // 3) スマホでの縦スクロール（自前実装）
+        //    [class*="EditorContainer"] は overflow:hidden のため、ブラウザ
+        //    標準のスワイプ操作では一切スクロールしない。Decap本体はおそらく
+        //    独自のドラッグ／リサイズ計算に依存した内部実装でスクロールを
+        //    実現しているが、CSSでプレビュー側を非表示にする都合上その前提が
+        //    崩れやすく、実機でスワイプが効かなくなる不具合が確認された。
+        //    ここでは、指のドラッグ量をそのまま scrollTop に反映する最小限の
+        //    タッチスクロールを自前で実装し、Decap内部実装に依存せず確実に
+        //    動作するようにする（PCでは元々マウスホイールで動くため対象外）。
+        // ==================================================================
+        var touchScrollContainer = null;
+        var touchStartY = 0;
+        var touchStartScrollTop = 0;
+        var touchIsDragging = false;
+        var touchHasMoved = false;
+        var TOUCH_MOVE_THRESHOLD = 6; // px（誤反応を避けるための最小移動量）
+
+        function isTouchScrollExempt(target) {
+          // フォーム操作要素・ドラッグ並び替えハンドル・クイックナビUI・
+          // プルダウンの選択肢・モーダル内は、それぞれ本来の操作を優先し、
+          // 自前スクロールの対象外とする。
+          return !!(
+            target.closest &&
+            target.closest(
+              [
+                'input',
+                'textarea',
+                'select',
+                '[contenteditable]',
+                '[class*="DragIconContainer"]',
+                '#cms-quick-nav-btn',
+                '#cms-quick-nav-menu',
+                '[class$="-menu"]',
+                '[class*="-option"]',
+                '[class*="Modal"]',
+                '[role="dialog"]',
+              ].join(',')
+            )
+          );
+        }
+
+        document.addEventListener(
+          'touchstart',
+          function (e) {
+            if (!window.matchMedia('(max-width: 799px)').matches) return;
+            if (e.touches.length !== 1) return;
+            if (isTouchScrollExempt(e.target)) return;
+            var container = findScrollContainer();
+            if (!container) return;
+            touchScrollContainer = container;
+            touchStartY = e.touches[0].clientY;
+            touchStartScrollTop = container.scrollTop;
+            touchIsDragging = true;
+            touchHasMoved = false;
+          },
+          { passive: true }
+        );
+
+        document.addEventListener(
+          'touchmove',
+          function (e) {
+            if (!touchIsDragging || !touchScrollContainer) return;
+            var deltaY = e.touches[0].clientY - touchStartY;
+            if (Math.abs(deltaY) > TOUCH_MOVE_THRESHOLD) touchHasMoved = true;
+            if (touchHasMoved) {
+              touchScrollContainer.scrollTop = touchStartScrollTop - deltaY;
+            }
+          },
+          { passive: true }
+        );
+
+        function endTouchScroll() {
+          touchIsDragging = false;
+          touchHasMoved = false;
+          touchScrollContainer = null;
+        }
+        document.addEventListener('touchend', endTouchScroll, { passive: true });
+        document.addEventListener('touchcancel', endTouchScroll, { passive: true });
+
+        function controlDepth(el, root) {
+          var depth = 0;
+          var cur = el;
+          while (cur && cur !== root) {
+            if (typeof cur.className === 'string' && cur.className.indexOf('ControlContainer') !== -1) {
+              depth++;
+            }
+            cur = cur.parentElement;
+          }
+          return depth;
+        }
+
+        function topLevelFieldLabels(root) {
+          if (!root) return [];
+          var labels = Array.prototype.slice.call(root.querySelectorAll('[class*="FieldLabel"]'));
+          return labels.filter(function (l) {
+            return controlDepth(l, root) === 1;
+          });
+        }
+
+        // 深さ1のラベルテキストから、そのグループの ControlContainer 本体を辿る
+        function findGroupContainer(root, groupLabelText) {
+          var labels = topLevelFieldLabels(root);
+          var match = null;
+          for (var i = 0; i < labels.length; i++) {
+            if (labels[i].textContent.trim() === groupLabelText) {
+              match = labels[i];
+              break;
+            }
+          }
+          if (!match) return null;
+          var el = match;
+          while (el && !(typeof el.className === 'string' && el.className.indexOf('ControlContainer') !== -1)) {
+            el = el.parentElement;
+          }
+          return el;
+        }
+
+        // ==================================================================
+        // 1) スマホ用クイックナビ：管理画面の各大項目へスムーズスクロールする
+        //    フローティングメニュー（スマホ幅かつエントリ編集画面でのみ表示）
+        // ==================================================================
+        var navBtn = document.createElement('button');
+        navBtn.id = 'cms-quick-nav-btn';
+        navBtn.type = 'button';
+        navBtn.setAttribute('aria-label', '項目一覧を開く');
+        navBtn.textContent = '☰';
+
+        var navMenu = document.createElement('div');
+        navMenu.id = 'cms-quick-nav-menu';
+
+        document.body.appendChild(navBtn);
+        document.body.appendChild(navMenu);
+
+        function closeNavMenu() {
+          navMenu.classList.remove('open');
+        }
+
+        function rebuildNavMenu() {
+          var root = getFormRoot();
+          navMenu.innerHTML = '';
+          if (!root) return false;
+          var labels = topLevelFieldLabels(root);
+          if (!labels.length) return false;
+          labels.forEach(function (label) {
+            var text = label.textContent.trim();
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = text;
+            btn.addEventListener('click', function () {
+              // メニューを開いてから実際にタップするまでの間にCMS側の再描画で
+              // 参照が古くなっている可能性があるため、クリック時に同じラベル
+              // 文言の要素を改めて探し直してからスクロールする。
+              var freshRoot = getFormRoot();
+              var freshLabels = topLevelFieldLabels(freshRoot);
+              var freshTarget = label;
+              for (var i = 0; i < freshLabels.length; i++) {
+                if (freshLabels[i].textContent.trim() === text) {
+                  freshTarget = freshLabels[i];
+                  break;
+                }
+              }
+              // スマホでは入力中のキーボードが開いたままだと fixed 要素の
+              // 表示位置とタップ判定がずれることがあるため、先にフォーカスを外す
+              if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+              }
+              closeNavMenu();
+              scrollToElement(freshTarget);
+            });
+            navMenu.appendChild(btn);
+          });
+          return true;
+        }
+
+        navBtn.addEventListener('click', function () {
+          if (navMenu.classList.contains('open')) {
+            closeNavMenu();
+            return;
+          }
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+          if (rebuildNavMenu()) {
+            navMenu.classList.add('open');
+          }
+        });
+
+        document.addEventListener('click', function (e) {
+          if (!navMenu.classList.contains('open')) return;
+          if (e.target === navBtn || navMenu.contains(e.target)) return;
+          closeNavMenu();
+        });
+
+        // PC幅（Decap本体が左：フォーム／右：プレビューの2カラム表示を行う
+        // min-width:800px 以上の幅）では、ボタン／メニューがプレビューペインに
+        // 重ならないよう、実際に表示中の Pane1（フォーム側）の右端の位置に
+        // 合わせて right を動的に調整する。
+        // スマホ・タブレット幅（799px以下）では、既にCSSでプレビュー自体を
+        // 非表示にして単一カラム表示にしているため、常に画面右下に固定表示
+        // する＝スマホと全く同じ見た目・挙動になる。
+        // （閾値はプレビュー2カラム化のCSSと同じ799pxに揃えている）
+        function updateNavButtonPosition() {
+          if (window.matchMedia('(max-width: 799px)').matches) {
+            navBtn.style.right = '16px';
+            navMenu.style.right = '16px';
+            return;
+          }
+          var pane1 = document.querySelector('.Pane1');
+          var pane2 = document.querySelector('.Pane2');
+          var previewVisible =
+            pane2 && getComputedStyle(pane2).display !== 'none' && pane2.getBoundingClientRect().width > 0;
+          if (previewVisible && pane1) {
+            var offset = Math.max(16, window.innerWidth - pane1.getBoundingClientRect().right + 16);
+            navBtn.style.right = offset + 'px';
+            navMenu.style.right = offset + 'px';
+          } else {
+            navBtn.style.right = '16px';
+            navMenu.style.right = '16px';
+          }
+        }
+
+        function updateNavButtonVisibility() {
+          var onEntryScreen = !!getFormRoot();
+          navBtn.classList.toggle('visible', onEntryScreen);
+          if (!onEntryScreen) closeNavMenu();
+          updateNavButtonPosition();
+        }
+
+        window.addEventListener('resize', updateNavButtonVisibility);
+        window.addEventListener('hashchange', function () {
+          closeNavMenu();
+          updateNavButtonVisibility();
+        });
+
+        // ==================================================================
+        // 2) 見出し ⇄ 機能フラグ／セクション表示順序 の表示文言 同期
+        //    Decap CMS はフィールドラベルや選択肢を config.yml 由来の
+        //    固定文字列として描画し、他フィールドの値と連動させる仕組みを
+        //    持たないため、実際の見出し入力値を定期的にDOMへ反映させる形で
+        //    疑似的に同期する。
+        // ==================================================================
+
+        // セクションID → 対応する見出しセクションの大項目ラベル文言
+        // （config.yml の該当オブジェクトフィールドの label と一致させること）
+        var GROUP_LABELS = {
+          features: '選ばれる理由セクション',
+          services: 'サービスセクション',
+          flow: '制作の流れセクション',
+          products: '商品一覧セクション（竹/松プラン）',
+          works: '実績セクション',
+          plans: '料金プランセクション',
+          faq: 'FAQセクション',
+          access: 'アクセスセクション',
+          contact: 'お問い合わせセクション',
+        };
+
+        // 機能フラグ／セクション表示順序の選択肢は、この順序で並んでいる
+        // （config.yml の features フィールド順・sectionOrder の options 順と一致させること）
+        var OPTION_ORDER = ['features', 'services', 'flow', 'products', 'works', 'plans', 'faq', 'access', 'contact'];
+
+        var HEADING_FALLBACK = {
+          features: '選ばれる3つの理由',
+          services: 'サービス・事業内容',
+          flow: 'ご相談から納品までの流れ',
+          products: '商品・プラン一覧',
+          works: '実績・活用事例',
+          plans: '料金プラン',
+          faq: 'よくある質問',
+          access: '店舗概要・アクセス',
+          contact: 'お問い合わせ',
+        };
+
+        var latestHeadings = Object.assign({}, HEADING_FALLBACK);
+
+        function findHeadingValueInGroup(groupContainer) {
+          if (!groupContainer) return null;
+          var labels = Array.prototype.slice.call(groupContainer.querySelectorAll('[class*="FieldLabel"]'));
+          var headingLabel = null;
+          for (var i = 0; i < labels.length; i++) {
+            if (controlDepth(labels[i], groupContainer) === 1 && labels[i].textContent.trim() === '見出し') {
+              headingLabel = labels[i];
+              break;
+            }
+          }
+          if (!headingLabel) return null;
+          var forId = headingLabel.getAttribute('for');
+          var input = forId ? document.getElementById(forId) : null;
+          return input && input.value ? input.value : null;
+        }
+
+        function syncSectionLabels() {
+          var root = getFormRoot();
+          if (!root) return;
+
+          var headings = Object.assign({}, HEADING_FALLBACK);
+          Object.keys(GROUP_LABELS).forEach(function (key) {
+            var container = findGroupContainer(root, GROUP_LABELS[key]);
+            var val = findHeadingValueInGroup(container);
+            if (val) headings[key] = val;
+          });
+          latestHeadings = headings;
+
+          // 機能フラグのチェックボックスラベル（config.yml の定義順に並ぶ前提）
+          var featuresContainer = findGroupContainer(root, '機能フラグ（プラン切り替え）');
+          if (featuresContainer) {
+            var checkboxLabels = Array.prototype.slice
+              .call(featuresContainer.querySelectorAll('[class*="FieldLabel"]'))
+              .filter(function (l) {
+                return controlDepth(l, featuresContainer) === 1;
+              });
+            OPTION_ORDER.forEach(function (key, i) {
+              // 商品・型化ページの表示チェックボックスは「（竹/松プラン）」という
+              // プラン文脈の補足が付いた専用文言のため、他と違い上書きしない。
+              if (key === 'products') return;
+              var label = checkboxLabels[i];
+              if (label) label.textContent = '「' + headings[key] + '」セクションを表示する';
+            });
+          }
+
+          // セクション表示順序：各アイテムの「選択中の表示テキスト」
+          var orderContainer = findGroupContainer(root, 'セクション表示順序');
+          if (orderContainer) {
+            var items = orderContainer.querySelectorAll('[class*="SortableListItem"]');
+            items.forEach(function (item) {
+              var idLabel = item.querySelector('[class*="NestedObjectLabel"]');
+              var key = idLabel ? idLabel.textContent.trim() : null;
+              if (!key || !headings[key]) return;
+              var singleValue = item.querySelector('[class*="singleValue"]');
+              if (singleValue) singleValue.textContent = headings[key];
+            });
+          }
+        }
+
+        // セレクトの選択肢（プルダウンを開いた瞬間に生成される）は
+        // config.yml 由来の固定ラベルで毎回描画し直されるため、開くたびに書き換える
+        var menuObserver = new MutationObserver(function (mutations) {
+          mutations.forEach(function (m) {
+            m.addedNodes.forEach(function (node) {
+              if (!(node instanceof HTMLElement)) return;
+              var menu = null;
+              if (node.className && typeof node.className === 'string' && /-menu$/.test(node.className)) {
+                menu = node;
+              } else if (node.querySelector) {
+                menu = node.querySelector('[class$="-menu"]');
+              }
+              if (!menu) return;
+              var options = menu.querySelectorAll('[class*="-option"]');
+              options.forEach(function (opt, i) {
+                var key = OPTION_ORDER[i];
+                if (key && latestHeadings[key]) {
+                  opt.textContent = latestHeadings[key];
+                }
+              });
+            });
+          });
+        });
+        menuObserver.observe(document.body, { childList: true, subtree: true });
+
+        window.addEventListener('load', function () {
+          updateNavButtonVisibility();
+          setInterval(function () {
+            updateNavButtonVisibility();
+            syncSectionLabels();
+          }, 500);
+        });
+      })();
+    </script>
+  </body>
+</html>

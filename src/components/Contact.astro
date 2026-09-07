@@ -1,0 +1,93 @@
+---
+// ============================================================================
+// Contact.astro — お問い合わせフォーム
+// 送信ボタン直下に「プライバシーポリシーに同意の上、送信してください」の
+// リンク付き注記を標準配置（/privacy へリンク）。
+// ============================================================================
+import { site } from '../lib/site';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+---
+
+{site.features.enableContact && (
+<section id="contact" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="contact-heading">
+  <div class="max-w-[1100px] mx-auto">
+    <div class="text-center mb-10">
+      <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+        {site.contactSection.eyebrow}
+      </div>
+      <h2 id="contact-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+        {site.contactSection.heading}
+      </h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div>
+        <p class="text-[14px] leading-[1.9] text-secondary-light mb-6" set:html={site.contactSection.body} />
+        <ul class="list-none p-0 m-0 flex flex-col gap-[14px]">
+          {
+            site.contactSection.points.map((point) => (
+              <li class="text-[13px] text-secondary-light font-normal">・{point}</li>
+            ))
+          }
+        </ul>
+      </div>
+      <form id="contact-form" novalidate class="flex flex-col gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input
+            type="text"
+            name="name"
+            placeholder={site.contactSection.form.namePlaceholder}
+            required
+            class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]"
+            aria-label={site.contactSection.form.namePlaceholder}
+          />
+          <input
+            type="text"
+            name="company"
+            placeholder={site.contactSection.form.companyPlaceholder}
+            class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]"
+            aria-label={site.contactSection.form.companyPlaceholder}
+          />
+        </div>
+        <input
+          type="email"
+          name="email"
+          placeholder={site.contactSection.form.emailPlaceholder}
+          required
+          class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]"
+          aria-label={site.contactSection.form.emailPlaceholder}
+        />
+        <textarea
+          name="message"
+          placeholder={site.contactSection.form.messagePlaceholder}
+          rows="4"
+          required
+          class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px] resize-y"
+          aria-label={site.contactSection.form.messagePlaceholder}
+        ></textarea>
+        <button
+          type="submit"
+          class="mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full cursor-pointer hover:opacity-90 transition-opacity bg-gradient-to-br from-[#1e5bf2] to-primary-dark"
+        >
+          {site.contactSection.form.submitLabel} <span aria-hidden="true">›</span>
+        </button>
+        <p class="text-[12px] text-ink-faint text-center m-0">
+          <a href="/privacy" class="text-primary underline">{site.ui.privacyPolicyLabel}</a>{site.ui.privacyConsentSuffix}
+        </p>
+      </form>
+    </div>
+  </div>
+</section>
+)}
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // TODO: フォーム送信処理（API連携）を実装
+  });
+</script>

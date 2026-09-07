@@ -1,0 +1,68 @@
+---
+// ============================================================================
+// MobileNavDrawer.astro
+// スマホ表示専用：開閉ドロワー本体。
+// ヘッダーの横並び行（flex row）の“外側”に、幅100%の兄弟要素として配置する
+// こと（PC表示で高さ0のまま横幅だけ確保してレイアウトを崩すのを防ぐため）。
+// ============================================================================
+interface NavItem {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  items: NavItem[];
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+const { items, ctaLabel, ctaHref } = Astro.props;
+---
+
+<nav id="mobile-nav" class="md:hidden" aria-label="モバイルナビゲーション">
+  {
+    items.map((item) => (
+      <a
+        href={item.href}
+        class="mobile-nav-link block px-5 py-[14px] text-[15px] font-bold text-secondary border-b border-surface-border"
+      >
+        {item.label}
+      </a>
+    ))
+  }
+  <a href={ctaHref} class="mobile-nav-link block px-5 py-[14px] text-[15px] font-bold text-primary">
+    {ctaLabel}
+  </a>
+</nav>
+
+<script>
+  const menuBtn = document.getElementById('menu-btn') as HTMLButtonElement;
+  const mobileNav = document.getElementById('mobile-nav') as HTMLElement;
+  const bar1 = document.getElementById('bar1') as HTMLElement;
+  const bar2 = document.getElementById('bar2') as HTMLElement;
+  const bar3 = document.getElementById('bar3') as HTMLElement;
+
+  function setMenu(open: boolean) {
+    menuBtn.setAttribute('aria-expanded', String(open));
+
+    if (open) {
+      mobileNav.style.maxHeight = mobileNav.scrollHeight + 'px';
+      mobileNav.classList.add('nav-open');
+    } else {
+      mobileNav.style.maxHeight = '0px';
+      mobileNav.classList.remove('nav-open');
+    }
+
+    bar1.style.transform = open ? 'translateY(8px) rotate(45deg)' : '';
+    bar2.style.opacity = open ? '0' : '1';
+    bar3.style.transform = open ? 'translateY(-8px) rotate(-45deg)' : '';
+  }
+
+  menuBtn.addEventListener('click', () => {
+    setMenu(menuBtn.getAttribute('aria-expanded') !== 'true');
+  });
+
+  document.querySelectorAll('.mobile-nav-link').forEach((link) => {
+    link.addEventListener('click', () => setMenu(false));
+  });
+</script>

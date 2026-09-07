@@ -1,0 +1,72 @@
+---
+// ============================================================================
+// Hero.astro — メインビジュアル（LCP画像。fetchpriority="high" 指定）
+// ============================================================================
+import { Image } from 'astro:assets';
+import { site } from '../lib/site';
+import { resolveImage } from '../lib/images';
+
+const heroImage = resolveImage(site.hero.image);
+---
+
+<section aria-label="メインビジュアル" class="relative w-full overflow-hidden" style="height:clamp(440px,72vw,640px);">
+  <Image
+    src={heroImage}
+    alt={site.hero.imageAlt}
+    class="absolute inset-0 w-full h-full object-cover"
+    width={1920}
+    height={1278}
+    widths={[640, 960, 1280, 1920]}
+    sizes="100vw"
+    format="webp"
+    quality={80}
+    fetchpriority="high"
+    loading="eager"
+  />
+  <div
+    class="absolute inset-0"
+    aria-hidden="true"
+    style="background:linear-gradient(180deg, rgba(8,16,34,0.72) 0%, rgba(8,16,34,0.48) 45%, rgba(8,16,34,0.8) 100%);"
+  >
+  </div>
+  <div class="relative z-10 h-full max-w-[1200px] mx-auto px-5 flex flex-col justify-center">
+    <h1
+      class="font-bold leading-[1.4] mb-5 tracking-[0.01em] text-white"
+      style="font-size:clamp(26px,3.6vw,38px);text-shadow:0 2px 14px rgba(0,0,0,0.45);"
+      set:html={site.hero.heading}
+    />
+    <p
+      class="text-[15px] leading-[1.9] text-white mb-7"
+      style="text-shadow:0 1px 8px rgba(0,0,0,0.4);"
+      set:html={site.hero.body}
+    />
+    <a
+      href={site.hero.ctaHref}
+      class="inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full w-fit bg-gradient-to-br from-[#1e5bf2] to-primary-dark"
+      style="box-shadow:0 10px 24px -8px rgba(25,84,224,0.55);"
+    >
+      {site.hero.ctaLabel} <span aria-hidden="true">›</span>
+    </a>
+    <ul class="flex flex-wrap gap-[18px] mt-7 list-none p-0 m-0">
+      {
+        site.hero.badges.map((badge) => (
+          <li
+            class="flex items-center gap-1.5 text-[13px] text-white font-bold"
+            style="text-shadow:0 1px 6px rgba(0,0,0,0.4);"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 12.5l5 5L20 6"
+                stroke="#fff"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {badge}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

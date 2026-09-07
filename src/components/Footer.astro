@@ -1,0 +1,95 @@
+---
+// ============================================================================
+// Footer.astro — 共通フッター（ロゴ＋SNS／ヘッダーと同じメニュー2列／プライバシー導線）
+// ============================================================================
+import { Image } from 'astro:assets';
+import { site, visibleNavItems } from '../lib/site';
+import { resolveImage } from '../lib/images';
+
+const logo = resolveImage(site.company.logo);
+const footerNav = visibleNavItems(site.footerNav);
+// 2列レイアウトの行数は、表示される項目数に合わせて動的に算出する
+// （非表示セクションが増えても不自然な空白行ができないようにするため）
+const footerNavRows = Math.max(1, Math.ceil(footerNav.length / 2));
+
+const snsLinks = [
+  {
+    label: 'X（旧Twitter）アカウント',
+    href: site.contact.xUrl,
+    icon: 'M4 3h3.6l4.7 6.3L17.6 3H21l-6.9 8.4L21.4 21h-3.6l-5.1-6.8L6.6 21H3l7.3-8.9L4 3Z',
+  },
+  {
+    label: 'インスタグラム',
+    href: site.contact.instagramUrl,
+    isFrame: true,
+  },
+  {
+    label: 'LINE公式アカウント',
+    href: site.contact.lineUrl,
+    icon: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
+  },
+  {
+    label: 'フェイスブック',
+    href: site.contact.facebookUrl,
+    icon: 'M15 8.5h2.2V5.6h-2.4c-2.4 0-3.8 1.5-3.8 3.9v1.8H8.6v3h2.4V21h3.1v-6.7h2.4l.4-3h-2.8v-1.5c0-.87.23-1.3 1.9-1.3Z',
+  },
+];
+---
+
+<footer class="bg-secondary-dark text-[#c7cede] pt-12 px-5 pb-24 md:pb-10 text-[12px]">
+  <div class="max-w-[900px] mx-auto flex flex-col md:flex-row md:justify-between gap-9 mb-9">
+    <!-- 左：ロゴ＋SNS -->
+    <div class="text-center md:text-left">
+      <Image
+        src={logo}
+        alt={`${site.company.name} ロゴ`}
+        class="h-6 w-auto object-contain mb-4 mx-auto md:mx-0 block"
+        width={161}
+        height={63}
+      />
+      <div class="flex items-center justify-center md:justify-start gap-3">
+        {
+          snsLinks.map((sns) => (
+            <a
+              href={sns.href}
+              aria-label={sns.label}
+              class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            >
+              {sns.isFrame ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
+                  <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
+                  <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d={sns.icon} fill="#fff" />
+                </svg>
+              )}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- 右：ヘッダーと同じメニューを2列で配置 -->
+    <nav
+      class="grid grid-cols-2 grid-flow-col gap-x-12 gap-y-3 text-center md:text-left justify-center md:justify-start"
+      style={`grid-template-rows: repeat(${footerNavRows}, auto);`}
+      aria-label="フッターナビゲーション"
+    >
+      {
+        footerNav.map((item) => (
+          <a href={item.href} class="text-[#c7cede] hover:text-white transition-colors">
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+
+  <div class="text-center border-t border-white/10 pt-6">
+    <a href="/privacy" class="text-[#c7cede] underline hover:text-white transition-colors">{site.ui.privacyPolicyLabel}</a>
+    <div class="mt-2">{site.copyright}</div>
+  </div>
+</footer>

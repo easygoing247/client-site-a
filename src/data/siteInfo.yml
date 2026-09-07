@@ -1,0 +1,247 @@
+company:
+  name: LOGO
+  logo: ../assets/logo.svg
+  siteName: LOGO | Web制作・LP制作
+  tagline: 想いをカタチに、成果につながるWebを。
+  description: シンプルで伝わるデザインと、使いやすいWebサイトでビジネスの成長をサポートします。相談無料・最短1週間対応。
+  representative: 山田 太郎
+  establishedYear: 2018
+  ogImage: ../assets/hero.jpg
+contact:
+  phone: 000-000-0000
+  phoneHref: tel:0000000000
+  email: info@example.com
+  lineUrl: "#"
+  instagramUrl: "#"
+  xUrl: "#"
+  facebookUrl: "#"
+  phoneLabel: お電話
+  lineLabel: LINEで相談
+access:
+  eyebrow: ACCESS
+  heading: 店舗概要・アクセス
+  labels:
+    postalCode: 郵便番号
+    address: 住所
+    nearestStation: 最寄り駅
+    phone: 電話番号
+    businessHours: 営業時間
+    closedDays: 定休日
+    parking: 駐車場
+    sns: 公式SNS
+store:
+  mapLat: 43.0606
+  closedDays: 土曜・日曜・祝日
+  mapLng: 141.3568
+  name: LOGO 札幌本店（ショールーム）
+  imageAlt: ショールーム外観イメージ
+  businessHours: 10:00〜18:00
+  mapEmbedUrl: https://www.google.com/maps?q=43.0606,141.3568&z=16&output=embed
+  address: 北海道札幌市中央区北一条西3丁目 LOGOビル5F
+  nearestStation: 札幌市営地下鉄 大通駅 徒歩5分
+  postalCode: 〒060-0001
+  parking: 3台（近隣コインパーキングもご利用いただけます）
+  image: /src/assets/access-store.jpg
+features:
+  enableFeatures: true
+  enableServices: true
+  enableProducts: false
+  enableAccess: true
+  enablePlans: true
+  enableFlow: true
+  enableFaq: true
+  enableContact: true
+  enableWorks: true
+sectionOrder:
+  - id: features
+  - id: services
+  - id: flow
+  - id: products
+  - id: works
+  - id: plans
+  - id: access
+  - id: faq
+  - id: contact
+hero:
+  heading: 想いをカタチに、<br />成果につながるWebを。
+  body: シンプルで伝わるデザインと、<br class="sm:hidden" />使いやすいWebサイトで<br class="hidden
+    sm:inline md:hidden" />ビジネスの成長をサポートします。
+  ctaLabel: 無料で相談する
+  ctaHref: "#contact"
+  image: /src/assets/hero.jpg
+  imageAlt: Web制作の作業風景（ノートパソコンでコーディングする様子）
+  badges:
+    - 相談無料
+    - 最短1週間で対応
+    - 安心のサポート体制
+features_section:
+  eyebrow: FEATURES
+  heading: 選ばれる3つの理由
+  items:
+    - number: "01"
+      title: 高品質デザイン
+      text: 目的に合わせたデザインで、信頼感と成果を生むサイトを制作します。
+      icon: ../assets/icon-design.png
+    - number: "02"
+      title: スマホ最適化
+      text: スマートフォンでの見やすさ・使いやすさを重視した設計で離脱を防ぎます。
+      icon: ../assets/icon-mobile.png
+    - number: "03"
+      title: 手厚いサポート
+      text: 公開後の運用・改善まで伴走し、継続的な成果につなげる支援を行います。
+      icon: ../assets/icon-support.png
+services:
+  eyebrow: SERVICE
+  heading: サービス・事業内容
+  items:
+    - title: Webサイト制作
+      text: コーポレートサイトやサービスサイトなど、目的に合わせたWebサイトを制作します。
+      image: ../assets/service-website.jpg
+    - title: LP制作
+      text: 商品・サービスの魅力を伝え、成果につながるランディングページを制作します。
+      image: ../assets/service-lp.jpg
+    - title: SEO・集客支援
+      text: 検索エンジンに強い構造設計とコンテンツで、集客・成果をサポートします。
+      image: ../assets/service-seo.jpg
+    - title: 運用・保守サポート
+      text: 更新作業やセキュリティ対策など、安心して運用できる体制を提供します。
+      image: ../assets/service-support.jpg
+flow:
+  eyebrow: FLOW
+  heading: ご相談から納品までの流れ
+  steps:
+    - number: 1
+      title: ヒアリング・ご相談
+      text: 現状の課題やご要望をお伺いし、方向性をすり合わせます。
+    - number: 2
+      title: ご提案・お見積り
+      text: 最適なプランと構成をご提案し、費用・スケジュールを提示します。
+    - number: 3
+      title: デザイン制作
+      text: ヒアリング内容をもとに、サイトの構成・デザインを作成します。
+    - number: 4
+      title: コーディング・実装
+      text: デザインをもとにコーディングを行い、動作確認を重ねます。
+    - number: 5
+      title: 公開・納品
+      text: 最終確認のうえサイトを公開し、納品後もサポートを継続します。
+works:
+  eyebrow: WORKS
+  heading: 実績・活用事例
+  items:
+    - title: コーポレートサイト制作
+      industry: 業種：IT・システム開発
+      tag: "#ブランディング強化"
+      image: ../assets/works-corporate.jpg
+    - title: サービスサイト制作
+      industry: 業種：インテリア・寝具
+      tag: "#集客数150%向上"
+      image: ../assets/works-service.jpg
+    - title: LP制作
+      industry: 業種：美容サロン
+      tag: "#CVR2.3倍改善"
+      image: ../assets/works-lp.jpg
+plans:
+  eyebrow: PLAN
+  heading: 料金プラン
+  note: ※料金はすべて税抜価格です。内容はご要望に応じてお見積りいたします。
+  popularBadgeLabel: 人気No.1
+  items:
+    - name: ライトプラン
+      description: 小規模サイトに最適
+      price: 150000
+      popular: false
+      features:
+        - トップページ＋下層3ページ
+        - スマホ対応
+        - お問い合わせフォーム
+    - name: スタンダードプラン
+      description: 一般的なコーポレートサイトに
+      price: 300000
+      popular: true
+      features:
+        - トップページ＋下層8ページ
+        - スマホ対応
+        - CMS導入
+        - 基本SEO対策
+    - name: プレミアムプラン
+      description: 集客・SEOを強化したい方に
+      price: 500000
+      popular: false
+      features:
+        - トップページ＋下層10ページ〜
+        - スマホ対応
+        - CMS導入
+        - SEO対策・運用サポート
+faq:
+  eyebrow: FAQ
+  heading: よくある質問
+  items:
+    - q: 制作期間はどのくらいですか？
+      a: 内容・規模によりますが、コーポレートサイトで4〜6週間、LPで2〜3週間が目安です。ご要望に応じてスケジュールをご相談いたします。
+    - q: 原稿や写真がなくても依頼できますか？
+      a: はい、可能です。ヒアリングをもとに構成・コピーの草案をご提案し、必要な素材もご相談のうえ準備いたします。
+    - q: 公開後のサポートはありますか？
+      a: 公開後の更新作業やセキュリティ対策、改善提案まで継続的にサポートするプランをご用意しています。
+contactSection:
+  eyebrow: CONTACT
+  heading: お問い合わせ
+  body: Web制作のご相談・お見積りは無料です。<br />お気軽にお問い合わせください。
+  points:
+    - 24時間以内にご返信します
+    - オンライン打ち合わせ可能
+    - 無理な営業は一切しません
+  form:
+    namePlaceholder: お名前
+    companyPlaceholder: 会社名（任意）
+    emailPlaceholder: メールアドレス
+    messagePlaceholder: お問い合わせ内容
+    submitLabel: 送信する
+productsSection:
+  eyebrow: PRODUCTS
+  heading: 商品・プラン一覧
+productPage:
+  breadcrumbHome: トップ
+  specsHeading: 仕様・含まれる内容
+  ctaLabel: このプランで相談する
+ui:
+  privacyPolicyLabel: プライバシーポリシー
+  privacyConsentSuffix: に同意の上、送信してください。
+nav:
+  - label: サービス
+    href: "#services"
+  - label: 流れ
+    href: "#flow"
+  - label: 商品
+    href: "#products"
+  - label: 実績
+    href: "#works"
+  - label: 料金プラン
+    href: "#plans"
+  - label: アクセス
+    href: "#access"
+  - label: よくある質問
+    href: "#faq"
+navCta:
+  label: お問い合わせ
+  href: "#contact"
+footerNav:
+  - label: サービス
+    href: "#services"
+  - label: 流れ
+    href: "#flow"
+  - label: 商品
+    href: "#products"
+  - label: 実績
+    href: "#works"
+  - label: " 料金プラン"
+    href: "#plans"
+  - label: アクセス
+    href: "#access"
+  - label: よくある質問
+    href: "#faq"
+  - label: お問い合わせ
+    href: "#contact"
+icons:
+  check: ../assets/icon-check.png
+copyright: © 2026 LOGO. All Rights Reserved.

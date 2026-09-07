@@ -1,0 +1,72 @@
+---
+// ============================================================================
+// Flow.astro — 「ご相談から納品までの流れ」（型化しやすいステップ配列駆動）
+// ============================================================================
+import { site } from '../lib/site';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+const steps = site.flow.steps;
+const enabled = site.features.enableFlow;
+---
+
+{enabled && (
+<section id="flow" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="flow-heading">
+  <div class="max-w-[1100px] mx-auto">
+    <div class="text-center mb-12">
+      <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+        {site.flow.eyebrow}
+      </div>
+      <h2 id="flow-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+        {site.flow.heading}
+      </h2>
+    </div>
+
+    <div class="flex flex-col lg:flex-row lg:items-stretch gap-3 lg:gap-2" role="list">
+      {
+        steps.map((step, i) => {
+          const isLast = i === steps.length - 1;
+          return (
+            <>
+              <div
+                role="listitem"
+                class:list={[
+                  'flex-1 rounded-2xl border-2 p-6 flex flex-col items-center text-center transition-colors',
+                  isLast
+                    ? 'border-primary bg-gradient-to-br from-[#1e5bf2] to-primary-dark'
+                    : 'border-surface-border bg-white',
+                ]}
+              >
+                <div class:list={['text-[26px] font-bold mb-2 leading-none', isLast ? 'text-white' : 'text-primary']}>
+                  {step.number}
+                </div>
+                <h3 class:list={['text-[14px] font-bold mb-1.5', isLast && 'text-white']}>{step.title}</h3>
+                <p class:list={['text-[12px] leading-[1.7] m-0', isLast ? 'text-white/85' : 'text-ink-soft']}>
+                  {step.text}
+                </p>
+              </div>
+
+              {!isLast && (
+                <div class="flex-none flex items-center justify-center py-1 lg:py-0 lg:px-1" aria-hidden="true">
+                  <svg class="rotate-90 lg:rotate-0" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="#c3cbe0"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              )}
+            </>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>
+)}

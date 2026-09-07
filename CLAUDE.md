@@ -1,0 +1,130 @@
+# CLAUDE.md
+
+このファイルは、このリポジトリで Claude Code が作業する際の必読ルールです。
+人間の開発者にも同様に適用されます。
+
+## 1. プロジェクト構造
+
+```
+astro.config.mjs        Astro設定（sitemap統合、site URL）
+tailwind.config.mjs      デザイントークン（primary/secondary/accent 等）を定義
+src/
+  data/siteInfo.yml      ★サイト全データの唯一のソース（Single Source of Truth）
+  lib/site.ts            siteInfo.yml をパースして型付きで公開
+  lib/images.ts           siteInfo.yml内の画像パス文字列を astro:assets の
+                          ImageMetadata に解決するヘルパー
+  layouts/Layout.astro    共通<head>・フォント読み込み最適化
+  components/             セクション単位のAstroコンポーネント（1コンポーネント1責務）
+  content/
+    config.ts             Content Collections スキーマ定義（products）
+    products/*.md          型化ページの実データ（Markdown + frontmatter）
+  pages/
+    index.astro            トップページ（コンポーネントを並べるだけ）
+    privacy.astro           プライバシーポリシー（siteInfo.ymlから動的生成）
+    products/[slug].astro   型化ページの動的ルート
+public/
+  admin/                   Decap CMS（index.html + config.yml）
+  robots.txt               検索エンジン向け設定（sitemapは@astrojs/sitemapが自動生成）
+```
+
+### 絶対ルール①：テキスト直書き禁止
+
+- コンポーネント（`.astro`）内に日本語テキスト・電話番号・住所・価格などを直接書き込まないこと。
+- すべてのテキスト／数値／リンク先は `src/data/siteInfo.yml` に定義し、
+  `src/lib/site.ts` の `site` オブジェクト経由で参照すること。
+- 型化ページ（商品・施工事例）のテキストは `src/content/products/*.md` の frontmatter に書く。
+- 例外：aria-label の補助文言、SVGのpath座標など「コンテンツではない実装詳細」のみ許容。
+
+### 絶対ルール②：画像は astro:assets の `<Image />` を使用する
+
+- `<img>` タグを直接書かない。必ず `astro:assets` の `<Image />` コンポーネントを使う。
+- 画像ファイルは `src/assets/` に配置し、`siteInfo.yml` にはそのファイル名を含む
+  相対パス文字列（例: `"../assets/hero.jpg"`）を書き、`resolveImage()` で解決する。
+- Content Collections（products）内の画像は、スキーマの `image()` ヘルパーを使い、
+  frontmatterに相対パスで記述する（`mainImage: "../../assets/xxx.jpg"`）。
+- ヒーロー画像など LCP に影響する画像には `fetchpriority="high"` と `loading="eager"` を、
+  それ以外の画像には `loading="lazy"` を必ず指定する。
+
+## 2. 案件初期化用プロンプト例（新規案件へ着せ替える手順）
+
+新しいクライアント案件にこのマスターテンプレートを流用する場合、Claude Code に対して
+以下のようなプロンプトを投げることを想定しています。
+
+```
+このマスターテンプレートを新しい案件用に初期化してください。
+- 店舗名・住所・電話番号・営業時間・SNSリンクを次の内容に置き換えてください：
+  （ここに新しい店舗情報を貼り付け）
+- ブランドカラーを primary=#○○○○○○, secondary=#○○○○○○, accent=#○○○○○○ に変更してください。
+  tailwind.config.mjs の colors ブロックのみを更新し、コンポーネント側の
+  クラス名（bg-primary 等）は変更しないでください。
+- src/assets/ 内の画像を、案件用に用意した写真に差し替えてください
+  （ファイル名は既存のものに合わせるか、siteInfo.yml のパスも合わせて更新してください）。
+- 料金プラン・サービス内容・FAQ・実績事例のテキストを、src/data/siteInfo.yml 内の
+  該当ブロックのみ書き換えてください（コンポーネント本体は変更不要です）。
+```
+
+このプロンプトのポイントは「**変更対象を siteInfo.yml とデザイントークンに限定する**」ことです。
+コンポーネントのマークアップ・ロジックには手を入れず、データと色の変数だけを
+差し替えることで、型化ページや将来の機能追加との衝突を避けられます。
+
+## 3. セキュリティ方針
+
+- `/admin`（Decap CMS）には、このリポジトリのコード側では認可制御を実装していません。
+- **本番デプロイ後、必ず Cloudflare Access（または同等のIdP連携リバースプロキシ）で
+  `/admin/*` へのアクセスを許可ユーザーのみに制限してください。**
+- Decap CMS関連スクリプト（netlify-identity-widget、decap-cms本体）は
+  `public/admin/index.html` にのみ読み込ませており、トップページ等の一般公開ページには
+  一切混入させないこと（パフォーマンス・セキュリティ両面での必須ルール）。
+- Git Gateway / Netlify Identity のバックエンド設定は `public/admin/config.yml` の
+  `backend` ブロックのみで完結させ、ソースコード側に認証情報をハードコードしないこと。
+
+## 4. 型化ページの管理ルールと 梅／竹／松 プラン運用
+
+### 型化ページ（`src/content/products/`）
+
+- 1商品・1施工事例 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
+  URLスラッグになる（例: `sample.md` → `/products/sample/`）。
+- frontmatterのスキーマは `src/content/config.ts` で定義されている。
+  必須フィールド：`title`, `price`, `mainImage`, `summary`, `specs`, `order`。
+- 型化ページのファイル自体は、機能フラグの状態に関わらず `npm run build` 時に
+  常に静的ページとして生成される（直接URLでのアクセス・先行公開プレビュー用）。
+  トップページからの導線表示のみが機能フラグで制御される。
+
+### 機能フラグによるプラン切り替え（`src/data/siteInfo.yml` の `features`）
+
+| フラグ | 用途 |
+|---|---|
+| `features.enableProducts` | `false`=梅プラン（1ページLPのみ、商品セクション非表示） / `true`=竹・松プラン（トップページに商品一覧セクションを表示し、`/products/[slug]` への導線を出す） |
+| `features.enableWorks` | 実績セクションの表示/非表示 |
+| `features.enableFaq` | FAQセクションの表示/非表示 |
+| `features.enablePlans` | 料金プランセクションの表示/非表示 |
+
+- 梅プランの案件では `enableProducts: false` のまま運用し、`src/content/products/`
+  にファイルを追加しても、トップページの商品セクションは表示されない
+  （ただし個別ページは生成されるため、将来のプラン変更に備えてコンテンツだけ
+  先に用意しておくことも可能）。
+- 竹・松プランへのアップグレード時は `enableProducts: true` に変更するのみでよい。
+  コンポーネントやルーティングの変更は不要。
+
+## 5. ローカルでのDecap CMS動作確認
+
+- `astro dev` は `public/` 配下のサブディレクトリで `index.html` の自動解決を行わない仕様があるため、
+  開発サーバーでは `http://localhost:3001/admin/index.html`（末尾まで明記）でアクセスすること。
+  `npm run build && npm run preview` で確認する場合は `/admin/`（末尾スラッシュ）でもアクセス可能。
+- `public/admin/config.yml` の `backend` は本番用の `git-gateway`（Netlify Identity前提）のため、
+  Netlifyにデプロイしていないローカル環境ではログインできない。ローカル確認時は以下の手順で
+  `local_backend: true` を使ったローカルプロキシ経由のログインを利用する：
+
+  ```bash
+  npm run dev        # ターミナル1
+  npm run cms:proxy  # ターミナル2（decap-serverを起動）
+  ```
+
+  その上で `/admin/index.html` を開き、「ログイン」ボタンを押すだけで
+  （Git認証不要で）ローカルの `siteInfo.yml` や `src/content/products/` を直接編集できる。
+- `local_backend: true` はlocalhost以外では自動的に無視されるため、本番ビルドには影響しない。
+
+## 6. .gitignore
+
+`node_modules/`, `dist/`, `.astro/`, `.env` 系は Git 管理対象外（`.gitignore` 参照）。
+`src/assets/` の画像ファイルは案件ごとに差し替わる資産のためコミット対象に含める。

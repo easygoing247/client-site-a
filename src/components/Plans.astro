@@ -1,0 +1,64 @@
+---
+// ============================================================================
+// Plans.astro — 「料金プラン」（features.enablePlans で表示制御）
+// ============================================================================
+import { Image } from 'astro:assets';
+import { site } from '../lib/site';
+import { resolveImage } from '../lib/images';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+const checkIcon = resolveImage(site.icons.check);
+---
+
+{
+  site.features.enablePlans && (
+    <section id="plans" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="plans-heading">
+      <div class="max-w-[1100px] mx-auto">
+        <div class="text-center mb-10">
+          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+            {site.plans.eyebrow}
+          </div>
+          <h2 id="plans-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+            {site.plans.heading}
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          {site.plans.items.map((plan) => (
+            <div
+              class:list={[
+                'relative rounded-2xl p-7 bg-white flex flex-col items-center text-center',
+                plan.popular ? 'border-2 border-primary' : 'border border-surface-border',
+              ]}
+              style={plan.popular ? 'box-shadow:0 16px 32px -12px rgba(25,84,224,0.28);' : undefined}
+            >
+              {plan.popular && (
+                <div class="absolute -top-[14px] left-1/2 -translate-x-1/2 bg-primary text-white text-[11px] font-bold px-[14px] py-[5px] rounded-full whitespace-nowrap">
+                  {site.plans.popularBadgeLabel}
+                </div>
+              )}
+              <h3 class:list={['text-[17px] font-bold mb-1', plan.popular && 'mt-2']}>{plan.name}</h3>
+              <p class="text-[12px] text-ink-soft mb-5">{plan.description}</p>
+              <div class="text-[28px] font-bold mb-6">
+                ¥{plan.price.toLocaleString('ja-JP')}
+                <span class="text-[14px] font-normal text-ink-soft">〜</span>
+              </div>
+              <ul class="list-none m-0 p-0 flex flex-col gap-3 w-fit mx-auto text-left">
+                {plan.features.map((feature) => (
+                  <li class="flex gap-2 items-center text-[13px] text-secondary-light">
+                    <Image src={checkIcon} alt="" aria-hidden="true" class="w-4 h-4 flex-none" width={16} height={16} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p class="text-center text-[12px] text-ink-faint mt-6">{site.plans.note}</p>
+      </div>
+    </section>
+  )
+}

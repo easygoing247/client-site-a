@@ -1,0 +1,135 @@
+---
+// ============================================================================
+// Access.astro — 「店舗概要・アクセス」（レスポンシブGoogleマップ埋め込み）
+// ============================================================================
+import { Image } from 'astro:assets';
+import { site } from '../lib/site';
+import { resolveImage } from '../lib/images';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+const storeImage = resolveImage(site.store.image);
+
+const snsLinks = [
+  {
+    label: 'LINE公式アカウント',
+    href: site.contact.lineUrl,
+    bg: 'bg-accent',
+    icon: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
+  },
+  {
+    label: 'インスタグラム',
+    href: site.contact.instagramUrl,
+    bg: '',
+    style: 'background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);',
+    isFrame: true,
+  },
+  {
+    label: 'エックス',
+    href: site.contact.xUrl,
+    bg: 'bg-secondary',
+    icon: 'M4 3h3.6l4.7 6.3L17.6 3H21l-6.9 8.4L21.4 21h-3.6l-5.1-6.8L6.6 21H3l7.3-8.9L4 3Z',
+  },
+  {
+    label: 'フェイスブック',
+    href: site.contact.facebookUrl,
+    bg: 'bg-[#1877f2]',
+    icon: 'M15 8.5h2.2V5.6h-2.4c-2.4 0-3.8 1.5-3.8 3.9v1.8H8.6v3h2.4V21h3.1v-6.7h2.4l.4-3h-2.8v-1.5c0-.87.23-1.3 1.9-1.3Z',
+  },
+];
+---
+
+{site.features.enableAccess && (
+<section id="access" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="access-heading">
+  <div class="max-w-[1100px] mx-auto">
+    <div class="text-center mb-10">
+      <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">{site.access.eyebrow}</div>
+      <h2 id="access-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">{site.access.heading}</h2>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <!-- 店舗外観 -->
+      <div class="rounded-2xl overflow-hidden border border-surface-border">
+        <Image
+          src={storeImage}
+          alt={site.store.imageAlt}
+          class="w-full h-[260px] sm:h-[320px] object-cover block"
+          width={700}
+          height={320}
+          format="webp"
+          loading="lazy"
+        />
+      </div>
+
+      <!-- 店舗情報 -->
+      <div>
+        <h3 class="text-[18px] font-bold mb-5">{site.store.name}</h3>
+        <dl class="grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light m-0">
+          <dt class="font-bold text-secondary">{site.access.labels.postalCode}</dt>
+          <dd class="m-0">{site.store.postalCode}</dd>
+
+          <dt class="font-bold text-secondary">{site.access.labels.address}</dt>
+          <dd class="m-0">{site.store.address}</dd>
+
+          <dt class="font-bold text-secondary">{site.access.labels.nearestStation}</dt>
+          <dd class="m-0">{site.store.nearestStation}</dd>
+
+          <dt class="font-bold text-secondary">{site.access.labels.phone}</dt>
+          <dd class="m-0"><a href={site.contact.phoneHref} class="text-primary">{site.contact.phone}</a></dd>
+
+          <dt class="font-bold text-secondary">{site.access.labels.businessHours}</dt>
+          <dd class="m-0">{site.store.businessHours}</dd>
+
+          <dt class="font-bold text-secondary">{site.access.labels.closedDays}</dt>
+          <dd class="m-0">{site.store.closedDays}</dd>
+
+          <dt class="font-bold text-secondary">{site.access.labels.parking}</dt>
+          <dd class="m-0">{site.store.parking}</dd>
+        </dl>
+
+        <div class="mt-6">
+          <span class="block text-[13px] font-bold text-secondary-light mb-3">{site.access.labels.sns}</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {
+              snsLinks.map((sns) => (
+                <a
+                  href={sns.href}
+                  aria-label={sns.label}
+                  class:list={['flex items-center gap-3 px-4 py-[9px] rounded-full', sns.bg]}
+                  style={sns.style}
+                >
+                  {sns.isFrame ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                      <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
+                      <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
+                      <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                      <path d={sns.icon} fill="#fff" />
+                    </svg>
+                  )}
+                  <span class="text-[13px] font-bold text-white">{sns.label}</span>
+                </a>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Googleマップ（レスポンシブ埋め込み） -->
+    <div class="mt-10 rounded-2xl overflow-hidden border border-surface-border">
+      <iframe
+        title={`Googleマップ：${site.store.name}周辺`}
+        src={site.store.mapEmbedUrl}
+        class="w-full h-[300px] sm:h-[360px] border-0 block"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+  </div>
+</section>
+)}

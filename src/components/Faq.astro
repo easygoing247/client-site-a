@@ -1,0 +1,110 @@
+---
+// ============================================================================
+// Faq.astro — 「よくある質問」アコーディオン（features.enableFaq で表示制御）
+// muted: セクション背景の交互配色を、表示順序に応じて外側から動的に指定する。
+// ============================================================================
+import { site } from '../lib/site';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = true } = Astro.props;
+---
+
+{
+  site.features.enableFaq && (
+    <section id="faq" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="faq-heading">
+      <div class="max-w-[760px] mx-auto">
+        <div class="text-center mb-10">
+          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+            {site.faq.eyebrow}
+          </div>
+          <h2 id="faq-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+            {site.faq.heading}
+          </h2>
+        </div>
+        <div class="flex flex-col gap-3" role="list">
+          {site.faq.items.map((item, i) => (
+            <div role="listitem" class="faq-item bg-white border border-surface-border rounded-xl overflow-hidden">
+              <h3 class="m-0">
+                <button
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls={`faq-answer-${i}`}
+                  class="faq-toggle w-full flex items-center justify-between gap-3 px-5 py-[18px] bg-transparent border-none text-left cursor-pointer hover:bg-surface-muted transition-colors font-sans"
+                >
+                  <span class="flex items-center gap-3">
+                    <span
+                      class="flex-none w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center select-none"
+                      aria-hidden="true"
+                    >
+                      Q
+                    </span>
+                    <span class="text-[14px] font-bold text-secondary">{item.q}</span>
+                  </span>
+                  <span class="flex-none text-primary text-[14px] faq-arrow" aria-hidden="true">
+                    ⌄
+                  </span>
+                </button>
+              </h3>
+              <div id={`faq-answer-${i}`} class="faq-answer px-5 text-[13px] leading-[1.8] text-ink-soft" style="padding-left:52px;">
+                <div class="faq-answer-inner pb-[20px]">{item.a}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* クリック時に「ぬるっと」高さ・透明度が変化する開閉アニメーション */
+  .faq-answer {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition:
+      max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.35s ease;
+  }
+  .faq-answer.faq-open {
+    opacity: 1;
+  }
+  .faq-answer-inner {
+    /* 質問文と回答の間にゆとりを持たせる */
+    padding-top: 14px;
+  }
+  .faq-arrow {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.faq-item').forEach((item) => {
+    const btn = item.querySelector<HTMLButtonElement>('.faq-toggle');
+    const answer = item.querySelector<HTMLElement>('.faq-answer');
+    const arrow = item.querySelector<HTMLElement>('.faq-arrow');
+    if (!btn || !answer || !arrow) return;
+
+    btn.addEventListener('click', () => {
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      const nextOpen = !isOpen;
+      btn.setAttribute('aria-expanded', String(nextOpen));
+      arrow.style.transform = nextOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+
+      if (nextOpen) {
+        answer.classList.add('faq-open');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+      } else {
+        // 現在の高さから0へ滑らかに縮めるため、一度実測値をセットしてから0にする
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        requestAnimationFrame(() => {
+          answer.style.maxHeight = '0px';
+        });
+        answer.classList.remove('faq-open');
+      }
+    });
+  });
+</script>
