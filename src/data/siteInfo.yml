@@ -170,8 +170,8 @@ company:
   ogImage: ../assets/hero.jpg
 contact:
   lineLabel: LINEで相談
-  showPhoneButton: false
-  showLineButton: true
+  showPhoneButton: true
+  showLineButton: false
   phoneLabel: お電話
   facebookUrl: "#"
   phone: 000-000-0000
