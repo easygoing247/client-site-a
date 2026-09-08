@@ -16,7 +16,7 @@ contact:
   phoneHref: tel:0000000000
   lineUrl: "#"
   email: info@example.com
-  instagramUrl: "#"
+  instagramUrl: ""
 access:
   eyebrow: ACCESS
   heading: 店舗概要・アクセス
