@@ -171,7 +171,7 @@ company:
 contact:
   lineLabel: LINEで相談
   showPhoneButton: true
-  showLineButton: false
+  showLineButton: true
   phoneLabel: お電話
   facebookUrl: "#"
   phone: 000-000-0000
