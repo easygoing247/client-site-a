@@ -132,6 +132,40 @@
         }
 
         /*
+          ツールバー（戻る／公開状態／「公開」ボタン等）をスクロール追従
+          （スティッキー）にする。
+          Decap本体は既定でこれを position:absolute; top:0 として
+          [class*="EditorContainer"] の内容領域の先頭に重ねて配置しており、
+          （自前のタッチスクロール処理で操作している）scrollTopの値が
+          増えると他のコンテンツと一緒に画面外へスクロールしてしまっていた。
+          position:sticky に変更することで通常のフロー内要素として扱われ、
+          スクロール量に応じて自身の本来の位置を保ちつつ、画面上端に
+          達した時点でそこに固定される（＝スクロール中も常にタップ可能）。
+        */
+        [class*='ToolbarContainer'] {
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 1000 !important;
+          background: #fff;
+          box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+        }
+
+        /*
+          [class*="EditorContainer"] にはツールバー分の高さ（66px）を
+          確保する padding-top が最初から設定されている（元々ツールバーを
+          position:absoluteで重ねて配置する前提のスペーサー）。
+          sticky化した今、この padding-top が「コンテインブロックの
+          コンテント領域の開始位置」を66pxに押し下げてしまい、sticky要素は
+          その内側（コンテント領域）より上には固定できない仕様のため、
+          画面最上部（0px）ではなく66px地点までしか追従できなくなる。
+          padding-top を打ち消し、ツールバー自身の高さぶんは通常の
+          フロー内で自然に確保させることで、0pxにきちんと固定されるようにする。
+        */
+        [class*='EditorContainer'] {
+          padding-top: 0 !important;
+        }
+
+        /*
           左右分割レイアウトを解除し、フォームのみを全幅表示する。
           .SplitPane の height:auto は一見不要に見えるが、これを外すと
           .SplitPane 自身が持つ inline の overflow:hidden ＋ 固定高さ（100%）
