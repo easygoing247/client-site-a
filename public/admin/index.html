@@ -166,18 +166,21 @@
         }
 
         /*
-          「テーマカラー」等のselectウィジェット（react-select）が展開する
-          選択肢メニューは、コントロール自身の直近の祖先要素からposition:
-          absoluteで飛び出す形で描画される。この飛び出し先の途中にある
-          [class*="ControlPaneContainer"]（フォーム領域を包む白背景のコンテナ。
-          Decap本体はここに overflow-x:hidden／overflow-y:auto を指定しており、
-          通常時はコンテンツの高さがぴったり収まるため見た目には気づかないが、
-          そこからはみ出す絶対配置要素＝ドロップダウンメニューだけが下端で
-          切り取られてしまっていた）を overflow: visible にし、メニューが
-          途中で見切れず最後まで表示されるようにする。
+          「テーマカラー」「セクション表示順序」等のselectウィジェット
+          （react-select）が展開する選択肢メニューは、コントロール自身の
+          直近の祖先要素からposition:absoluteで飛び出す形で描画される。
+          飛び出し先の途中にある祖先要素（[class*="ControlPaneContainer"]等）
+          のoverflow指定によっては、そこで見切れてしまう場合がある。
+          overflow:visibleは効果があるケースもあるが、途中の祖先すべてを
+          洗い出して個別に打ち消す方式は見落としに弱く、実機では依然として
+          見切れ・スクロール不可が発生することを確認したため、根本対応は
+          下部の<script>でメニュー自体をposition:fixedに切り替える方式で
+          行っている（要素を祖先のoverflow制限から完全に独立させるため、
+          途中の祖先が何であっても影響を受けなくなる）。
+          このoverflow:visibleは、JSが介入する直前の一瞬だけ見切れて見える
+          ちらつきを防ぐための保険として残している。
           （[class*="EditorContainer"] 自体は自前スクロールの要となるため
-          overflow:hiddenのまま変更しない。ここで対象にしているのはその内側の
-          コンテナのみ。）
+          overflow:hiddenのまま変更しない。）
         */
         [class*='ControlPaneContainer'] {
           overflow: visible !important;
@@ -719,6 +722,98 @@
           });
         });
         menuObserver.observe(document.body, { childList: true, subtree: true });
+
+        // ==================================================================
+        // 4) select ウィジェット（react-select）の選択肢メニューを
+        //    スマホ表示でも完全に表示・操作できるようにする（根本対応）。
+        //    Decap本体は選択肢メニューを、コントロールの直近の祖先要素から
+        //    position:absoluteで飛び出す形で描画する。この方式だと、
+        //    途中にあるどれか一つの祖先要素にでもoverflow:hiddenや高さ制限が
+        //    あれば、そこで見切れてしまう（今回問題になった
+        //    [class*="ControlPaneContainer"]に限らず、Decapの内部実装が
+        //    変わって別の祖先が同様の制限を持つようになった場合も同じ問題が
+        //    再発しうる）。
+        //    途中の祖先を一つずつ洗い出して打ち消す対症療法ではなく、
+        //    メニュー自体を position:fixed に切り替えて祖先要素のoverflow
+        //    制限から完全に切り離し、実際のコントロールの画面上の表示位置
+        //    （getBoundingClientRect）を基準に自前で配置し直す。
+        //    position:fixedの要素は、途中の祖先にtransform/filter/contain
+        //    等（この画面には存在しないことを確認済み）が無い限りビュー
+        //    ポート基準で配置されるため、[class*="EditorContainer"]を
+        //    含むどの祖先のoverflow:hiddenの影響も受けない
+        //    （[class*="EditorContainer"]自体は自前スクロールの要のため、
+        //    このoverflow:hiddenは変更せずそのまま維持する）。
+        // ==================================================================
+        var fixedMenuState = null; // { menu: Element, control: Element }
+
+        function repositionFixedMenu() {
+          if (!fixedMenuState) return;
+          var menu = fixedMenuState.menu;
+          if (!document.body.contains(menu)) {
+            fixedMenuState = null;
+            return;
+          }
+          var rect = fixedMenuState.control.getBoundingClientRect();
+          var margin = 4;
+          var edgeGap = 8;
+          var spaceBelow = window.innerHeight - rect.bottom - margin - edgeGap;
+          var spaceAbove = rect.top - margin - edgeGap;
+          menu.style.left = rect.left + 'px';
+          menu.style.width = rect.width + 'px';
+          if (spaceBelow >= 120 || spaceBelow >= spaceAbove) {
+            // コントロールの下に十分な余白がある場合はそのまま下に表示する
+            menu.style.top = rect.bottom + margin + 'px';
+            menu.style.bottom = 'auto';
+            menu.style.maxHeight = Math.max(120, spaceBelow) + 'px';
+          } else {
+            // 画面下端に近く下に十分な余白がない場合はコントロールの上に表示する
+            menu.style.top = 'auto';
+            menu.style.bottom = window.innerHeight - rect.top + margin + 'px';
+            menu.style.maxHeight = Math.max(120, spaceAbove) + 'px';
+          }
+        }
+
+        function activateFixedMenu(menu) {
+          // menuの直近の親（react-selectの"container"）配下に、同じ
+          // ウィジェットのコントロール本体（[class*="-control"]）が
+          // 兄弟要素として存在する前提で、それを配置の基準にする。
+          var container = menu.parentElement;
+          var control = container && container.querySelector('[class*="-control"]');
+          if (!control) return;
+          menu.style.position = 'fixed';
+          menu.style.zIndex = '99999';
+          menu.style.margin = '0';
+          menu.style.overflowY = 'auto';
+          menu.style.webkitOverflowScrolling = 'touch';
+          fixedMenuState = { menu: menu, control: control };
+          repositionFixedMenu();
+        }
+
+        var fixedMenuObserver = new MutationObserver(function (mutations) {
+          if (!window.matchMedia('(max-width: 799px)').matches) return;
+          var root = getFormRoot();
+          if (!root) return;
+          mutations.forEach(function (m) {
+            m.addedNodes.forEach(function (node) {
+              if (!(node instanceof HTMLElement)) return;
+              var menu =
+                typeof node.className === 'string' && /-menu$/.test(node.className)
+                  ? node
+                  : node.querySelector && node.querySelector('[class$="-menu"]');
+              // フォーム領域（selectウィジェットが存在しうる範囲）配下の
+              // メニューのみを対象にし、万一Decapの他の場所に同様の
+              // クラス名を持つ要素があっても誤って巻き込まないようにする。
+              if (menu && root.contains(menu)) activateFixedMenu(menu);
+            });
+          });
+        });
+        fixedMenuObserver.observe(document.body, { childList: true, subtree: true });
+
+        window.addEventListener('resize', repositionFixedMenu);
+        // scrollイベントはバブリングしないため、[class*="EditorContainer"]
+        // 自身で発生するscroll（自前タッチスクロールによるscrollTop変更）も
+        // 確実に検知できるよう、キャプチャ段階でdocumentに登録する。
+        document.addEventListener('scroll', repositionFixedMenu, true);
 
         window.addEventListener('load', function () {
           updateNavButtonVisibility();
