@@ -10,7 +10,7 @@ company:
 contact:
   lineLabel: LINEで相談
   phoneLabel: お電話
-  facebookUrl: "#"
+  facebookUrl: ""
   phone: 000-000-0000
   xUrl: "#"
   phoneHref: tel:0000000000
