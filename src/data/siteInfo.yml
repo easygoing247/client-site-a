@@ -14,7 +14,7 @@ contact:
   phone: 000-000-0000
   xUrl: "#"
   phoneHref: tel:0000000000
-  lineUrl: "#"
+  lineUrl: ""
   email: info@example.com
   instagramUrl: "#"
 access:
