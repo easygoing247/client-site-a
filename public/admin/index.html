@@ -2,7 +2,13 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      管理画面はタップ操作主体のUI（ドラッグ並び替え・スイッチ・独自タッチ
+      スクロール等）を多く含み、意図しないピンチズームで操作を誤りやすい
+      ため、拡大・縮小を禁止する（本体サイトのLayout.astroには影響しない、
+      このファイル内だけの設定）。
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>管理画面 | Decap CMS</title>
     <meta name="robots" content="noindex, nofollow" />
     <!--
@@ -23,6 +29,19 @@
       body {
         overflow-x: hidden;
         max-width: 100%;
+      }
+
+      /*
+        viewportのuser-scalable=noはAndroid Chrome等では効くが、iOS Safariは
+        これを無視して2本指ピンチによる拡大を許可してしまう仕様がある。
+        touch-action: manipulationを指定すると、ピンチズームや（連続タップに
+        よる）ダブルタップズームのジェスチャーだけをブラウザに無効化させ、
+        通常のタップ・縦スクロールのジェスチャーは妨げない
+        （下部の<script>によるgesturestart等の抑止と合わせた二重の対策）。
+      */
+      html,
+      body {
+        touch-action: manipulation;
       }
 
       /*
@@ -268,6 +287,26 @@
     -->
     <script>
       (function () {
+        // ==================================================================
+        // 0) ピンチズームの無効化（iOS Safari対策）
+        //    viewportメタタグの user-scalable=no / maximum-scale=1.0 と
+        //    CSSの touch-action: manipulation だけでは、iOS Safariが2本指
+        //    ピンチによる拡大を無視して許可してしまう場合がある。
+        //    iOS SafariはWebKit独自のgesture系イベント（標準化されていない）
+        //    を発火するため、これらをすべて preventDefault() し、ピンチ操作
+        //    そのものを無効化する（Android Chrome等はそもそもgesture*イベント
+        //    を発火しないため、この処理は影響しない）。
+        // ==================================================================
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (eventName) {
+          document.addEventListener(
+            eventName,
+            function (e) {
+              e.preventDefault();
+            },
+            { passive: false }
+          );
+        });
+
         // ------------------------------------------------------------------
         // 共通ヘルパー：エントリ編集フォームの「トップレベル項目」を判定する。
         // Decap CMSは各フィールド（オブジェクト／リスト／単一フィールドいずれも）
