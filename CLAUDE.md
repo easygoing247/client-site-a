@@ -75,8 +75,10 @@ public/
 - Decap CMS関連スクリプト（netlify-identity-widget、decap-cms本体）は
   `public/admin/index.html` にのみ読み込ませており、トップページ等の一般公開ページには
   一切混入させないこと（パフォーマンス・セキュリティ両面での必須ルール）。
-- Git Gateway / Netlify Identity のバックエンド設定は `public/admin/config.yml` の
+- GitHub連携（`backend.name: github`）のバックエンド設定は `public/admin/config.yml` の
   `backend` ブロックのみで完結させ、ソースコード側に認証情報をハードコードしないこと。
+  GitHub OAuth Appのクライアントシークレット等は、GitHub側・OAuth仲介サーバー側の
+  設定として管理し、このリポジトリには一切含めない。
 
 ## 4. 型化ページの管理ルールと 梅／竹／松 プラン運用
 
@@ -111,8 +113,8 @@ public/
 - `astro dev` は `public/` 配下のサブディレクトリで `index.html` の自動解決を行わない仕様があるため、
   開発サーバーでは `http://localhost:3001/admin/index.html`（末尾まで明記）でアクセスすること。
   `npm run build && npm run preview` で確認する場合は `/admin/`（末尾スラッシュ）でもアクセス可能。
-- `public/admin/config.yml` の `backend` は本番用の `git-gateway`（Netlify Identity前提）のため、
-  Netlifyにデプロイしていないローカル環境ではログインできない。ローカル確認時は以下の手順で
+- `public/admin/config.yml` の `backend` は本番用の `github`（GitHub OAuth前提）のため、
+  OAuth仲介サーバーを別途用意していないローカル環境ではログインできない。ローカル確認時は以下の手順で
   `local_backend: true` を使ったローカルプロキシ経由のログインを利用する：
 
   ```bash

@@ -1,19 +1,24 @@
 # ============================================================================
 # public/admin/config.yml — Decap CMS 設定
-# ・backend は Git Gateway を想定（Netlify Identity + Netlify/Cloudflare Pages）。
-#   別ホスティングを使う場合は backend セクションのみ差し替えること。
+# ・backend は GitHub 直接連携（OAuth）。Git Gateway（Netlify Identity）は
+#   使用しない。GitHubリポジトリへ直接コミットする方式のため、CMSへの
+#   ログインには GitHub OAuth App の登録と、そのOAuthフローを仲介する
+#   認可サーバー（例: Netlify上の無料のOAuthプロバイダ、または自前ホストの
+#   decap-cms-oauth-provider 等）が別途必要になる点に注意すること。
+#   参考: https://decapcms.org/docs/github-backend/
 # ・/admin 自体へのアクセス制限は、デプロイ後に Cloudflare Access 等で行う
 #   （このリポジトリのコードでは認可制御を行わない。CLAUDE.md 参照）。
 # ============================================================================
 
 backend:
-  name: git-gateway
+  name: github
+  repo: easygoing247/master-template
   branch: main
 
 # ローカル動作確認用：`npm run cms:proxy`（別ターミナルで decap-server を起動）と
-# 併用すると、Netlify Identity なしで localhost 上のファイルへ直接読み書きできる。
-# 本番ビルド（Netlify/Cloudflare Pages等）にデプロイした際は、localhost以外では
-# 自動的に無視され、上の git-gateway backend が使われる。
+# 併用すると、GitHub OAuth なしで localhost 上のファイルへ直接読み書きできる。
+# 本番ビルド（Cloudflare Pages等）にデプロイした際は、localhost以外では
+# 自動的に無視され、上の github backend（OAuth経由）が使われる。
 local_backend: true
 
 # アップロードした画像の保存先（Astroの src/assets を直接指すことで、
