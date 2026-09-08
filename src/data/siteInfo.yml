@@ -78,7 +78,9 @@ features_section:
   items:
     - number: "01"
       title: 高品質デザイン
-      text: 目的に合わせたデザインで、信頼感と成果を生むサイトを制作します。
+      text: |-
+        目的に合わせたデザインで、
+        信頼感と成果を生むサイトを制作します。
       icon: ../assets/icon-design.png
     - number: "02"
       title: スマホ最適化
