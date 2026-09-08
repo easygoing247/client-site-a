@@ -42,8 +42,8 @@ const heroImage = resolveImage(site.hero.image);
     />
     <a
       href={site.hero.ctaHref}
-      class="inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full w-fit bg-gradient-to-br from-[#1e5bf2] to-primary-dark"
-      style="box-shadow:0 10px 24px -8px rgba(25,84,224,0.55);"
+      class="inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full w-fit bg-gradient-to-br from-primary to-primary-dark"
+      style="box-shadow:0 10px 24px -8px rgba(var(--color-primary-rgb),0.55);"
     >
       {site.hero.ctaLabel} <span aria-hidden="true">›</span>
     </a>

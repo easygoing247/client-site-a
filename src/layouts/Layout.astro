@@ -4,6 +4,7 @@ import type { ImageMetadata } from 'astro';
 import '../styles/global.css';
 import { site } from '../lib/site';
 import { resolveImage } from '../lib/images';
+import { siteSettings } from '../lib/siteSettings';
 
 interface Props {
   title?: string;
@@ -24,7 +25,7 @@ const ogImageURL = new URL(optimizedOgImage.src, Astro.site).toString();
 ---
 
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-theme={siteSettings.theme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -3,6 +3,58 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+    テーマカラー（CSS変数）
+    Decap CMS の「デザインテーマ設定」（src/data/site-settings.json の
+    theme）を Layout.astro が <html data-theme="..."> に反映し、ここで
+    プリセットごとの値に切り替える。tailwind.config.mjs の
+    colors.primary.* はこれらの変数を参照しているため、bg-primary /
+    text-primary / border-primary 等のユーティリティクラスはコード変更
+    なしに全プリセットへ追従する。
+    ":root" と "[data-theme]" は詳細度が同じため、必ず ":root"（既定値＝
+    blue）を先に書き、後続の [data-theme="..."] で上書きする順序を守ること。
+  */
+  :root {
+    --color-primary: #1954e0;
+    --color-primary-light: #e7edfd;
+    --color-primary-dark: #1440b8;
+    --color-primary-hover: #1440b8;
+    /* box-shadow等のrgba()で使うためのR,G,B成分（--color-primaryと同じ色） */
+    --color-primary-rgb: 25, 84, 224;
+  }
+
+  [data-theme='red'] {
+    --color-primary: #dc2626;
+    --color-primary-light: #fee2e2;
+    --color-primary-dark: #b91c1c;
+    --color-primary-hover: #b91c1c;
+    --color-primary-rgb: 220, 38, 38;
+  }
+
+  [data-theme='green'] {
+    --color-primary: #16a34a;
+    --color-primary-light: #dcfce7;
+    --color-primary-dark: #15803d;
+    --color-primary-hover: #15803d;
+    --color-primary-rgb: 22, 163, 74;
+  }
+
+  [data-theme='purple'] {
+    --color-primary: #7c3aed;
+    --color-primary-light: #ede9fe;
+    --color-primary-dark: #6d28d9;
+    --color-primary-hover: #6d28d9;
+    --color-primary-rgb: 124, 58, 237;
+  }
+
+  [data-theme='orange'] {
+    --color-primary: #ea580c;
+    --color-primary-light: #ffedd5;
+    --color-primary-dark: #c2410c;
+    --color-primary-hover: #c2410c;
+    --color-primary-rgb: 234, 88, 12;
+  }
+
   html {
     scroll-behavior: smooth;
   }

@@ -33,7 +33,7 @@ const checkIcon = resolveImage(site.icons.check);
                 'relative rounded-2xl p-7 bg-white flex flex-col items-center text-center',
                 plan.popular ? 'border-2 border-primary' : 'border border-surface-border',
               ]}
-              style={plan.popular ? 'box-shadow:0 16px 32px -12px rgba(25,84,224,0.28);' : undefined}
+              style={plan.popular ? 'box-shadow:0 16px 32px -12px rgba(var(--color-primary-rgb),0.28);' : undefined}
             >
               {plan.popular && (
                 <div class="absolute -top-[14px] left-1/2 -translate-x-1/2 bg-primary text-white text-[11px] font-bold px-[14px] py-[5px] rounded-full whitespace-nowrap">

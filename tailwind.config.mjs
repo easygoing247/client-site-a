@@ -5,22 +5,31 @@ export default {
     extend: {
       // ============================================================
       // Design Tokens（テーマ変数）
-      // 案件ごとの着せ替えは、この colors ブロックの値だけを
+      // 案件ごとの恒久的な着せ替えは、この colors ブロックの値だけを
       // 書き換えれば全ページに反映されます（直書き禁止ルール参照）。
+      //
+      // primary系のみ CSS変数（src/styles/global.css の :root /
+      // [data-theme="..."] 参照）を経由しており、Decap CMSの
+      // 「デザインテーマ設定」（blue/red/green/purple/orange）で
+      // ビルドし直すことなく "実行時に" 切り替えられる。
+      // secondary/surface/ink は中立色のためテーマ非連動の固定値のまま。
       // ============================================================
       colors: {
         primary: {
-          DEFAULT: '#1954e0',
-          light: '#e7edfd',
-          dark: '#1440b8',
+          DEFAULT: 'var(--color-primary)',
+          light: 'var(--color-primary-light)',
+          dark: 'var(--color-primary-dark)',
+          hover: 'var(--color-primary-hover)',
         },
         secondary: {
           DEFAULT: '#12203f',
           light: '#3d4658',
           dark: '#0f1e3d',
         },
+        // LINE公式ブランドカラー。第三者ブランドの色のため、サイトの
+        // テーマカラー切り替え（primary）とは独立して固定値のままにする。
         accent: {
-          DEFAULT: '#06c755', // LINEブランドカラー等、CTA強調用
+          DEFAULT: '#06c755',
         },
         surface: {
           DEFAULT: '#ffffff',

@@ -64,7 +64,13 @@ const { Content } = await product.render();
               {product.data.specs.map((spec) => (
                 <li class="flex gap-2 items-start text-[13px] text-secondary-light">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none mt-0.5">
-                    <path d="M4 12.5l5 5L20 6" stroke="#1954e0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+                    <path
+                      d="M4 12.5l5 5L20 6"
+                      style="stroke: var(--color-primary);"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                   {spec}
                 </li>
@@ -79,7 +85,7 @@ const { Content } = await product.render();
 
         <a
           href="/#contact"
-          class="inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full bg-gradient-to-br from-[#1e5bf2] to-primary-dark"
+          class="inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full bg-gradient-to-br from-primary to-primary-dark"
         >
           {site.productPage.ctaLabel} <span aria-hidden="true">›</span>
         </a>

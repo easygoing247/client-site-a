@@ -318,6 +318,22 @@ collections:
 
           - { label: "コピーライト表記", name: "copyright", widget: string }
 
+      - name: "siteSettings"
+        label: "デザインテーマ設定（site-settings.json）"
+        file: "src/data/site-settings.json"
+        fields:
+          - label: "テーマカラー"
+            name: "theme"
+            widget: select
+            default: "blue"
+            hint: "サイト全体のメインカラー（ボタン・リンク・見出し等）をプリセットから切り替えます。保存後、再ビルド・再デプロイで反映されます。"
+            options:
+              - { label: "ブルー（デフォルト）", value: "blue" }
+              - { label: "レッド", value: "red" }
+              - { label: "グリーン", value: "green" }
+              - { label: "パープル", value: "purple" }
+              - { label: "オレンジ", value: "orange" }
+
   # ==========================================================================
   # ② フォルダコレクション：型化ページ（products）を追加・編集・削除
   # ==========================================================================
