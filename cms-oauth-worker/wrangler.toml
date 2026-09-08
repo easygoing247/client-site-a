@@ -1,0 +1,12 @@
+# ============================================================================
+# cms-oauth-worker/wrangler.toml
+# Decap CMS の GitHub OAuth 仲介プロキシ（Cloudflare Worker）。
+#
+# GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET は、このファイルには書かず
+# 以下のコマンドで Cloudflare 側のシークレットとして登録すること：
+#   npx wrangler secret put GITHUB_CLIENT_ID
+#   npx wrangler secret put GITHUB_CLIENT_SECRET
+# ============================================================================
+name = "master-template-oauth"
+main = "src/index.js"
+compatibility_date = "2024-11-01"

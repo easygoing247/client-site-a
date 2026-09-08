@@ -3,8 +3,8 @@
 # ・backend は GitHub 直接連携（OAuth）。Git Gateway（Netlify Identity）は
 #   使用しない。GitHubリポジトリへ直接コミットする方式のため、CMSへの
 #   ログインには GitHub OAuth App の登録と、そのOAuthフローを仲介する
-#   認可サーバー（例: Netlify上の無料のOAuthプロバイダ、または自前ホストの
-#   decap-cms-oauth-provider 等）が別途必要になる点に注意すること。
+#   認可サーバーが必要。ここでは自前の Cloudflare Worker（cms-oauth-worker/、
+#   base_url に指定）をOAuthプロキシとして使用している。
 #   参考: https://decapcms.org/docs/github-backend/
 # ・/admin 自体へのアクセス制限は、デプロイ後に Cloudflare Access 等で行う
 #   （このリポジトリのコードでは認可制御を行わない。CLAUDE.md 参照）。
@@ -14,6 +14,8 @@ backend:
   name: github
   repo: easygoing247/master-template
   branch: main
+  base_url: https://master-template-oauth.easygoing247.workers.dev
+  auth_endpoint: /auth
 
 # ローカル動作確認用：`npm run cms:proxy`（別ターミナルで decap-server を起動）と
 # 併用すると、GitHub OAuth なしで localhost 上のファイルへ直接読み書きできる。
