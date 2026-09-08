@@ -166,6 +166,24 @@
         }
 
         /*
+          「テーマカラー」等のselectウィジェット（react-select）が展開する
+          選択肢メニューは、コントロール自身の直近の祖先要素からposition:
+          absoluteで飛び出す形で描画される。この飛び出し先の途中にある
+          [class*="ControlPaneContainer"]（フォーム領域を包む白背景のコンテナ。
+          Decap本体はここに overflow-x:hidden／overflow-y:auto を指定しており、
+          通常時はコンテンツの高さがぴったり収まるため見た目には気づかないが、
+          そこからはみ出す絶対配置要素＝ドロップダウンメニューだけが下端で
+          切り取られてしまっていた）を overflow: visible にし、メニューが
+          途中で見切れず最後まで表示されるようにする。
+          （[class*="EditorContainer"] 自体は自前スクロールの要となるため
+          overflow:hiddenのまま変更しない。ここで対象にしているのはその内側の
+          コンテナのみ。）
+        */
+        [class*='ControlPaneContainer'] {
+          overflow: visible !important;
+        }
+
+        /*
           左右分割レイアウトを解除し、フォームのみを全幅表示する。
           .SplitPane の height:auto は一見不要に見えるが、これを外すと
           .SplitPane 自身が持つ inline の overflow:hidden ＋ 固定高さ（100%）
