@@ -8,15 +8,15 @@ company:
   establishedYear: 2018
   ogImage: ../assets/hero.jpg
 contact:
-  phone: 000-000-0000
-  phoneHref: tel:0000000000
-  email: info@example.com
-  lineUrl: "#"
-  instagramUrl: "#"
-  xUrl: "#"
-  facebookUrl: "#"
-  phoneLabel: お電話
   lineLabel: LINEで相談
+  phoneLabel: お電話
+  facebookUrl: "#"
+  phone: 000-000-0000
+  xUrl: "#"
+  phoneHref: tel:0000000000
+  lineUrl: "#"
+  email: info@example.com
+  instagramUrl: "#"
 access:
   eyebrow: ACCESS
   heading: 店舗概要・アクセス
@@ -64,7 +64,7 @@ sectionOrder:
   - id: contact
 hero:
   heading: 想いをカタチに、<br />成果につながるWebを。
-  body: シンプルで伝わるデザインと、<br class="sm:hidden" />使いやすいWebサイトで<br class="hidden
+  body: simpleで伝わるデザインと、<br class="sm:hidden" />使いやすいWebサイトで<br class="hidden
     sm:inline md:hidden" />ビジネスの成長をサポートします。
   ctaLabel: 無料で相談する
   ctaHref: "#contact"
