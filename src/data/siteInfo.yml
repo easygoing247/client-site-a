@@ -184,8 +184,8 @@ ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
 sectionOrder:
-  - id: features
   - id: services
+  - id: features
   - id: flow
   - id: products
   - id: works
