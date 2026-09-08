@@ -150,8 +150,8 @@ contactSection:
   heading: お問い合わせ
   body: Web制作のご相談・お見積りは無料です。<br />お気軽にお問い合わせください。
   points:
-    - 24時間以内にご返信します
     - オンライン打ち合わせ可能
+    - 24時間以内にご返信します
     - 無理な営業は一切しません
   form:
     namePlaceholder: お名前
