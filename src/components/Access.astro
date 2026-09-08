@@ -6,7 +6,7 @@
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
-import { resolveImage } from '../lib/images';
+import { resolveImageOrNull } from '../lib/images';
 
 interface Props {
   muted?: boolean;
@@ -14,7 +14,7 @@ interface Props {
 
 const { muted = false } = Astro.props;
 const store = site.access.store;
-const storeImage = resolveImage(store.image);
+const storeImage = resolveImageOrNull(store.image);
 
 // ラベル・値のどちらかが空欄の行はサイト上に表示しない
 const infoRows = [
@@ -64,27 +64,33 @@ const snsLinks = [
 <section id="access" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="access-heading">
   <div class="max-w-[1100px] mx-auto">
     <div class="text-center mb-10">
-      <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">{site.access.eyebrow}</div>
-      <h2 id="access-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">{site.access.heading}</h2>
+      {site.access.eyebrow && (
+        <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">{site.access.eyebrow}</div>
+      )}
+      {site.access.heading && (
+        <h2 id="access-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">{site.access.heading}</h2>
+      )}
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-      <!-- 店舗外観 -->
-      <div class="rounded-2xl overflow-hidden border border-surface-border">
-        <Image
-          src={storeImage}
-          alt={store.imageAlt}
-          class="w-full h-[260px] sm:h-[320px] object-cover block"
-          width={700}
-          height={320}
-          format="webp"
-          loading="lazy"
-        />
-      </div>
+      {storeImage && (
+        <!-- 店舗外観 -->
+        <div class="rounded-2xl overflow-hidden border border-surface-border">
+          <Image
+            src={storeImage}
+            alt={store.imageAlt}
+            class="w-full h-[260px] sm:h-[320px] object-cover block"
+            width={700}
+            height={320}
+            format="webp"
+            loading="lazy"
+          />
+        </div>
+      )}
 
       <!-- 店舗情報 -->
       <div>
-        <h3 class="text-[18px] font-bold mb-5">{store.name}</h3>
+        {store.name && <h3 class="text-[18px] font-bold mb-5">{store.name}</h3>}
         {infoRows.length > 0 && (
           <dl class="grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light m-0">
             {infoRows.map((row) => (
@@ -131,15 +137,17 @@ const snsLinks = [
       </div>
     </div>
 
-    <!-- Googleマップ（レスポンシブ埋め込み） -->
-    <div class="mt-10 rounded-2xl overflow-hidden border border-surface-border">
-      <iframe
-        title={`Googleマップ：${store.name}周辺`}
-        src={store.mapEmbedUrl}
-        class="w-full h-[300px] sm:h-[360px] border-0 block"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"></iframe>
-    </div>
+    {store.mapEmbedUrl && (
+      <!-- Googleマップ（レスポンシブ埋め込み） -->
+      <div class="mt-10 rounded-2xl overflow-hidden border border-surface-border">
+        <iframe
+          title={store.name ? `Googleマップ：${store.name}周辺` : 'Googleマップ'}
+          src={store.mapEmbedUrl}
+          class="w-full h-[300px] sm:h-[360px] border-0 block"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    )}
   </div>
 </section>
 )}

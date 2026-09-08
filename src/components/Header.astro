@@ -4,11 +4,11 @@
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site, visibleNavItems } from '../lib/site';
-import { resolveImage } from '../lib/images';
+import { resolveImageOrNull } from '../lib/images';
 import MobileMenuButton from './MobileMenuButton.astro';
 import MobileNavDrawer from './MobileNavDrawer.astro';
 
-const logo = resolveImage(site.company.logo);
+const logo = resolveImageOrNull(site.company.logo);
 const nav = visibleNavItems(site.nav);
 ---
 
@@ -16,9 +16,11 @@ const nav = visibleNavItems(site.nav);
   class="sticky top-0 z-50 border-b border-surface-border bg-white/95 backdrop-blur-sm"
 >
   <div class="max-w-[1200px] mx-auto px-5 py-[14px] flex items-center justify-between gap-4">
-    <a href="/" aria-label="トップページへ戻る">
-      <Image src={logo} alt={`${site.company.name} ロゴ`} class="h-7 w-auto object-contain" width={161} height={63} />
-    </a>
+    {logo && (
+      <a href="/" aria-label="トップページへ戻る">
+        <Image src={logo} alt={`${site.company.name} ロゴ`} class="h-7 w-auto object-contain" width={161} height={63} />
+      </a>
+    )}
 
     <!-- デスクトップナビ -->
     <nav class="hidden md:flex items-center gap-8" aria-label="メインナビゲーション">
@@ -32,12 +34,14 @@ const nav = visibleNavItems(site.nav);
           </a>
         ))
       }
-      <a
-        href={site.navCta.href}
-        class="text-[14px] font-bold text-white bg-primary px-[22px] py-[10px] rounded-full hover:bg-primary-dark transition-colors"
-      >
-        {site.navCta.label}
-      </a>
+      {site.navCta.label && site.navCta.href && (
+        <a
+          href={site.navCta.href}
+          class="text-[14px] font-bold text-white bg-primary px-[22px] py-[10px] rounded-full hover:bg-primary-dark transition-colors"
+        >
+          {site.navCta.label}
+        </a>
+      )}
     </nav>
 
     <MobileMenuButton />

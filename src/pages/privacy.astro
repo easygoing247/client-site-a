@@ -9,6 +9,18 @@ import Footer from '../components/Footer.astro';
 import StickyContactBar from '../components/StickyContactBar.astro';
 import BackToTop from '../components/BackToTop.astro';
 import { site } from '../lib/site';
+
+// ラベル・値のどちらかが空欄の行は表示しない
+const businessInfoRows = [
+  { label: '事業者名', value: site.company.name },
+  { label: '代表者', value: site.company.representative },
+  {
+    label: '所在地',
+    value: [site.access.store.postalCode, site.access.store.address].filter(Boolean).join(' '),
+  },
+].filter((row) => row.label && row.value);
+
+const hasContactRow = !!(site.contact.phone || site.contact.email);
 ---
 
 <Layout title={`プライバシーポリシー | ${site.company.siteName}`} description="お問い合わせフォームおよびアクセス解析における個人情報の取り扱いについてご案内します。">
@@ -27,22 +39,29 @@ import { site } from '../lib/site';
             お客様の個人情報の取り扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」といいます）を定めます。
           </p>
 
-          <section>
-            <h2 class="text-[16px] font-bold text-secondary mb-3">第1条（事業者情報）</h2>
-            <dl class="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2 text-[13px]">
-              <dt class="font-bold text-secondary">事業者名</dt>
-              <dd class="m-0">{site.company.name}</dd>
-              <dt class="font-bold text-secondary">代表者</dt>
-              <dd class="m-0">{site.company.representative}</dd>
-              <dt class="font-bold text-secondary">所在地</dt>
-              <dd class="m-0">{site.access.store.postalCode} {site.access.store.address}</dd>
-              <dt class="font-bold text-secondary">連絡先</dt>
-              <dd class="m-0">
-                <a href={site.contact.phoneHref} class="text-primary">{site.contact.phone}</a> ／
-                <a href={`mailto:${site.contact.email}`} class="text-primary">{site.contact.email}</a>
-              </dd>
-            </dl>
-          </section>
+          {(businessInfoRows.length > 0 || hasContactRow) && (
+            <section>
+              <h2 class="text-[16px] font-bold text-secondary mb-3">第1条（事業者情報）</h2>
+              <dl class="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2 text-[13px]">
+                {businessInfoRows.map((row) => (
+                  <>
+                    <dt class="font-bold text-secondary">{row.label}</dt>
+                    <dd class="m-0">{row.value}</dd>
+                  </>
+                ))}
+                {hasContactRow && (
+                  <>
+                    <dt class="font-bold text-secondary">連絡先</dt>
+                    <dd class="m-0">
+                      {site.contact.phone && <a href={site.contact.phoneHref} class="text-primary">{site.contact.phone}</a>}
+                      {site.contact.phone && site.contact.email && ' ／ '}
+                      {site.contact.email && <a href={`mailto:${site.contact.email}`} class="text-primary">{site.contact.email}</a>}
+                    </dd>
+                  </>
+                )}
+              </dl>
+            </section>
+          )}
 
           <section>
             <h2 class="text-[16px] font-bold text-secondary mb-3">第2条（取得する個人情報）</h2>
@@ -91,7 +110,9 @@ import { site } from '../lib/site';
             </p>
           </section>
 
-          <p class="text-[12px] text-ink-faint">制定日：{site.company.establishedYear}年4月1日</p>
+          {site.company.establishedYear && (
+            <p class="text-[12px] text-ink-faint">制定日：{site.company.establishedYear}年4月1日</p>
+          )}
         </div>
       </div>
     </section>

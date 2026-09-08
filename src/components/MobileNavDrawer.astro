@@ -30,9 +30,11 @@ const { items, ctaLabel, ctaHref } = Astro.props;
       </a>
     ))
   }
-  <a href={ctaHref} class="mobile-nav-link block px-5 py-[14px] text-[15px] font-bold text-primary">
-    {ctaLabel}
-  </a>
+  {ctaLabel && ctaHref && (
+    <a href={ctaHref} class="mobile-nav-link block px-5 py-[14px] text-[15px] font-bold text-primary">
+      {ctaLabel}
+    </a>
+  )}
 </nav>
 
 <script>

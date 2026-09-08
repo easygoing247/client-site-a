@@ -25,3 +25,15 @@ export function resolveImage(relativePath: string): ImageMetadata {
 
   return modules[key].default;
 }
+
+// ============================================================================
+// resolveImage() は「値が入っているが該当ファイルが無い」場合のみエラーに
+// したい（本当の設定ミスを検知するため）。一方、CMS側の画像フィールドが
+// すべて任意入力になったことで「未入力（空文字/undefined）」も正当な状態に
+// なったため、その場合は例外を投げず null を返し、呼び出し側で
+// `{image && <Image ... />}` のように非表示にできるようにする。
+// ============================================================================
+export function resolveImageOrNull(relativePath: string | undefined | null): ImageMetadata | null {
+  if (!relativePath) return null;
+  return resolveImage(relativePath);
+}

@@ -17,15 +17,19 @@ const { muted = true } = Astro.props;
     <section id="faq" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="faq-heading">
       <div class="max-w-[760px] mx-auto">
         <div class="text-center mb-10">
-          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
-            {site.faq.eyebrow}
-          </div>
-          <h2 id="faq-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
-            {site.faq.heading}
-          </h2>
+          {site.faq.eyebrow && (
+            <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+              {site.faq.eyebrow}
+            </div>
+          )}
+          {site.faq.heading && (
+            <h2 id="faq-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+              {site.faq.heading}
+            </h2>
+          )}
         </div>
         <div class="flex flex-col gap-3" role="list">
-          {site.faq.items.map((item, i) => (
+          {site.faq.items.filter((item) => item.q).map((item, i) => (
             <div role="listitem" class="faq-item bg-white border border-surface-border rounded-xl overflow-hidden">
               <h3 class="m-0">
                 <button
@@ -48,9 +52,11 @@ const { muted = true } = Astro.props;
                   </span>
                 </button>
               </h3>
-              <div id={`faq-answer-${i}`} class="faq-answer px-5 text-[13px] leading-[1.8] text-ink-soft" style="padding-left:52px;">
-                <div class="faq-answer-inner pb-[20px] whitespace-pre-line">{item.a}</div>
-              </div>
+              {item.a && (
+                <div id={`faq-answer-${i}`} class="faq-answer px-5 text-[13px] leading-[1.8] text-ink-soft" style="padding-left:52px;">
+                  <div class="faq-answer-inner pb-[20px] whitespace-pre-line">{item.a}</div>
+                </div>
+              )}
             </div>
           ))}
         </div>

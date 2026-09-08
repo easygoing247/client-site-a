@@ -24,12 +24,16 @@ const products = enabled
     <section id="products" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="products-heading">
       <div class="max-w-[1100px] mx-auto">
         <div class="text-center mb-10">
-          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
-            {site.productsSection.eyebrow}
-          </div>
-          <h2 id="products-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
-            {site.productsSection.heading}
-          </h2>
+          {site.productsSection.eyebrow && (
+            <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+              {site.productsSection.eyebrow}
+            </div>
+          )}
+          {site.productsSection.heading && (
+            <h2 id="products-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+              {site.productsSection.heading}
+            </h2>
+          )}
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
@@ -37,21 +41,25 @@ const products = enabled
               href={`/products/${product.slug}/`}
               class="block bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
             >
-              <Image
-                src={product.data.mainImage}
-                alt={product.data.title}
-                class="w-full h-[170px] object-cover block"
-                width={450}
-                height={170}
-                format="webp"
-                loading="lazy"
-              />
+              {product.data.mainImage && (
+                <Image
+                  src={product.data.mainImage}
+                  alt={product.data.title ?? ''}
+                  class="w-full h-[170px] object-cover block"
+                  width={450}
+                  height={170}
+                  format="webp"
+                  loading="lazy"
+                />
+              )}
               <div class="p-4">
-                <h3 class="font-bold text-[15px] mb-1">{product.data.title}</h3>
-                <p class="text-[12px] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line">{product.data.summary}</p>
-                <div class="text-[16px] font-bold text-primary">
-                  ¥{product.data.price.toLocaleString('ja-JP')}〜
-                </div>
+                {product.data.title && <h3 class="font-bold text-[15px] mb-1">{product.data.title}</h3>}
+                {product.data.summary && (
+                  <p class="text-[12px] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line">{product.data.summary}</p>
+                )}
+                {!!product.data.price && (
+                  <div class="text-[16px] font-bold text-primary">¥{product.data.price.toLocaleString('ja-JP')}〜</div>
+                )}
               </div>
             </a>
           ))}

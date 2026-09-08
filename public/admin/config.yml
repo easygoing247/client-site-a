@@ -8,6 +8,10 @@
 #   参考: https://decapcms.org/docs/github-backend/
 # ・/admin 自体へのアクセス制限は、デプロイ後に Cloudflare Access 等で行う
 #   （このリポジトリのコードでは認可制御を行わない。CLAUDE.md 参照）。
+# ・システムの構造上必須な識別子（下記「セクション表示順序」の
+#   セレクト値等）を除き、原則すべてのフィールドを required: false
+#   （任意入力）にしている。未入力の場合、サイト側の各コンポーネントが
+#   対応する表示要素を自動的に非表示にする。
 # ============================================================================
 
 backend:
@@ -33,6 +37,9 @@ locale: "ja"
 collections:
   # ==========================================================================
   # ① ファイルコレクション：siteInfo.yml を丸ごと編集
+  #    表示順は「ヒーロー→セクション表示順序の並び→基本情報・共通設定→
+  #    その他→コピーライト→セクションの表示・非表示→商品ページ共通文言」
+  #    の順に固定している（管理画面での探しやすさのため）。
   # ==========================================================================
   - name: "settings"
     label: "サイト設定"
@@ -41,53 +48,136 @@ collections:
         label: "サイト全体設定（siteInfo.yml）"
         file: "src/data/siteInfo.yml"
         fields:
-          - label: "会社・サイト基本情報"
-            name: "company"
+          # --- 1. ヒーローセクション（固定で一番上） -----------------------
+          - label: "ヒーローセクション"
+            name: "hero"
             widget: object
             fields:
-              - { label: "会社名", name: "name", widget: string }
-              - { label: "ロゴ画像", name: "logo", widget: image }
-              - { label: "サイトタイトル（<title>用）", name: "siteName", widget: string }
-              - { label: "キャッチコピー（内部用）", name: "tagline", widget: string }
-              - { label: "サイト説明文（meta description）", name: "description", widget: text }
-              - { label: "代表者名", name: "representative", widget: string }
-              - { label: "設立年", name: "establishedYear", widget: number, value_type: int }
-              - { label: "OGP画像（SNSシェア時のサムネイル）", name: "ogImage", widget: image }
+              - { label: "見出し（Enterキーで改行、HTML（<br />等）も使用可）", name: "heading", widget: text, required: false }
+              - { label: "本文（Enterキーで改行、HTML（<br />等）も使用可）", name: "body", widget: text, required: false }
+              - { label: "CTAボタン文言", name: "ctaLabel", widget: string, required: false }
+              - { label: "CTAボタン遷移先", name: "ctaHref", widget: string, required: false }
+              - { label: "背景画像", name: "image", widget: image, required: false }
+              - { label: "画像 代替テキスト", name: "imageAlt", widget: string, required: false }
+              - label: "バッジ（3〜4個推奨）"
+                name: "badges"
+                widget: list
+                required: false
+                field: { label: "バッジ文言", name: "badge", widget: string, required: false }
 
-          - label: "連絡先・SNS"
-            name: "contact"
+          # --- 2. 「セクション表示順序」に含まれる各セクション -------------
+          - label: "選ばれる理由セクション"
+            name: "features_section"
             widget: object
             fields:
-              - { label: "電話番号（表示用）", name: "phone", widget: string }
-              - { label: "電話番号（tel:リンク用）", name: "phoneHref", widget: string }
-              - { label: "メールアドレス", name: "email", widget: string }
-              - { label: "LINE URL", name: "lineUrl", widget: string, required: false, hint: "未入力の場合、サイト上のLINEアイコン／ボタンは自動的に非表示になります。" }
-              - { label: "Instagram URL", name: "instagramUrl", widget: string, required: false, hint: "未入力の場合、サイト上のInstagramアイコンは自動的に非表示になります。" }
-              - { label: "X（旧Twitter）URL", name: "xUrl", widget: string, required: false, hint: "未入力の場合、サイト上のXアイコンは自動的に非表示になります。" }
-              - { label: "Facebook URL", name: "facebookUrl", widget: string, required: false, hint: "未入力の場合、サイト上のFacebookアイコンは自動的に非表示になります。" }
-              - { label: "「お電話」ボタン文言（スマホ下部固定バー）", name: "phoneLabel", widget: string }
-              - { label: "「LINEで相談」ボタン文言（スマホ下部固定バー）", name: "lineLabel", widget: string }
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - label: "項目"
+                name: "items"
+                widget: list
+                required: false
+                fields:
+                  - { label: "番号", name: "number", widget: string, required: false }
+                  - { label: "タイトル", name: "title", widget: string, required: false }
+                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
+                  - { label: "アイコン画像", name: "icon", widget: image, required: false }
+
+          - label: "サービスセクション"
+            name: "services"
+            widget: object
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - label: "サービス項目"
+                name: "items"
+                widget: list
+                required: false
+                fields:
+                  - { label: "タイトル", name: "title", widget: string, required: false }
+                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
+                  - { label: "画像", name: "image", widget: image, required: false }
+
+          - label: "制作の流れセクション"
+            name: "flow"
+            widget: object
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - label: "ステップ"
+                name: "steps"
+                widget: list
+                required: false
+                fields:
+                  - { label: "番号", name: "number", widget: number, value_type: int, required: false }
+                  - { label: "タイトル", name: "title", widget: string, required: false }
+                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
+
+          - label: "商品一覧セクション（竹/松プラン）"
+            name: "productsSection"
+            widget: object
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+
+          - label: "実績セクション"
+            name: "works"
+            widget: object
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - label: "実績項目"
+                name: "items"
+                widget: list
+                required: false
+                fields:
+                  - { label: "タイトル", name: "title", widget: string, required: false }
+                  - { label: "業種", name: "industry", widget: string, required: false }
+                  - { label: "タグ", name: "tag", widget: string, required: false }
+                  - { label: "画像", name: "image", widget: image, required: false }
+
+          - label: "料金プランセクション"
+            name: "plans"
+            widget: object
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "注記文", name: "note", widget: string, required: false }
+              - { label: "人気プランバッジ文言", name: "popularBadgeLabel", widget: string, required: false }
+              - label: "プラン"
+                name: "items"
+                widget: list
+                required: false
+                fields:
+                  - { label: "プラン名", name: "name", widget: string, required: false }
+                  - { label: "説明", name: "description", widget: string, required: false }
+                  - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+                  - { label: "人気プランバッジを表示", name: "popular", widget: boolean, default: false }
+                  - label: "含まれる内容"
+                    name: "features"
+                    widget: list
+                    required: false
+                    field: { label: "項目", name: "feature", widget: string, required: false }
 
           - label: "アクセスセクション"
             name: "access"
             widget: object
             fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
               - label: "店舗情報"
                 name: "store"
                 widget: object
                 fields:
-                  - { label: "店舗名", name: "name", widget: string }
+                  - { label: "店舗名", name: "name", widget: string, required: false }
                   - { label: "郵便番号", name: "postalCode", widget: string, required: false }
                   - { label: "住所", name: "address", widget: string, required: false }
                   - { label: "最寄り駅", name: "nearestStation", widget: string, required: false }
                   - { label: "営業時間", name: "businessHours", widget: string, required: false }
                   - { label: "定休日", name: "closedDays", widget: string, required: false }
                   - { label: "駐車場", name: "parking", widget: string, required: false }
-                  - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string }
-                  - { label: "店舗外観画像", name: "image", widget: image }
-                  - { label: "店舗外観 代替テキスト", name: "imageAlt", widget: string }
+                  - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string, required: false }
+                  - { label: "店舗外観画像", name: "image", widget: image, required: false }
+                  - { label: "店舗外観 代替テキスト", name: "imageAlt", widget: string, required: false }
               - label: "項目ラベル"
                 name: "labels"
                 widget: object
@@ -102,25 +192,87 @@ collections:
                   - { label: "駐車場", name: "parking", widget: string, required: false }
                   - { label: "公式SNS", name: "sns", widget: string, required: false }
 
-          - label: "機能フラグ（プラン切り替え）"
-            name: "features"
+          - label: "FAQセクション"
+            name: "faq"
             widget: object
-            hint: "各項目のラベル文言は、対応するセクションの「見出し」フィールドの内容に自動で追従します（下の各セクション設定タブで見出しを変更すると、ここの表示もあわせて更新されます）。"
             fields:
-              - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true }
-              - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true }
-              - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true }
-              - { label: "商品・型化ページを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false }
-              - { label: "「実績・活用事例」セクションを表示する", name: "enableWorks", widget: boolean, default: true }
-              - { label: "「料金プラン」セクションを表示する", name: "enablePlans", widget: boolean, default: true }
-              - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true }
-              - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
-              - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - label: "質問項目"
+                name: "items"
+                widget: list
+                required: false
+                fields:
+                  - { label: "質問", name: "q", widget: string, required: false }
+                  - { label: "回答（Enterキーで改行可）", name: "a", widget: text, required: false }
 
+          - label: "お問い合わせセクション"
+            name: "contactSection"
+            widget: object
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "本文（Enterキーで改行、HTML（<br />等）も使用可）", name: "body", widget: text, required: false }
+              - label: "アピールポイント"
+                name: "points"
+                widget: list
+                required: false
+                field: { label: "ポイント", name: "point", widget: string, required: false }
+              - label: "フォーム項目"
+                name: "form"
+                widget: object
+                fields:
+                  - { label: "「お名前」入力欄の文言", name: "namePlaceholder", widget: string, required: false }
+                  - { label: "「会社名」入力欄の文言", name: "companyPlaceholder", widget: string, required: false }
+                  - { label: "「メールアドレス」入力欄の文言", name: "emailPlaceholder", widget: string, required: false }
+                  - { label: "「お問い合わせ内容」入力欄の文言", name: "messagePlaceholder", widget: string, required: false }
+                  - { label: "送信ボタン文言", name: "submitLabel", widget: string, required: false }
+
+          # --- 3. 会社・サイト基本情報 --------------------------------------
+          - label: "会社・サイト基本情報"
+            name: "company"
+            widget: object
+            fields:
+              - { label: "会社名", name: "name", widget: string, required: false }
+              - { label: "ロゴ画像", name: "logo", widget: image, required: false }
+              - { label: "サイトタイトル（<title>用）", name: "siteName", widget: string, required: false }
+              - { label: "キャッチコピー（内部用）", name: "tagline", widget: string, required: false }
+              - { label: "サイト説明文（meta description）", name: "description", widget: text, required: false }
+              - { label: "代表者名", name: "representative", widget: string, required: false }
+              - { label: "設立年", name: "establishedYear", widget: number, value_type: int, required: false }
+              - { label: "OGP画像（SNSシェア時のサムネイル）", name: "ogImage", widget: image, required: false }
+
+          # --- 4. 連絡先・SNS -----------------------------------------------
+          - label: "連絡先・SNS"
+            name: "contact"
+            widget: object
+            fields:
+              - { label: "電話番号（表示用）", name: "phone", widget: string, required: false }
+              - { label: "電話番号（tel:リンク用）", name: "phoneHref", widget: string, required: false }
+              - { label: "メールアドレス", name: "email", widget: string, required: false }
+              - { label: "LINE URL", name: "lineUrl", widget: string, required: false, hint: "未入力の場合、サイト上のLINEアイコン／ボタンは自動的に非表示になります。" }
+              - { label: "Instagram URL", name: "instagramUrl", widget: string, required: false, hint: "未入力の場合、サイト上のInstagramアイコンは自動的に非表示になります。" }
+              - { label: "X（旧Twitter）URL", name: "xUrl", widget: string, required: false, hint: "未入力の場合、サイト上のXアイコンは自動的に非表示になります。" }
+              - { label: "Facebook URL", name: "facebookUrl", widget: string, required: false, hint: "未入力の場合、サイト上のFacebookアイコンは自動的に非表示になります。" }
+              - { label: "「お電話」ボタン文言（スマホ下部固定バー）", name: "phoneLabel", widget: string, required: false }
+              - { label: "「LINEで相談」ボタン文言（スマホ下部固定バー）", name: "lineLabel", widget: string, required: false }
+              - { label: "「お電話」ボタンを表示する（スマホ下部固定バー）", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
+              - { label: "「LINEで相談」ボタンを表示する（スマホ下部固定バー）", name: "showLineButton", widget: boolean, default: true }
+
+          # --- 5. 共通UI文言 -------------------------------------------------
+          - label: "共通UI文言"
+            name: "ui"
+            widget: object
+            fields:
+              - { label: "「プライバシーポリシー」リンク文言", name: "privacyPolicyLabel", widget: string, required: false }
+              - { label: "お問い合わせフォーム同意文（末尾）", name: "privacyConsentSuffix", widget: string, required: false }
+
+          # --- 6. その他既存セクション ---------------------------------------
           - label: "セクション表示順序"
             name: "sectionOrder"
             widget: list
-            hint: "ドラッグ&ドロップで並び替えると、そのままサイト上の表示順になります（背景の白／グレーの交互配色も自動で追従します）。上のチェックボックスで非表示にしたセクションは、ここに残っていても表示されません。選択肢の文言は各セクションの「見出し」フィールドの内容に自動で追従します。"
+            required: false
+            hint: "ドラッグ&ドロップで並び替えると、そのままサイト上の表示順になります（背景の白／グレーの交互配色も自動で追従します）。「セクションの表示・非表示」で非表示にしたセクションは、ここに残っていても表示されません。選択肢の文言は各セクションの「見出し」フィールドの内容に自動で追従します。"
             summary: "{{fields.id}}"
             fields:
               - label: "セクション"
@@ -137,184 +289,62 @@ collections:
                   - { label: "店舗概要・アクセス", value: "access" }
                   - { label: "お問い合わせ", value: "contact" }
 
-          - label: "ヒーローセクション"
-            name: "hero"
-            widget: object
-            fields:
-              - { label: "見出し（Enterキーで改行、HTML（<br />等）も使用可）", name: "heading", widget: text }
-              - { label: "本文（Enterキーで改行、HTML（<br />等）も使用可）", name: "body", widget: text }
-              - { label: "CTAボタン文言", name: "ctaLabel", widget: string }
-              - { label: "CTAボタン遷移先", name: "ctaHref", widget: string }
-              - { label: "背景画像", name: "image", widget: image }
-              - { label: "画像 代替テキスト", name: "imageAlt", widget: string }
-              - label: "バッジ（3〜4個推奨）"
-                name: "badges"
-                widget: list
-                field: { label: "バッジ文言", name: "badge", widget: string }
-
-          - label: "選ばれる理由セクション"
-            name: "features_section"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - label: "項目"
-                name: "items"
-                widget: list
-                fields:
-                  - { label: "番号", name: "number", widget: string }
-                  - { label: "タイトル", name: "title", widget: string }
-                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text }
-                  - { label: "アイコン画像", name: "icon", widget: image }
-
-          - label: "サービスセクション"
-            name: "services"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - label: "サービス項目"
-                name: "items"
-                widget: list
-                fields:
-                  - { label: "タイトル", name: "title", widget: string }
-                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text }
-                  - { label: "画像", name: "image", widget: image }
-
-          - label: "制作の流れセクション"
-            name: "flow"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - label: "ステップ"
-                name: "steps"
-                widget: list
-                fields:
-                  - { label: "番号", name: "number", widget: number, value_type: int }
-                  - { label: "タイトル", name: "title", widget: string }
-                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text }
-
-          - label: "実績セクション"
-            name: "works"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - label: "実績項目"
-                name: "items"
-                widget: list
-                fields:
-                  - { label: "タイトル", name: "title", widget: string }
-                  - { label: "業種", name: "industry", widget: string }
-                  - { label: "タグ", name: "tag", widget: string }
-                  - { label: "画像", name: "image", widget: image }
-
-          - label: "料金プランセクション"
-            name: "plans"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - { label: "注記文", name: "note", widget: string }
-              - { label: "人気プランバッジ文言", name: "popularBadgeLabel", widget: string }
-              - label: "プラン"
-                name: "items"
-                widget: list
-                fields:
-                  - { label: "プラン名", name: "name", widget: string }
-                  - { label: "説明", name: "description", widget: string }
-                  - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int }
-                  - { label: "人気プランバッジを表示", name: "popular", widget: boolean, default: false }
-                  - label: "含まれる内容"
-                    name: "features"
-                    widget: list
-                    field: { label: "項目", name: "feature", widget: string }
-
-          - label: "FAQセクション"
-            name: "faq"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - label: "質問項目"
-                name: "items"
-                widget: list
-                fields:
-                  - { label: "質問", name: "q", widget: string }
-                  - { label: "回答（Enterキーで改行可）", name: "a", widget: text }
-
-          - label: "お問い合わせセクション"
-            name: "contactSection"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-              - { label: "本文（Enterキーで改行、HTML（<br />等）も使用可）", name: "body", widget: text }
-              - label: "アピールポイント"
-                name: "points"
-                widget: list
-                field: { label: "ポイント", name: "point", widget: string }
-              - label: "フォーム項目"
-                name: "form"
-                widget: object
-                fields:
-                  - { label: "「お名前」入力欄の文言", name: "namePlaceholder", widget: string }
-                  - { label: "「会社名」入力欄の文言", name: "companyPlaceholder", widget: string }
-                  - { label: "「メールアドレス」入力欄の文言", name: "emailPlaceholder", widget: string }
-                  - { label: "「お問い合わせ内容」入力欄の文言", name: "messagePlaceholder", widget: string }
-                  - { label: "送信ボタン文言", name: "submitLabel", widget: string }
-
-          - label: "商品一覧セクション（竹/松プラン）"
-            name: "productsSection"
-            widget: object
-            fields:
-              - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
-              - { label: "見出し", name: "heading", widget: string }
-
-          - label: "商品・施工事例ページ（共通文言）"
-            name: "productPage"
-            widget: object
-            fields:
-              - { label: "パンくずリストの「トップ」表示名", name: "breadcrumbHome", widget: string }
-              - { label: "「仕様・含まれる内容」見出し", name: "specsHeading", widget: string }
-              - { label: "相談CTAボタン文言", name: "ctaLabel", widget: string }
-
-          - label: "共通UI文言"
-            name: "ui"
-            widget: object
-            fields:
-              - { label: "「プライバシーポリシー」リンク文言", name: "privacyPolicyLabel", widget: string }
-              - { label: "お問い合わせフォーム同意文（末尾）", name: "privacyConsentSuffix", widget: string }
-
           - label: "ヘッダーナビゲーション"
             name: "nav"
             widget: list
+            required: false
             fields:
-              - { label: "表示名", name: "label", widget: string }
-              - { label: "リンク先", name: "href", widget: string }
+              - { label: "表示名", name: "label", widget: string, required: false }
+              - { label: "リンク先", name: "href", widget: string, required: false }
 
           - label: "ヘッダーCTAボタン"
             name: "navCta"
             widget: object
             fields:
-              - { label: "表示名", name: "label", widget: string }
-              - { label: "リンク先", name: "href", widget: string }
+              - { label: "表示名", name: "label", widget: string, required: false }
+              - { label: "リンク先", name: "href", widget: string, required: false }
 
           - label: "フッターナビゲーション"
             name: "footerNav"
             widget: list
+            required: false
             fields:
-              - { label: "表示名", name: "label", widget: string }
-              - { label: "リンク先", name: "href", widget: string }
+              - { label: "表示名", name: "label", widget: string, required: false }
+              - { label: "リンク先", name: "href", widget: string, required: false }
 
           - label: "共通アイコン"
             name: "icons"
             widget: object
             fields:
-              - { label: "チェックマークアイコン", name: "check", widget: image }
+              - { label: "チェックマークアイコン", name: "check", widget: image, required: false }
 
-          - { label: "コピーライト表記", name: "copyright", widget: string }
+          # --- 7. コピーライト表記 -------------------------------------------
+          - { label: "コピーライト表記", name: "copyright", widget: string, required: false }
+
+          # --- 8. セクションの表示・非表示（旧：機能フラグ） -----------------
+          - label: "セクションの表示・非表示"
+            name: "features"
+            widget: object
+            hint: "各項目のラベル文言は、対応するセクションの「見出し」フィールドの内容に自動で追従します（上の各セクション設定タブで見出しを変更すると、ここの表示もあわせて更新されます）。"
+            fields:
+              - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true }
+              - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true }
+              - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true }
+              - { label: "商品・型化ページを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false }
+              - { label: "「実績・活用事例」セクションを表示する", name: "enableWorks", widget: boolean, default: true }
+              - { label: "「料金プラン」セクションを表示する", name: "enablePlans", widget: boolean, default: true }
+              - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true }
+              - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
+              - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
+
+          # --- 9. 商品・施工事例ページ（共通文言）（一番最下部） -------------
+          - label: "商品・施工事例ページ（共通文言）"
+            name: "productPage"
+            widget: object
+            fields:
+              - { label: "パンくずリストの「トップ」表示名", name: "breadcrumbHome", widget: string, required: false }
+              - { label: "「仕様・含まれる内容」見出し", name: "specsHeading", widget: string, required: false }
+              - { label: "相談CTAボタン文言", name: "ctaLabel", widget: string, required: false }
 
       - name: "siteSettings"
         label: "デザインテーマ設定（site-settings.json）"
@@ -344,14 +374,15 @@ collections:
     extension: "md"
     format: "frontmatter"
     fields:
-      - { label: "タイトル", name: "title", widget: string }
-      - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int }
-      - { label: "メイン画像", name: "mainImage", widget: image }
-      - { label: "概要（一覧・OGP用の要約文）", name: "summary", widget: text }
+      - { label: "タイトル", name: "title", widget: string, required: false }
+      - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+      - { label: "メイン画像", name: "mainImage", widget: image, required: false }
+      - { label: "概要（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
       - label: "仕様・含まれる内容"
         name: "specs"
         widget: list
-        field: { label: "項目", name: "spec", widget: string }
-      - { label: "表示順（小さいほど先頭）", name: "order", widget: number, value_type: int, default: 0 }
+        required: false
+        field: { label: "項目", name: "spec", widget: string, required: false }
+      - { label: "表示順（小さいほど先頭）", name: "order", widget: number, value_type: int, default: 0, required: false }
       - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
-      - { label: "本文", name: "body", widget: markdown }
+      - { label: "本文", name: "body", widget: markdown, required: false }

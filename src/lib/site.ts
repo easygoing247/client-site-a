@@ -30,6 +30,8 @@ export interface SiteInfo {
     facebookUrl: string;
     phoneLabel: string;
     lineLabel: string;
+    showPhoneButton: boolean;
+    showLineButton: boolean;
   };
   access: {
     eyebrow: string;
@@ -170,8 +172,10 @@ const navHrefToFeatureFlag: Partial<Record<string, keyof SiteInfo['features']>> 
   '#contact': 'enableContact',
 };
 
-export function visibleNavItems<T extends { href: string }>(items: T[]): T[] {
-  return items.filter((item) => {
+export function visibleNavItems<T extends { href: string; label: string }>(items: T[]): T[] {
+  return (items ?? []).filter((item) => {
+    // 表示名・リンク先のどちらかが未入力の項目は表示しない
+    if (!item.label || !item.href) return false;
     const flag = navHrefToFeatureFlag[item.href];
     // 対応するセクションフラグが無いリンク（外部リンク等）は常に表示する
     return flag === undefined || site.features[flag];

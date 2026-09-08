@@ -4,7 +4,7 @@
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
-import { resolveImage } from '../lib/images';
+import { resolveImageOrNull } from '../lib/images';
 
 interface Props {
   muted?: boolean;
@@ -18,31 +18,40 @@ const { muted = false } = Astro.props;
     <section id="services" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="services-heading">
       <div class="max-w-[1100px] mx-auto">
         <div class="text-center mb-10">
-          <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
-            {site.services.eyebrow}
-          </div>
-          <h2 id="services-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
-            {site.services.heading}
-          </h2>
+          {site.services.eyebrow && (
+            <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+              {site.services.eyebrow}
+            </div>
+          )}
+          {site.services.heading && (
+            <h2 id="services-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+              {site.services.heading}
+            </h2>
+          )}
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {site.services.items.map((item) => (
-            <article class="border border-surface-border rounded-card overflow-hidden bg-white">
-              <Image
-                src={resolveImage(item.image)}
-                alt={`${item.title}のイメージ`}
-                class="w-full h-[150px] object-cover block"
-                width={400}
-                height={150}
-                format="webp"
-                loading="lazy"
-              />
-              <div class="p-[18px]">
-                <h3 class="font-bold text-[15px] mb-2">{item.title}</h3>
-                <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.text}</p>
-              </div>
-            </article>
-          ))}
+          {site.services.items.map((item) => {
+            const image = resolveImageOrNull(item.image);
+            return (
+              <article class="border border-surface-border rounded-card overflow-hidden bg-white">
+                {image && (
+                  <Image
+                    src={image}
+                    alt={item.title ? `${item.title}のイメージ` : ''}
+                    class="w-full h-[150px] object-cover block"
+                    width={400}
+                    height={150}
+                    format="webp"
+                    loading="lazy"
+                  />
+                )}
+                <div class="p-[18px]">
+                  {item.title && <h3 class="font-bold text-[15px] mb-2">{item.title}</h3>}
+                  {item.text && <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.text}</p>}
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

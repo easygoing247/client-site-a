@@ -17,12 +17,16 @@ const enabled = site.features.enableFlow;
 <section id="flow" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="flow-heading">
   <div class="max-w-[1100px] mx-auto">
     <div class="text-center mb-12">
-      <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
-        {site.flow.eyebrow}
-      </div>
-      <h2 id="flow-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
-        {site.flow.heading}
-      </h2>
+      {site.flow.eyebrow && (
+        <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
+          {site.flow.eyebrow}
+        </div>
+      )}
+      {site.flow.heading && (
+        <h2 id="flow-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">
+          {site.flow.heading}
+        </h2>
+      )}
     </div>
 
     <div class="flex flex-col lg:flex-row lg:items-stretch gap-3 lg:gap-2" role="list">
@@ -40,13 +44,17 @@ const enabled = site.features.enableFlow;
                     : 'border-surface-border bg-white',
                 ]}
               >
-                <div class:list={['text-[26px] font-bold mb-2 leading-none', isLast ? 'text-white' : 'text-primary']}>
-                  {step.number}
-                </div>
-                <h3 class:list={['text-[14px] font-bold mb-1.5', isLast && 'text-white']}>{step.title}</h3>
-                <p class:list={['text-[12px] leading-[1.7] m-0 whitespace-pre-line', isLast ? 'text-white/85' : 'text-ink-soft']}>
-                  {step.text}
-                </p>
+                {step.number != null && (
+                  <div class:list={['text-[26px] font-bold mb-2 leading-none', isLast ? 'text-white' : 'text-primary']}>
+                    {step.number}
+                  </div>
+                )}
+                {step.title && <h3 class:list={['text-[14px] font-bold mb-1.5', isLast && 'text-white']}>{step.title}</h3>}
+                {step.text && (
+                  <p class:list={['text-[12px] leading-[1.7] m-0 whitespace-pre-line', isLast ? 'text-white/85' : 'text-ink-soft']}>
+                    {step.text}
+                  </p>
+                )}
               </div>
 
               {!isLast && (

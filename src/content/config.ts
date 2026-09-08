@@ -10,10 +10,13 @@ const products = defineCollection({
   type: 'content',
   schema: ({ image }) =>
     z.object({
-      title: z.string(),
-      price: z.number(),
-      mainImage: image(),
-      summary: z.string(),
+      // CMS側（config.yml）で全項目を任意入力にしているため、スキーマ側も
+      // 未入力を許容する。表示側（Products.astro / products/[slug].astro）
+      // で値が無い項目は非表示にする。
+      title: z.string().optional(),
+      price: z.number().optional(),
+      mainImage: image().optional(),
+      summary: z.string().optional(),
       specs: z.array(z.string()).default([]),
       order: z.number().default(0),
       publishedAt: z.coerce.date().optional(),
