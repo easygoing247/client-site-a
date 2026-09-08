@@ -20,6 +20,17 @@ contact:
 access:
   eyebrow: ACCESS
   heading: 店舗概要・アクセス
+  store:
+    closedDays: 土曜・日曜・祝日
+    name: LOGO 札幌本店（ショールーム）
+    imageAlt: ショールーム外観イメージ
+    businessHours: 10:00〜18:00
+    mapEmbedUrl: https://www.google.com/maps?q=43.0606,141.3568&z=16&output=embed
+    address: 北海道札幌市中央区北一条西3丁目 LOGOビル5F
+    nearestStation: 札幌市営地下鉄 大通駅 徒歩5分
+    postalCode: 〒060-0001
+    parking: 3台（近隣コインパーキングもご利用いただけます）
+    image: /src/assets/access-store.jpg
   labels:
     postalCode: 郵便番号
     address: 住所
@@ -29,17 +40,6 @@ access:
     closedDays: 定休日
     parking: 駐車場
     sns: 公式SNS
-store:
-  closedDays: 土曜・日曜・祝日
-  name: LOGO 札幌本店（ショールーム）
-  imageAlt: ショールーム外観イメージ
-  businessHours: 10:00〜18:00
-  mapEmbedUrl: https://www.google.com/maps?q=43.0606,141.3568&z=16&output=embed
-  address: 北海道札幌市中央区北一条西3丁目 LOGOビル5F
-  nearestStation: 札幌市営地下鉄 大通駅 徒歩5分
-  postalCode: 〒060-0001
-  parking: 3台（近隣コインパーキングもご利用いただけます）
-  image: /src/assets/access-store.jpg
 features:
   enableFeatures: true
   enableServices: true

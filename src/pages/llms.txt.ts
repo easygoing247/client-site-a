@@ -31,7 +31,7 @@ export const GET: APIRoute = ({ site: siteURL }) => {
   lines.push('');
   lines.push(`- 会社名: ${site.company.name}`);
   lines.push(`- 代表者: ${site.company.representative}`);
-  lines.push(`- 所在地: ${site.store.postalCode} ${site.store.address}`);
+  lines.push(`- 所在地: ${site.access.store.postalCode} ${site.access.store.address}`);
   lines.push(`- 電話番号: ${site.contact.phone}`);
   lines.push(`- メールアドレス: ${site.contact.email}`);
 

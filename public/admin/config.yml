@@ -61,10 +61,10 @@ collections:
               - { label: "電話番号（表示用）", name: "phone", widget: string }
               - { label: "電話番号（tel:リンク用）", name: "phoneHref", widget: string }
               - { label: "メールアドレス", name: "email", widget: string }
-              - { label: "LINE URL", name: "lineUrl", widget: string }
-              - { label: "Instagram URL", name: "instagramUrl", widget: string }
-              - { label: "X（旧Twitter）URL", name: "xUrl", widget: string }
-              - { label: "Facebook URL", name: "facebookUrl", widget: string }
+              - { label: "LINE URL", name: "lineUrl", widget: string, required: false, hint: "未入力の場合、サイト上のLINEアイコン／ボタンは自動的に非表示になります。" }
+              - { label: "Instagram URL", name: "instagramUrl", widget: string, required: false, hint: "未入力の場合、サイト上のInstagramアイコンは自動的に非表示になります。" }
+              - { label: "X（旧Twitter）URL", name: "xUrl", widget: string, required: false, hint: "未入力の場合、サイト上のXアイコンは自動的に非表示になります。" }
+              - { label: "Facebook URL", name: "facebookUrl", widget: string, required: false, hint: "未入力の場合、サイト上のFacebookアイコンは自動的に非表示になります。" }
               - { label: "「お電話」ボタン文言（スマホ下部固定バー）", name: "phoneLabel", widget: string }
               - { label: "「LINEで相談」ボタン文言（スマホ下部固定バー）", name: "lineLabel", widget: string }
 
@@ -74,33 +74,33 @@ collections:
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
               - { label: "見出し", name: "heading", widget: string }
+              - label: "店舗情報"
+                name: "store"
+                widget: object
+                fields:
+                  - { label: "店舗名", name: "name", widget: string }
+                  - { label: "郵便番号", name: "postalCode", widget: string, required: false }
+                  - { label: "住所", name: "address", widget: string, required: false }
+                  - { label: "最寄り駅", name: "nearestStation", widget: string, required: false }
+                  - { label: "営業時間", name: "businessHours", widget: string, required: false }
+                  - { label: "定休日", name: "closedDays", widget: string, required: false }
+                  - { label: "駐車場", name: "parking", widget: string, required: false }
+                  - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string }
+                  - { label: "店舗外観画像", name: "image", widget: image }
+                  - { label: "店舗外観 代替テキスト", name: "imageAlt", widget: string }
               - label: "項目ラベル"
                 name: "labels"
                 widget: object
+                hint: "各項目の行は、ここのラベルまたは右側の店舗情報の値のどちらかが空欄の場合、サイト上で自動的に非表示になります。"
                 fields:
-                  - { label: "郵便番号", name: "postalCode", widget: string }
-                  - { label: "住所", name: "address", widget: string }
-                  - { label: "最寄り駅", name: "nearestStation", widget: string }
-                  - { label: "電話番号", name: "phone", widget: string }
-                  - { label: "営業時間", name: "businessHours", widget: string }
-                  - { label: "定休日", name: "closedDays", widget: string }
-                  - { label: "駐車場", name: "parking", widget: string }
-                  - { label: "公式SNS", name: "sns", widget: string }
-
-          - label: "店舗情報"
-            name: "store"
-            widget: object
-            fields:
-              - { label: "店舗名", name: "name", widget: string }
-              - { label: "郵便番号", name: "postalCode", widget: string }
-              - { label: "住所", name: "address", widget: string }
-              - { label: "最寄り駅", name: "nearestStation", widget: string }
-              - { label: "営業時間", name: "businessHours", widget: string }
-              - { label: "定休日", name: "closedDays", widget: string }
-              - { label: "駐車場", name: "parking", widget: string }
-              - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string }
-              - { label: "店舗外観画像", name: "image", widget: image }
-              - { label: "店舗外観 代替テキスト", name: "imageAlt", widget: string }
+                  - { label: "郵便番号", name: "postalCode", widget: string, required: false }
+                  - { label: "住所", name: "address", widget: string, required: false }
+                  - { label: "最寄り駅", name: "nearestStation", widget: string, required: false }
+                  - { label: "電話番号", name: "phone", widget: string, required: false }
+                  - { label: "営業時間", name: "businessHours", widget: string, required: false }
+                  - { label: "定休日", name: "closedDays", widget: string, required: false }
+                  - { label: "駐車場", name: "parking", widget: string, required: false }
+                  - { label: "公式SNS", name: "sns", widget: string, required: false }
 
           - label: "機能フラグ（プラン切り替え）"
             name: "features"
@@ -141,8 +141,8 @@ collections:
             name: "hero"
             widget: object
             fields:
-              - { label: "見出し（HTML可・<br />で改行）", name: "heading", widget: text }
-              - { label: "本文（HTML可）", name: "body", widget: text }
+              - { label: "見出し（Enterキーで改行、HTML（<br />等）も使用可）", name: "heading", widget: text }
+              - { label: "本文（Enterキーで改行、HTML（<br />等）も使用可）", name: "body", widget: text }
               - { label: "CTAボタン文言", name: "ctaLabel", widget: string }
               - { label: "CTAボタン遷移先", name: "ctaHref", widget: string }
               - { label: "背景画像", name: "image", widget: image }
@@ -164,7 +164,7 @@ collections:
                 fields:
                   - { label: "番号", name: "number", widget: string }
                   - { label: "タイトル", name: "title", widget: string }
-                  - { label: "本文", name: "text", widget: text }
+                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text }
                   - { label: "アイコン画像", name: "icon", widget: image }
 
           - label: "サービスセクション"
@@ -178,7 +178,7 @@ collections:
                 widget: list
                 fields:
                   - { label: "タイトル", name: "title", widget: string }
-                  - { label: "本文", name: "text", widget: text }
+                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text }
                   - { label: "画像", name: "image", widget: image }
 
           - label: "制作の流れセクション"
@@ -193,7 +193,7 @@ collections:
                 fields:
                   - { label: "番号", name: "number", widget: number, value_type: int }
                   - { label: "タイトル", name: "title", widget: string }
-                  - { label: "本文", name: "text", widget: text }
+                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text }
 
           - label: "実績セクション"
             name: "works"
@@ -242,7 +242,7 @@ collections:
                 widget: list
                 fields:
                   - { label: "質問", name: "q", widget: string }
-                  - { label: "回答", name: "a", widget: text }
+                  - { label: "回答（Enterキーで改行可）", name: "a", widget: text }
 
           - label: "お問い合わせセクション"
             name: "contactSection"
@@ -250,7 +250,7 @@ collections:
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string }
               - { label: "見出し", name: "heading", widget: string }
-              - { label: "本文（HTML可）", name: "body", widget: text }
+              - { label: "本文（Enterキーで改行、HTML（<br />等）も使用可）", name: "body", widget: text }
               - label: "アピールポイント"
                 name: "points"
                 widget: list

@@ -31,21 +31,22 @@ export interface SiteInfo {
     phoneLabel: string;
     lineLabel: string;
   };
-  store: {
-    name: string;
-    postalCode: string;
-    address: string;
-    nearestStation: string;
-    businessHours: string;
-    closedDays: string;
-    parking: string;
-    mapEmbedUrl: string;
-    image: string;
-    imageAlt: string;
-  };
   access: {
     eyebrow: string;
     heading: string;
+    // 「店舗情報」は独立セクションではなく、アクセスセクションの一部として統合。
+    store: {
+      name: string;
+      postalCode: string;
+      address: string;
+      nearestStation: string;
+      businessHours: string;
+      closedDays: string;
+      parking: string;
+      mapEmbedUrl: string;
+      image: string;
+      imageAlt: string;
+    };
     labels: {
       postalCode: string;
       address: string;

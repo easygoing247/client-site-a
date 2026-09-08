@@ -31,12 +31,12 @@ const heroImage = resolveImage(site.hero.image);
   </div>
   <div class="relative z-10 h-full max-w-[1200px] mx-auto px-5 flex flex-col justify-center">
     <h1
-      class="font-bold leading-[1.4] mb-5 tracking-[0.01em] text-white"
+      class="font-bold leading-[1.4] mb-5 tracking-[0.01em] text-white whitespace-pre-line"
       style="font-size:clamp(26px,3.6vw,38px);text-shadow:0 2px 14px rgba(0,0,0,0.45);"
       set:html={site.hero.heading}
     />
     <p
-      class="text-[15px] leading-[1.9] text-white mb-7"
+      class="text-[15px] leading-[1.9] text-white mb-7 whitespace-pre-line"
       style="text-shadow:0 1px 8px rgba(0,0,0,0.4);"
       set:html={site.hero.body}
     />

@@ -1,6 +1,8 @@
 ---
 // ============================================================================
 // Access.astro — 「店舗概要・アクセス」（レスポンシブGoogleマップ埋め込み）
+// 店舗情報はアクセスセクションに統合済み（site.access.store）。
+// 各情報行・SNSアイコンは、値が未入力の場合は自動的に非表示になる。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
@@ -11,7 +13,23 @@ interface Props {
 }
 
 const { muted = false } = Astro.props;
-const storeImage = resolveImage(site.store.image);
+const store = site.access.store;
+const storeImage = resolveImage(store.image);
+
+// ラベル・値のどちらかが空欄の行はサイト上に表示しない
+const infoRows = [
+  { label: site.access.labels.postalCode, value: store.postalCode },
+  { label: site.access.labels.address, value: store.address },
+  { label: site.access.labels.nearestStation, value: store.nearestStation },
+  {
+    label: site.access.labels.phone,
+    value: site.contact.phone,
+    href: site.contact.phoneHref,
+  },
+  { label: site.access.labels.businessHours, value: store.businessHours },
+  { label: site.access.labels.closedDays, value: store.closedDays },
+  { label: site.access.labels.parking, value: store.parking },
+].filter((row) => row.label && row.value);
 
 const snsLinks = [
   {
@@ -39,7 +57,7 @@ const snsLinks = [
     bg: 'bg-[#1877f2]',
     icon: 'M15 8.5h2.2V5.6h-2.4c-2.4 0-3.8 1.5-3.8 3.9v1.8H8.6v3h2.4V21h3.1v-6.7h2.4l.4-3h-2.8v-1.5c0-.87.23-1.3 1.9-1.3Z',
   },
-];
+].filter((sns) => sns.href);
 ---
 
 {site.features.enableAccess && (
@@ -55,7 +73,7 @@ const snsLinks = [
       <div class="rounded-2xl overflow-hidden border border-surface-border">
         <Image
           src={storeImage}
-          alt={site.store.imageAlt}
+          alt={store.imageAlt}
           class="w-full h-[260px] sm:h-[320px] object-cover block"
           width={700}
           height={320}
@@ -66,66 +84,58 @@ const snsLinks = [
 
       <!-- 店舗情報 -->
       <div>
-        <h3 class="text-[18px] font-bold mb-5">{site.store.name}</h3>
-        <dl class="grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light m-0">
-          <dt class="font-bold text-secondary">{site.access.labels.postalCode}</dt>
-          <dd class="m-0">{site.store.postalCode}</dd>
+        <h3 class="text-[18px] font-bold mb-5">{store.name}</h3>
+        {infoRows.length > 0 && (
+          <dl class="grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light m-0">
+            {infoRows.map((row) => (
+              <>
+                <dt class="font-bold text-secondary">{row.label}</dt>
+                <dd class="m-0">
+                  {row.href ? <a href={row.href} class="text-primary">{row.value}</a> : row.value}
+                </dd>
+              </>
+            ))}
+          </dl>
+        )}
 
-          <dt class="font-bold text-secondary">{site.access.labels.address}</dt>
-          <dd class="m-0">{site.store.address}</dd>
-
-          <dt class="font-bold text-secondary">{site.access.labels.nearestStation}</dt>
-          <dd class="m-0">{site.store.nearestStation}</dd>
-
-          <dt class="font-bold text-secondary">{site.access.labels.phone}</dt>
-          <dd class="m-0"><a href={site.contact.phoneHref} class="text-primary">{site.contact.phone}</a></dd>
-
-          <dt class="font-bold text-secondary">{site.access.labels.businessHours}</dt>
-          <dd class="m-0">{site.store.businessHours}</dd>
-
-          <dt class="font-bold text-secondary">{site.access.labels.closedDays}</dt>
-          <dd class="m-0">{site.store.closedDays}</dd>
-
-          <dt class="font-bold text-secondary">{site.access.labels.parking}</dt>
-          <dd class="m-0">{site.store.parking}</dd>
-        </dl>
-
-        <div class="mt-6">
-          <span class="block text-[13px] font-bold text-secondary-light mb-3">{site.access.labels.sns}</span>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {
-              snsLinks.map((sns) => (
-                <a
-                  href={sns.href}
-                  aria-label={sns.label}
-                  class:list={['flex items-center gap-3 px-4 py-[9px] rounded-full', sns.bg]}
-                  style={sns.style}
-                >
-                  {sns.isFrame ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
-                      <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
-                      <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
-                      <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
-                      <path d={sns.icon} fill="#fff" />
-                    </svg>
-                  )}
-                  <span class="text-[13px] font-bold text-white">{sns.label}</span>
-                </a>
-              ))
-            }
+        {snsLinks.length > 0 && (
+          <div class="mt-6">
+            <span class="block text-[13px] font-bold text-secondary-light mb-3">{site.access.labels.sns}</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {
+                snsLinks.map((sns) => (
+                  <a
+                    href={sns.href}
+                    aria-label={sns.label}
+                    class:list={['flex items-center gap-3 px-4 py-[9px] rounded-full', sns.bg]}
+                    style={sns.style}
+                  >
+                    {sns.isFrame ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                        <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
+                        <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
+                        <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                        <path d={sns.icon} fill="#fff" />
+                      </svg>
+                    )}
+                    <span class="text-[13px] font-bold text-white">{sns.label}</span>
+                  </a>
+                ))
+              }
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
 
     <!-- Googleマップ（レスポンシブ埋め込み） -->
     <div class="mt-10 rounded-2xl overflow-hidden border border-surface-border">
       <iframe
-        title={`Googleマップ：${site.store.name}周辺`}
-        src={site.store.mapEmbedUrl}
+        title={`Googleマップ：${store.name}周辺`}
+        src={store.mapEmbedUrl}
         class="w-full h-[300px] sm:h-[360px] border-0 block"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"></iframe>

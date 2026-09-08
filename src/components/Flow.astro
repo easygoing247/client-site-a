@@ -44,7 +44,7 @@ const enabled = site.features.enableFlow;
                   {step.number}
                 </div>
                 <h3 class:list={['text-[14px] font-bold mb-1.5', isLast && 'text-white']}>{step.title}</h3>
-                <p class:list={['text-[12px] leading-[1.7] m-0', isLast ? 'text-white/85' : 'text-ink-soft']}>
+                <p class:list={['text-[12px] leading-[1.7] m-0 whitespace-pre-line', isLast ? 'text-white/85' : 'text-ink-soft']}>
                   {step.text}
                 </p>
               </div>
