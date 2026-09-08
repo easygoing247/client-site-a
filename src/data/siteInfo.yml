@@ -64,7 +64,7 @@ sectionOrder:
   - id: contact
 hero:
   heading: 想いをカタチに、<br />成果につながるWebを。
-  body: simpleで伝わるデザインと、<br class="sm:hidden" />使いやすいWebサイトで<br class="hidden
+  body: シンプルで伝わるデザインと、<br class="sm:hidden" />使いやすいWebサイトで<br class="hidden
     sm:inline md:hidden" />ビジネスの成長をサポートします。
   ctaLabel: 無料で相談する
   ctaHref: "#contact"
