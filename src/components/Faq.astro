@@ -14,8 +14,8 @@ const { muted = true } = Astro.props;
 
 {
   site.features.enableFaq && (
-    <section id="faq" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="faq-heading">
-      <div class="max-w-[760px] mx-auto">
+    <section id="faq" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="faq-heading">
+      <div class="max-w-xl sm:max-w-2xl lg:max-w-[760px] mx-auto px-4 sm:px-6 lg:px-0">
         <div class="text-center mb-10">
           {site.faq.eyebrow && (
             <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">

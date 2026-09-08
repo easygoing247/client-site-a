@@ -61,8 +61,8 @@ const snsLinks = [
 ---
 
 {site.features.enableAccess && (
-<section id="access" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="access-heading">
-  <div class="max-w-[1100px] mx-auto">
+<section id="access" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="access-heading">
+  <div class="max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5">
     <div class="text-center mb-10">
       {site.access.eyebrow && (
         <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">{site.access.eyebrow}</div>
@@ -107,7 +107,15 @@ const snsLinks = [
         {snsLinks.length > 0 && (
           <div class="mt-6">
             <span class="block text-[13px] font-bold text-secondary-light mb-3">{site.access.labels.sns}</span>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/*
+              sm:grid-cols-2にしていた頃は、SNSリンクが奇数個の場合に最後の
+              1個だけ2列のうち片方の列（半分の幅）に取り残され、他のボタンと
+              横幅が揃わずアンバランスに見える問題があった。タブレット幅
+              （lg未満）では1列固定にして全ボタンをコンテナ幅いっぱいの
+              同じ横幅に揃え、PC表示（lg以上、店舗情報が右カラムに収まり
+              十分な横幅がある）でのみ2列に戻す。
+            */}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
               {
                 snsLinks.map((sns) => (
                   <a

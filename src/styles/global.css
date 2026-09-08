@@ -69,8 +69,16 @@
   a {
     text-decoration: none;
   }
+  /*
+    スマホのハンバーガーメニューからのスムーズスクロール（およびPCの
+    ヘッダーナビ、#contact等への直リンク）で、固定ヘッダー（sticky、
+    実測高さ64px）の直下に見出しがきちんと収まるようにする。
+    Tailwindのscroll-mt-20（5rem=80px）相当の値を、id付きセクション全体に
+    まとめて適用している（Header.astroの高さが変わった場合はここを
+    合わせて調整すること）。
+  */
   section[id] {
-    scroll-margin-top: 76px;
+    scroll-margin-top: 80px;
   }
   input:focus,
   textarea:focus {

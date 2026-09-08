@@ -45,7 +45,12 @@ const { muted = false } = Astro.props;
                     loading="lazy"
                   />
                 )}
-                <div class="p-[18px]">
+                {/*
+                  スマホ表示（grid-cols-1）で画像下のテキスト領域が横長で
+                  平坦に見えるのを防ぐため、上下方向のパディングを左右より
+                  多めに取り、カードに適度な高さと立体感を持たせる。
+                */}
+                <div class="px-[18px] py-7">
                   {item.title && <h3 class="font-bold text-[15px] mb-2">{item.title}</h3>}
                   {item.text && <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.text}</p>}
                 </div>

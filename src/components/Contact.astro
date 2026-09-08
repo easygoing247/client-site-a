@@ -14,8 +14,8 @@ const { muted = false } = Astro.props;
 ---
 
 {site.features.enableContact && (
-<section id="contact" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="contact-heading">
-  <div class="max-w-[1100px] mx-auto">
+<section id="contact" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="contact-heading">
+  <div class="max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5">
     <div class="text-center mb-10">
       {site.contactSection.eyebrow && (
         <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">
