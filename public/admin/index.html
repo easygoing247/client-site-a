@@ -108,6 +108,23 @@
       }
 
       @media (max-width: 799px) {
+        /*
+          html/body は overflow-x のみ隠しており、overflow-y は既定（visible）
+          のままだった。管理画面のコンテンツは [class*="EditorContainer"]
+          （position:absolute, overflow:hidden）がJSでscrollTopを操作する
+          方式のため、ページ本体（body）側が万一わずかでも縦にスクロール
+          可能だと、実機でのスワイプ時にブラウザ標準のページスクロールと
+          自前のタッチスクロール処理が同時に発生し、位置がずれて「画面が
+          固まった」ように見える不具合につながっていた。
+          スマホ幅ではページ本体自体を縦方向にもスクロール不可にし、
+          スクロールは常に自前のタッチスクロール処理（下部の<script>）
+          経由の scrollTop 操作に一本化する。
+        */
+        html,
+        body {
+          overflow-y: hidden;
+        }
+
         [class*='ToolbarContainer'],
         [class*='EditorContainer'] {
           min-width: 0 !important;
@@ -335,10 +352,20 @@
             var deltaY = e.touches[0].clientY - touchStartY;
             if (Math.abs(deltaY) > TOUCH_MOVE_THRESHOLD) touchHasMoved = true;
             if (touchHasMoved) {
+              // ブラウザ標準のページスクロール／バウンスが自前スクロールと
+              // 同時に発生すると、[class*="EditorContainer"] が
+              // position:absolute のためページ本体のスクロールに引きずられて
+              // 表示位置がずれ、実機では「画面が固まった」ように見える不具合が
+              // あった。このジェスチャーは自前スクロールとして処理している
+              // ことを明示し、標準スクロールを完全に無効化する。
+              // （このリスナーは exempt 対象＝input/textarea/select/モーダル等
+              // では touchIsDragging が立たず、ここに到達しないため、
+              // それらの要素本来のネイティブスクロール／操作は妨げない）
+              e.preventDefault();
               touchScrollContainer.scrollTop = touchStartScrollTop - deltaY;
             }
           },
-          { passive: true }
+          { passive: false }
         );
 
         function endTouchScroll() {
