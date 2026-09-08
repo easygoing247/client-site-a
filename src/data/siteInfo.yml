@@ -34,7 +34,7 @@ store:
   name: LOGO 札幌本店（ショールーム）
   imageAlt: ショールーム外観イメージ
   businessHours: 10:00〜18:00
-  mapEmbedUrl: https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d433.30684717583046!2d141.34751200859677!3d43.06395247187121!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f0b299efe971403%3A0xceea1031d7c2e2a5!2z5Zu95oyH5a6a6YeN6KaB5paH5YyW6LKh44O75YyX5rW36YGT5bqB5pen5pys5bqB6IiOIOi1pOOCjOOCk-OBjOW6geiIjg!5e0!3m2!1sja!2sjp!4v1788843901163!5m2!1sja!2sjp
+  mapEmbedUrl: https://www.google.com/maps?q=43.0606,141.3568&z=16&output=embed
   address: 北海道札幌市中央区北一条西3丁目 LOGOビル5F
   nearestStation: 札幌市営地下鉄 大通駅 徒歩5分
   postalCode: 〒060-0001
