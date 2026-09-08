@@ -40,8 +40,6 @@ export interface SiteInfo {
     closedDays: string;
     parking: string;
     mapEmbedUrl: string;
-    mapLat: number;
-    mapLng: number;
     image: string;
     imageAlt: string;
   };

@@ -30,9 +30,7 @@ access:
     parking: 駐車場
     sns: 公式SNS
 store:
-  mapLat: 43.0606
   closedDays: 土曜・日曜・祝日
-  mapLng: 141.3568
   name: LOGO 札幌本店（ショールーム）
   imageAlt: ショールーム外観イメージ
   businessHours: 10:00〜18:00

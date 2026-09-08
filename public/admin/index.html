@@ -604,7 +604,12 @@
         }
 
         // セレクトの選択肢（プルダウンを開いた瞬間に生成される）は
-        // config.yml 由来の固定ラベルで毎回描画し直されるため、開くたびに書き換える
+        // config.yml 由来の固定ラベルで毎回描画し直されるため、開くたびに書き換える。
+        // ただし、この書き換えは「セクション表示順序」の並び替えリスト内にある
+        // セクション選択プルダウンだけが対象。他のプルダウン（テーマカラー選択
+        // 等、今後追加されるものも含む）まで巻き込んで書き換えてしまわないよう、
+        // 開いたメニューが実際に「セクション表示順序」のコンテナ配下にあるか
+        // どうかを毎回確認してから適用する。
         var menuObserver = new MutationObserver(function (mutations) {
           mutations.forEach(function (m) {
             m.addedNodes.forEach(function (node) {
@@ -616,7 +621,15 @@
                 menu = node.querySelector('[class$="-menu"]');
               }
               if (!menu) return;
+
+              var root = getFormRoot();
+              var orderContainer = root ? findGroupContainer(root, 'セクション表示順序') : null;
+              if (!orderContainer || !orderContainer.contains(menu)) return;
+
               var options = menu.querySelectorAll('[class*="-option"]');
+              // 「セクション表示順序」の選択肢数（OPTION_ORDER基準）と一致しない
+              // 場合は誤爆防止のため何もしない。
+              if (options.length !== OPTION_ORDER.length) return;
               options.forEach(function (opt, i) {
                 var key = OPTION_ORDER[i];
                 if (key && latestHeadings[key]) {

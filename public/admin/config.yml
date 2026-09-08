@@ -99,8 +99,6 @@ collections:
               - { label: "定休日", name: "closedDays", widget: string }
               - { label: "駐車場", name: "parking", widget: string }
               - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string }
-              - { label: "緯度", name: "mapLat", widget: number }
-              - { label: "経度", name: "mapLng", widget: number }
               - { label: "店舗外観画像", name: "image", widget: image }
               - { label: "店舗外観 代替テキスト", name: "imageAlt", widget: string }
 
