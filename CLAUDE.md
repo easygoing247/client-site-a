@@ -215,17 +215,37 @@ Decap CMSからクライアントが直接編集・保存した内容はGitHub�
 | お知らせ・ブログ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
 
 - 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
-  対応する下層ページ（`src/pages/services.astro` 等）を作る際は、`src/lib/` に
-  パーサ（`site.ts` と同様のもの）を追加し、型付きで参照すること。コンポーネントへの
-  テキスト直書きは禁止（絶対ルール①）。
-- `news` コレクションのスキーマは `src/content/config.ts` の `news` で定義。
-  `draft: true` の記事は一覧・詳細の表示側で除外する想定。画像は `image()` ヘルパー
-  経由で `../../assets/` からの相対パスで指定する（絶対ルール②）。
+  パーサは **`src/lib/pages.ts`**（`servicesPage` / `aboutPage` / `contactPage`、
+  `site.ts` と同じ `?raw` インポート方式）。コンポーネントへのテキスト直書きは禁止（絶対ルール①）。
+- `news` コレクションのスキーマは `src/content/config.ts` の `news` で定義。取得は
+  **`src/lib/news.ts`** の `getPublishedNews()`（`draft: true` を除外し公開日降順）を経由する。
+  カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で
+  `../../assets/` からの相対パスで指定する（絶対ルール②）。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
 
-### 9.4 CMSライブプレビュー・ナビ連動との整合
+### 9.4 下層ページ本体（`src/pages/`）とルーティング
+
+| URL | ファイル | データソース |
+|---|---|---|
+| `/services` | `src/pages/services.astro` | `src/lib/pages.ts` `servicesPage` |
+| `/about` | `src/pages/about.astro` | `src/lib/pages.ts` `aboutPage` |
+| `/contact` | `src/pages/contact.astro` | `src/lib/pages.ts` `contactPage` ＋ `siteInfo.yml` の `contactSection.form` |
+| `/news` | `src/pages/news/index.astro` | `news` コレクション（一覧） |
+| `/news/<slug>` | `src/pages/news/[slug].astro` | `news` コレクション（詳細・静的生成） |
+
+- 共通パーツ：`Header` / `Footer` / `StickyContactBar` / `BackToTop` に加え、
+  下層ページ共通の見出し＋パンくずは **`src/components/PageHeader.astro`**、
+  CTAボタンは **`src/components/Button.astro`** を再利用する。
+- ヘッダー／フッターのナビ（`siteInfo.yml` の `nav` / `footerNav` / `navCta`）は、
+  下層ページへは絶対パス（`/services` 等）、トップページのセクションへは
+  **ルート付きハッシュ（`/#works` 等）** でリンクする。`SmoothScroll.astro` は
+  「リンク先が現在表示中ページと同一パス」のハッシュリンクのみスクロール処理し、
+  別ページ宛て（`/#works` を下層ページでクリック）はブラウザ標準遷移に任せる。
+
+### 9.5 CMSライブプレビュー・ナビ連動との整合
 
 - 下層ページ用コンポーネントを追加した場合は、`public/admin/preview.js` の対応する
   `render*()` 関数も追従修正すること（セクション7の二重管理ルール）。
-- 下層ページへのナビ項目を追加する場合は、`src/lib/site.ts`（`navHrefToFeatureFlag`）と
-  `preview.js`（`NAV_HREF_TO_FLAG`）の両方に同じキーを追加すること。
+- ナビ項目とセクション表示フラグの連動は `src/lib/site.ts`（`navHrefToFeatureFlag`、
+  `#works` と `/#works` の両形式を登録）と `preview.js`（`NAV_HREF_TO_FLAG`、同様に両形式）
+  の2箇所で管理。新規セクション／ナビ項目を追加する場合は両方に同じキーを追加すること。

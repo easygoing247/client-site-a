@@ -812,8 +812,13 @@
   // 実サイト側（src/lib/site.ts の visibleNavItems）と同様に連動して
   // 非表示にする。キーはFEATURE_FLAG_MAPと同じ対応関係を「#セクションID」
   // の形（nav/footerNavのhref表記）に変換したもの。
+  // 複数ページ版（master-template-multi）では、トップページのセクションへ戻る
+  // リンクを「/#works」形式（ルート付きハッシュ）で持たせるため、
+  // 旧来の「#works」形式と両方をキーに登録する。「/services」等の
+  // 下層ページ専用リンクは対応フラグを持たない＝常に表示。
   var NAV_HREF_TO_FLAG = Object.keys(FEATURE_FLAG_MAP).reduce(function (acc, id) {
     acc['#' + id] = FEATURE_FLAG_MAP[id];
+    acc['/#' + id] = FEATURE_FLAG_MAP[id];
     return acc;
   }, {});
 

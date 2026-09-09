@@ -1,0 +1,26 @@
+---
+// ============================================================================
+// Button.astro — サイト共通のCTAボタン（リンク）
+// グラデーションの塗り（primary → primary-dark）の丸ピルボタンを統一する。
+// variant="solid"（既定）＝塗り / variant="outline" ＝白地・枠線
+// ============================================================================
+interface Props {
+  href: string;
+  label: string;
+  variant?: 'solid' | 'outline';
+  class?: string;
+}
+
+const { href, label, variant = 'solid', class: className = '' } = Astro.props;
+
+const base =
+  'inline-flex items-center justify-center gap-2 font-bold text-[15px] px-8 py-4 rounded-full transition-opacity hover:opacity-90';
+const styles =
+  variant === 'outline'
+    ? 'text-primary bg-white border border-primary'
+    : 'text-white bg-gradient-to-br from-primary to-primary-dark';
+---
+
+<a href={href} class:list={[base, styles, className]}>
+  {label} <span aria-hidden="true">›</span>
+</a>

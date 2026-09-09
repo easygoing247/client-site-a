@@ -161,6 +161,10 @@ export const site = yaml.load(raw) as SiteInfo;
 // （管理画面の「機能フラグ」で該当セクションをOFFにした際、ナビだけ
 // 　リンク切れのまま残ってしまうのを防ぐため）
 // ============================================================================
+// 複数ページ版（master-template-multi）では、トップページのセクションへ戻る
+// リンクを「/#works」のようにルート付きハッシュで持たせるため、旧来の
+// 「#works」形式と両方をキーに登録しておく。「/services」などの下層ページ
+// 専用リンクは対応フラグを持たない＝常に表示。
 const navHrefToFeatureFlag: Partial<Record<string, keyof SiteInfo['features']>> = {
   '#features': 'enableFeatures',
   '#services': 'enableServices',
@@ -171,6 +175,15 @@ const navHrefToFeatureFlag: Partial<Record<string, keyof SiteInfo['features']>> 
   '#faq': 'enableFaq',
   '#access': 'enableAccess',
   '#contact': 'enableContact',
+  '/#features': 'enableFeatures',
+  '/#services': 'enableServices',
+  '/#flow': 'enableFlow',
+  '/#products': 'enableProducts',
+  '/#works': 'enableWorks',
+  '/#plans': 'enablePlans',
+  '/#faq': 'enableFaq',
+  '/#access': 'enableAccess',
+  '/#contact': 'enableContact',
 };
 
 export function visibleNavItems<T extends { href: string; label: string }>(items: T[]): T[] {

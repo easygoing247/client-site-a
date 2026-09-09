@@ -55,9 +55,19 @@
   }
 
   document.addEventListener('click', (e) => {
-    const link = (e.target as HTMLElement).closest('a[href^="#"]');
+    // 「#works」形式（同一ページ内アンカー）に加え、複数ページ版で使う
+    // 「/#works」形式（ルート付きハッシュ）も、リンク先が現在表示中の
+    // ページと同一パスであれば同じスムーススクロール処理の対象にする。
+    // 別ページ宛て（例: 下層ページから "/#works"）はブラウザ標準の遷移に任せる。
+    const link = (e.target as HTMLElement).closest('a[href*="#"]');
     if (!(link instanceof HTMLAnchorElement)) return;
-    const hash = link.getAttribute('href') ?? '';
+    const rawHref = link.getAttribute('href') ?? '';
+    if (!rawHref.includes('#')) return;
+    const url = new URL(link.href, window.location.href);
+    const samePage =
+      url.pathname === window.location.pathname && url.origin === window.location.origin;
+    if (!samePage) return;
+    const hash = url.hash;
     if (scrollToHash(hash, 'smooth')) {
       e.preventDefault();
       // ブラウザ標準のジャンプは止めているが、URLのハッシュ自体は

@@ -1,0 +1,82 @@
+---
+// ============================================================================
+// src/pages/news/index.astro — 「お知らせ・ブログ」一覧
+// news コレクションを公開日の新しい順に一覧表示する（下書きは除外）。
+// ============================================================================
+import { Image } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import StickyContactBar from '../../components/StickyContactBar.astro';
+import BackToTop from '../../components/BackToTop.astro';
+import { site } from '../../lib/site';
+import { getPublishedNews, newsCategoryLabel, formatNewsDate } from '../../lib/news';
+
+const posts = await getPublishedNews();
+const heading = 'お知らせ・ブログ';
+---
+
+<Layout title={`${heading} | ${site.company.siteName}`} description={`${site.company.name}からのお知らせ・ブログ記事の一覧です。`}>
+  <Header />
+  <main>
+    <PageHeader
+      eyebrow="NEWS"
+      title={heading}
+      crumbs={[{ label: site.productPage.breadcrumbHome || 'トップ', href: '/' }, { label: heading }]}
+    />
+
+    <section class="py-14 px-5">
+      <div class="max-w-[900px] mx-auto">
+        {posts.length === 0 ? (
+          <p class="text-center text-[14px] text-ink-soft py-10">まだ記事がありません。</p>
+        ) : (
+          <ul class="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {posts.map((post) => {
+              const image = post.data.eyecatch;
+              const category = newsCategoryLabel(post.data.category);
+              return (
+                <li>
+                  <a href={`/news/${post.slug}`} class="group flex flex-col h-full border border-surface-border rounded-card overflow-hidden bg-white hover:border-primary transition-colors">
+                    {image && (
+                      <Image
+                        src={image}
+                        alt={post.data.eyecatchAlt || post.data.title || ''}
+                        class="w-full h-[180px] object-cover block"
+                        width={450}
+                        height={253}
+                        format="webp"
+                        loading="lazy"
+                      />
+                    )}
+                    <div class="flex-1 px-5 py-5">
+                      <div class="flex items-center gap-2 mb-2 text-[11px]">
+                        {category && (
+                          <span class="font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full">{category}</span>
+                        )}
+                        {post.data.publishedAt && (
+                          <time datetime={post.data.publishedAt.toISOString()} class="text-ink-faint">
+                            {formatNewsDate(post.data.publishedAt)}
+                          </time>
+                        )}
+                      </div>
+                      {post.data.title && (
+                        <h2 class="text-[15px] font-bold leading-[1.6] mb-1 group-hover:text-primary transition-colors">{post.data.title}</h2>
+                      )}
+                      {post.data.summary && (
+                        <p class="text-[12px] leading-[1.7] text-ink-soft m-0 line-clamp-3">{post.data.summary}</p>
+                      )}
+                    </div>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </section>
+  </main>
+  <Footer />
+  <StickyContactBar />
+  <BackToTop />
+</Layout>

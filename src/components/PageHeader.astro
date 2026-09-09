@@ -1,0 +1,46 @@
+---
+// ============================================================================
+// PageHeader.astro — 下層ページ共通のページ見出し＋パンくずリスト
+// トップページ以外の各ページ（services / about / contact / news 等）で
+// 共通利用し、見出し・パンくずのデザインをサイト全体で統一する。
+// ============================================================================
+interface Crumb {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+  crumbs?: Crumb[];
+}
+
+const { eyebrow, title, lead, crumbs = [] } = Astro.props;
+---
+
+<section class="pt-10 pb-8 px-5 border-b border-surface-border bg-white">
+  <div class="max-w-[900px] mx-auto">
+    {crumbs.length > 0 && (
+      <nav class="text-[12px] text-ink-faint mb-5 flex flex-wrap items-center gap-1.5" aria-label="パンくずリスト">
+        {crumbs.map((crumb, i) => (
+          <>
+            {i > 0 && <span aria-hidden="true">›</span>}
+            {crumb.href ? (
+              <a href={crumb.href} class="hover:text-primary transition-colors">{crumb.label}</a>
+            ) : (
+              <span class="text-ink-soft">{crumb.label}</span>
+            )}
+          </>
+        ))}
+      </nav>
+    )}
+    {eyebrow && (
+      <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">{eyebrow}</div>
+    )}
+    <h1 class="font-bold m-0" style="font-size:clamp(24px,3.6vw,34px);">{title}</h1>
+    {lead && (
+      <p class="mt-4 text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line m-0">{lead}</p>
+    )}
+  </div>
+</section>

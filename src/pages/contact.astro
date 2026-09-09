@@ -1,0 +1,109 @@
+---
+// ============================================================================
+// src/pages/contact.astro — 「お問い合わせ・ご予約」下層ページ
+// フォーム項目の文言は siteInfo.yml（contactSection.form）を共通利用し、
+// ページ固有の案内文・注意事項・プライバシーポリシーは
+// src/data/contactPage.yml（src/lib/pages.ts の contactPage）を参照する。
+// ============================================================================
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import PageHeader from '../components/PageHeader.astro';
+import StickyContactBar from '../components/StickyContactBar.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { site } from '../lib/site';
+import { contactPage, parseTextBlocks } from '../lib/pages';
+
+const heading = contactPage.heading || 'お問い合わせ・ご予約';
+const notes = (contactPage.notes ?? []).filter(Boolean);
+const form = site.contactSection.form;
+const privacy = contactPage.privacyPolicy ?? {};
+const privacyBlocks = parseTextBlocks(privacy.body);
+---
+
+<Layout title={`${heading} | ${site.company.siteName}`} description={contactPage.intro || site.company.description}>
+  <Header />
+  <main>
+    <PageHeader
+      eyebrow="CONTACT"
+      title={heading}
+      lead={contactPage.intro}
+      crumbs={[{ label: site.productPage.breadcrumbHome || 'トップ', href: '/' }, { label: heading }]}
+    />
+
+    <section class="py-14 px-5">
+      <div class="max-w-[720px] mx-auto">
+        {notes.length > 0 && (
+          <ul class="list-none p-0 m-0 mb-8 flex flex-col gap-2 bg-surface-muted rounded-2xl px-6 py-5">
+            {notes.map((note) => (
+              <li class="text-[13px] leading-[1.8] text-secondary-light">・{note}</li>
+            ))}
+          </ul>
+        )}
+
+        <form id="contact-form" novalidate class="flex flex-col gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="text" name="name" placeholder={form.namePlaceholder} required
+              class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]" aria-label={form.namePlaceholder} />
+            <input type="text" name="company" placeholder={form.companyPlaceholder}
+              class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]" aria-label={form.companyPlaceholder} />
+          </div>
+          <input type="email" name="email" placeholder={form.emailPlaceholder} required
+            class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]" aria-label={form.emailPlaceholder} />
+          <textarea name="message" placeholder={form.messagePlaceholder} rows="5" required
+            class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px] resize-y" aria-label={form.messagePlaceholder}></textarea>
+          <button type="submit"
+            class="mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full cursor-pointer hover:opacity-90 transition-opacity bg-gradient-to-br from-primary to-primary-dark">
+            {form.submitLabel} <span aria-hidden="true">›</span>
+          </button>
+          {site.ui.privacyPolicyLabel && (
+            <p class="text-[12px] text-ink-faint text-center m-0">
+              <a href="/privacy" class="text-primary underline">{site.ui.privacyPolicyLabel}</a>{site.ui.privacyConsentSuffix}
+            </p>
+          )}
+        </form>
+
+        {contactPage.afterSubmit && (
+          <p id="contact-thanks" hidden class="mt-6 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line text-center bg-primary-light rounded-2xl px-6 py-5">
+            {contactPage.afterSubmit}
+          </p>
+        )}
+      </div>
+    </section>
+
+    {(privacy.heading || privacyBlocks.length > 0) && (
+      <section class="py-14 px-5 bg-surface-muted">
+        <div class="max-w-[760px] mx-auto">
+          {privacy.heading && (
+            <h2 class="font-bold mb-6" style="font-size:clamp(20px,3vw,26px);">{privacy.heading}</h2>
+          )}
+          <div class="flex flex-col gap-4 text-[14px] leading-[1.9] text-secondary-light">
+            {privacyBlocks.map((block) =>
+              block.type === 'heading' ? (
+                <h3 class="text-[15px] font-bold text-secondary mt-2">{block.text}</h3>
+              ) : (
+                <p class="whitespace-pre-line m-0">{block.text}</p>
+              )
+            )}
+          </div>
+          {privacy.updatedAt && (
+            <p class="mt-6 text-[12px] text-ink-faint">最終改定日：{privacy.updatedAt}</p>
+          )}
+        </div>
+      </section>
+    )}
+  </main>
+  <Footer />
+  <StickyContactBar />
+  <BackToTop />
+</Layout>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const thanks = document.getElementById('contact-thanks');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // TODO: フォーム送信処理（API連携）を実装
+    if (thanks) thanks.hidden = false;
+  });
+</script>

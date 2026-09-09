@@ -1,0 +1,112 @@
+---
+// ============================================================================
+// src/pages/services.astro — 「サービス内容・料金」下層ページ
+// データソースは src/data/services.yml（src/lib/pages.ts の servicesPage）。
+// ============================================================================
+import { Image } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Button from '../components/Button.astro';
+import StickyContactBar from '../components/StickyContactBar.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { site } from '../lib/site';
+import { servicesPage } from '../lib/pages';
+import { resolveImageOrNull } from '../lib/images';
+
+const heading = servicesPage.heading || 'サービス内容・料金';
+const items = servicesPage.items ?? [];
+const priceTable = servicesPage.priceTable ?? [];
+---
+
+<Layout
+  title={`${heading} | ${site.company.siteName}`}
+  description={servicesPage.lead || site.company.description}
+>
+  <Header />
+  <main>
+    <PageHeader
+      eyebrow="SERVICE"
+      title={heading}
+      lead={servicesPage.lead}
+      crumbs={[{ label: site.productPage.breadcrumbHome || 'トップ', href: '/' }, { label: heading }]}
+    />
+
+    {items.length > 0 && (
+      <section class="py-14 px-5">
+        <div class="max-w-[900px] mx-auto flex flex-col gap-12">
+          {items.map((item, i) => {
+            const image = resolveImageOrNull(item.image);
+            return (
+              <article class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
+                {image && (
+                  <div class:list={['rounded-2xl overflow-hidden border border-surface-border', i % 2 === 1 && 'md:order-2']}>
+                    <Image
+                      src={image}
+                      alt={item.title ? `${item.title}のイメージ` : ''}
+                      class="w-full h-[220px] sm:h-[260px] object-cover block"
+                      width={600}
+                      height={360}
+                      format="webp"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div>
+                  {item.title && <h2 class="text-[19px] font-bold mb-3">{item.title}</h2>}
+                  {item.description && (
+                    <p class="text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4">{item.description}</p>
+                  )}
+                  {item.features && item.features.filter(Boolean).length > 0 && (
+                    <ul class="list-none m-0 p-0 flex flex-col gap-2">
+                      {item.features.filter(Boolean).map((feature) => (
+                        <li class="flex gap-2 items-start text-[13px] text-secondary-light">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none mt-0.5">
+                            <path d="M4 12.5l5 5L20 6" style="stroke: var(--color-primary);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    )}
+
+    {priceTable.length > 0 && (
+      <section class="py-14 px-5 bg-surface-muted">
+        <div class="max-w-[760px] mx-auto">
+          <h2 class="text-center font-bold mb-8" style="font-size:clamp(20px,3vw,26px);">料金表</h2>
+          <div class="rounded-2xl overflow-hidden border border-surface-border bg-white">
+            {priceTable.map((row, i) => (
+              <div class:list={['flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4', i > 0 && 'border-t border-surface-border']}>
+                <div class="text-[14px] font-bold text-secondary">{row.name}</div>
+                <div class="text-[15px] font-bold text-primary">
+                  {typeof row.price === 'number' ? (
+                    <>¥{row.price.toLocaleString('ja-JP')}<span class="text-[12px] font-normal text-ink-soft">〜</span></>
+                  ) : null}
+                </div>
+                {row.note && <div class="w-full text-[12px] text-ink-faint">{row.note}</div>}
+              </div>
+            ))}
+          </div>
+          {servicesPage.priceNote && (
+            <p class="mt-5 text-[12px] leading-[1.8] text-ink-faint whitespace-pre-line">{servicesPage.priceNote}</p>
+          )}
+        </div>
+      </section>
+    )}
+
+    <section class="py-14 px-5 text-center">
+      {site.navCta.label && <Button href="/contact" label={site.navCta.label} />}
+    </section>
+  </main>
+  <Footer />
+  <StickyContactBar />
+  <BackToTop />
+</Layout>

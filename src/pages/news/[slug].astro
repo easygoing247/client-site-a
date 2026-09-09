@@ -1,0 +1,87 @@
+---
+// ============================================================================
+// src/pages/news/[slug].astro — 「お知らせ・ブログ」記事詳細
+// news コレクションの各記事を静的生成する動的ルート。
+// ============================================================================
+import { Image } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Button from '../../components/Button.astro';
+import StickyContactBar from '../../components/StickyContactBar.astro';
+import BackToTop from '../../components/BackToTop.astro';
+import { site } from '../../lib/site';
+import { getPublishedNews, newsCategoryLabel, formatNewsDate } from '../../lib/news';
+
+export async function getStaticPaths() {
+  const posts = await getPublishedNews();
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const category = newsCategoryLabel(post.data.category);
+const home = site.productPage.breadcrumbHome || 'トップ';
+---
+
+<Layout
+  title={post.data.title ? `${post.data.title} | ${site.company.siteName}` : site.company.siteName}
+  description={post.data.summary}
+  image={post.data.eyecatch}
+>
+  <Header />
+  <main>
+    <article class="py-12 px-5">
+      <div class="max-w-[760px] mx-auto">
+        <nav class="text-[12px] text-ink-faint mb-6 flex flex-wrap items-center gap-1.5" aria-label="パンくずリスト">
+          <a href="/" class="hover:text-primary transition-colors">{home}</a>
+          <span aria-hidden="true">›</span>
+          <a href="/news" class="hover:text-primary transition-colors">お知らせ・ブログ</a>
+          <span aria-hidden="true">›</span>
+          <span class="text-ink-soft">{post.data.title}</span>
+        </nav>
+
+        <div class="flex items-center gap-2 mb-3 text-[12px]">
+          {category && (
+            <span class="font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full">{category}</span>
+          )}
+          {post.data.publishedAt && (
+            <time datetime={post.data.publishedAt.toISOString()} class="text-ink-faint">
+              {formatNewsDate(post.data.publishedAt)}
+            </time>
+          )}
+        </div>
+
+        {post.data.title && (
+          <h1 class="font-bold mb-6" style="font-size:clamp(22px,3.4vw,32px);">{post.data.title}</h1>
+        )}
+
+        {post.data.eyecatch && (
+          <div class="rounded-2xl overflow-hidden border border-surface-border mb-8">
+            <Image
+              src={post.data.eyecatch}
+              alt={post.data.eyecatchAlt || post.data.title || ''}
+              class="w-full h-auto object-cover block"
+              width={760}
+              height={430}
+              format="webp"
+              fetchpriority="high"
+              loading="eager"
+            />
+          </div>
+        )}
+
+        <div class="prose-content text-[14px] leading-[1.9] text-secondary-light mb-12">
+          <Content />
+        </div>
+
+        <div class="text-center border-t border-surface-border pt-10">
+          <Button href="/news" label="一覧へ戻る" variant="outline" />
+        </div>
+      </div>
+    </article>
+  </main>
+  <Footer />
+  <StickyContactBar />
+  <BackToTop />
+</Layout>

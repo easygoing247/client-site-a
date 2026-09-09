@@ -490,7 +490,7 @@ collections:
             widget: object
             fields:
               - { label: "見出し", name: "heading", widget: string, required: false }
-              - { label: "本文（Markdown可）", name: "body", widget: markdown, required: false }
+              - { label: "本文（空行で段落区切り／行頭「## 」で小見出し）", name: "body", widget: text, required: false }
               - { label: "最終改定日", name: "updatedAt", widget: string, required: false }
 
   # ==========================================================================
