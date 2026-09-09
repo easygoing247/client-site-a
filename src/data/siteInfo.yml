@@ -234,7 +234,7 @@ copyright: © 2026 LOGO. All Rights Reserved.
 features:
   enableFeatures: true
   enableServices: true
-  enableProducts: false
+  enableProducts: true
   enableAccess: true
   enablePlans: true
   enableFlow: true
