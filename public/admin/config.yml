@@ -27,6 +27,10 @@ backend:
 # 自動的に無視され、上の github backend（OAuth経由）が使われる。
 local_backend: true
 
+# 本番サイトのURL。CMS内の「サイトを表示」リンクやプレビューの絶対URL基準に使われる。
+site_url: "https://master-template-multi.easygoing247.workers.dev"
+display_url: "https://master-template-multi.easygoing247.workers.dev"
+
 # アップロードした画像の保存先（Astroの src/assets を直接指すことで、
 # CMSから差し替えた画像も astro:assets の最適化対象になる）
 media_folder: "src/assets"
