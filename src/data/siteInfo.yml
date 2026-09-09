@@ -175,16 +175,16 @@ contact:
   phoneLabel: お電話
   facebookUrl: "#"
   phone: 000-000-0000
+  snsOrder:
+    - id: x
+    - id: line
+    - id: instagram
+    - id: facebook
   xUrl: "#"
   phoneHref: tel:0000000000
   lineUrl: "#"
   email: info@example.com
   instagramUrl: "#"
-  snsOrder:
-    - id: line
-    - id: instagram
-    - id: x
-    - id: facebook
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
