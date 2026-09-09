@@ -33,29 +33,33 @@ const { muted = false } = Astro.props;
           {site.services.items.map((item) => {
             const image = resolveImageOrNull(item.image);
             return (
-              <article class="border border-surface-border rounded-card overflow-hidden bg-white">
+              <!--
+                スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
+                含めたカード全体」のシルエットが正方形に近くなるよう、
+                カードを flex flex-col aspect-square のコンテナ化する。
+                画像自体は横長（aspect-video）のまま保ち、残りの高さを
+                テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
+                解除し、画像は元の固定高さ（150px）に戻る。
+              -->
+              <article class="flex flex-col aspect-square md:aspect-auto border border-surface-border rounded-card overflow-hidden bg-white">
                 {image && (
-                  <!--
-                    スマホ（md未満）はカード全体が横長で平坦に見えないよう、
-                    画像を正方形に近い比率（aspect-square）で表示する。
-                    md以上は元の横長比率（固定高さ150px）に戻す。
-                  -->
                   <Image
                     src={image}
                     alt={item.title ? `${item.title}のイメージ` : ''}
-                    class="w-full aspect-square md:aspect-auto md:h-[150px] object-cover block"
+                    class="w-full flex-none aspect-video md:aspect-auto md:h-[150px] object-cover block"
                     width={400}
-                    height={400}
+                    height={225}
                     format="webp"
                     loading="lazy"
                   />
                 )}
                 {/*
-                  スマホ表示（grid-cols-1）で画像下のテキスト領域が横長で
-                  平坦に見えるのを防ぐため、上下方向のパディングを左右より
-                  多めに取り、カードに適度な高さと立体感を持たせる。
+                  overflow-hiddenは付けない：aspect-squareはあくまで
+                  「目安の比率」であり、テキストが長い場合はカードが
+                  正方形より縦に伸びることを許容し、内容が見切れて
+                  隠れてしまわないようにする。
                 */}
-                <div class="px-[18px] py-7">
+                <div class="flex-1 px-[18px] py-4 md:py-7">
                   {item.title && <h3 class="font-bold text-[15px] mb-2">{item.title}</h3>}
                   {item.text && <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.text}</p>}
                 </div>

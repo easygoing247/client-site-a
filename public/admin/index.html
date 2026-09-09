@@ -45,6 +45,22 @@
       }
 
       /*
+        Decap CMS標準の挙動として、required: falseの項目名の末尾には
+        「 (任意)」という接尾辞が自動的に <span> として追加される
+        （例：<label>CTAボタン文言<span> (任意)</span></label>）。
+        本プロジェクトはほぼ全項目をrequired: falseにしているため、この
+        接尾辞があらゆる項目名に付いてしまい、かえって視認性を下げている。
+        required: trueの項目（省略時の既定値）にはこの<span>自体が
+        存在しないため、FieldLabel内の<span>を一律非表示にしても
+        「(任意)」の接尾辞だけが消え、他の項目名表示には影響しない。
+        （真に必須な項目にだけ「（必須）」を表示する処理は、下部の
+        <script>でラベル文言に応じて個別に追加している。）
+      */
+      label[class*='FieldLabel'] > span {
+        display: none;
+      }
+
+      /*
         リスト項目（機能フラグの並び替えリスト等）のドラッグハンドルは、
         タッチ操作だとブラウザ標準の縦スクロールジェスチャーと競合し、
         ドラッグ移動が効かない／画面が一緒にスクロールしてしまう問題がある。
@@ -482,6 +498,16 @@
           return depth;
         }
 
+        // Decapが required: false の項目名に自動付与する「 (任意)」接尾辞
+        // （CSS側では[class*="FieldLabel"] > spanとして非表示にしているが、
+        // textContentには引き続き含まれる）を取り除く。クイックナビの
+        // ボタン文言表示、および見出し文言でのグループ特定（文字列完全一致）
+        // の両方で、この接尾辞込みのテキストのままだと表示・比較の両面で
+        // 支障が出るため、テキストを読み取る箇所では必ずこれを経由する。
+        function stripOptionalSuffix(text) {
+          return text.replace(/\s*\(任意\)\s*$/, '');
+        }
+
         function topLevelFieldLabels(root) {
           if (!root) return [];
           var labels = Array.prototype.slice.call(root.querySelectorAll('[class*="FieldLabel"]'));
@@ -495,7 +521,7 @@
           var labels = topLevelFieldLabels(root);
           var match = null;
           for (var i = 0; i < labels.length; i++) {
-            if (labels[i].textContent.trim() === groupLabelText) {
+            if (stripOptionalSuffix(labels[i].textContent).trim() === groupLabelText) {
               match = labels[i];
               break;
             }
@@ -535,7 +561,7 @@
           var labels = topLevelFieldLabels(root);
           if (!labels.length) return false;
           labels.forEach(function (label) {
-            var text = label.textContent.trim();
+            var text = stripOptionalSuffix(label.textContent).trim();
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = text;
@@ -547,7 +573,7 @@
               var freshLabels = topLevelFieldLabels(freshRoot);
               var freshTarget = label;
               for (var i = 0; i < freshLabels.length; i++) {
-                if (freshLabels[i].textContent.trim() === text) {
+                if (stripOptionalSuffix(freshLabels[i].textContent).trim() === text) {
                   freshTarget = freshLabels[i];
                   break;
                 }
@@ -670,7 +696,7 @@
           var labels = Array.prototype.slice.call(groupContainer.querySelectorAll('[class*="FieldLabel"]'));
           var headingLabel = null;
           for (var i = 0; i < labels.length; i++) {
-            if (controlDepth(labels[i], groupContainer) === 1 && labels[i].textContent.trim() === '見出し') {
+            if (controlDepth(labels[i], groupContainer) === 1 && stripOptionalSuffix(labels[i].textContent).trim() === '見出し') {
               headingLabel = labels[i];
               break;
             }
@@ -854,11 +880,41 @@
         // 確実に検知できるよう、キャプチャ段階でdocumentに登録する。
         document.addEventListener('scroll', repositionFixedMenu, true);
 
+        // ==================================================================
+        // 5) 真に必須な項目にだけ「（必須）」を明記する
+        //    Decap本体はrequired: falseの項目にのみ「(任意)」<span>を
+        //    自動付与し（上のCSSで非表示化済み）、required: true
+        //    （省略時の既定値）の項目には何も表示しない。本プロジェクトで
+        //    唯一required: falseにしていない＝真に必須なフィールドは、
+        //    「セクション表示順序」「SNS表示順序」の各項目が持つセレクト
+        //    （順序リストの構造上必須な識別子）と、「デザインテーマ設定」の
+        //    「テーマカラー」の3つのみ。ラベル文言はconfig.yml側で
+        //    このプロジェクト内でのみ使われる一意な文言のため、文言一致で
+        //    判定して問題ない。
+        // ==================================================================
+        var REQUIRED_FIELD_LABEL_TEXTS = ['セクション', 'SNS', 'テーマカラー'];
+        function markRequiredFieldLabels() {
+          var labels = document.querySelectorAll('label[class*="FieldLabel"]');
+          labels.forEach(function (label) {
+            if (label.querySelector('.cms-required-badge')) return;
+            // 先頭のテキストノード（Decapが付与する"(任意)"<span>より前の
+            // 本来のラベル文言部分）だけを比較対象にする。
+            var firstNode = label.childNodes[0];
+            var text = firstNode && firstNode.nodeType === Node.TEXT_NODE ? firstNode.textContent.trim() : label.textContent.trim();
+            if (REQUIRED_FIELD_LABEL_TEXTS.indexOf(text) === -1) return;
+            var badge = document.createElement('span');
+            badge.className = 'cms-required-badge';
+            badge.textContent = '（必須）';
+            label.appendChild(badge);
+          });
+        }
+
         window.addEventListener('load', function () {
           updateNavButtonVisibility();
           setInterval(function () {
             updateNavButtonVisibility();
             syncSectionLabels();
+            markRequiredFieldLabels();
           }, 500);
         });
       })();

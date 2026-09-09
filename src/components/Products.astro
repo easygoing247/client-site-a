@@ -37,27 +37,33 @@ const products = enabled
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
+            <!--
+              スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
+              含めたカード全体」のシルエットが正方形に近くなるよう、
+              カードを flex flex-col aspect-square のコンテナ化する。
+              画像自体は横長（aspect-video）のまま保ち、残りの高さを
+              テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
+              解除し、画像は元の固定高さ（170px）に戻る。
+              overflow-hiddenはテキスト側には付けない：aspect-squareは
+              あくまで「目安の比率」であり、内容が見切れて隠れてしまう
+              ことがないようにする。
+            -->
             <a
               href={`/products/${product.slug}/`}
-              class="block bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
+              class="flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
             >
               {product.data.mainImage && (
-                <!--
-                  スマホ（md未満）はカード全体が横長で平坦に見えないよう、
-                  画像を正方形に近い比率（aspect-square）で表示する。
-                  md以上は元の横長比率（固定高さ170px）に戻す。
-                -->
                 <Image
                   src={product.data.mainImage}
                   alt={product.data.title ?? ''}
-                  class="w-full aspect-square md:aspect-auto md:h-[170px] object-cover block"
+                  class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
                   width={450}
-                  height={450}
+                  height={253}
                   format="webp"
                   loading="lazy"
                 />
               )}
-              <div class="p-4">
+              <div class="flex-1 p-4">
                 {product.data.title && <h3 class="font-bold text-[15px] mb-1">{product.data.title}</h3>}
                 {product.data.summary && (
                   <p class="text-[12px] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line">{product.data.summary}</p>
