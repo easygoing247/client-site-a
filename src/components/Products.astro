@@ -42,12 +42,17 @@ const products = enabled
               class="block bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
             >
               {product.data.mainImage && (
+                <!--
+                  スマホ（md未満）はカード全体が横長で平坦に見えないよう、
+                  画像を正方形に近い比率（aspect-square）で表示する。
+                  md以上は元の横長比率（固定高さ170px）に戻す。
+                -->
                 <Image
                   src={product.data.mainImage}
                   alt={product.data.title ?? ''}
-                  class="w-full h-[170px] object-cover block"
+                  class="w-full aspect-square md:aspect-auto md:h-[170px] object-cover block"
                   width={450}
-                  height={170}
+                  height={450}
                   format="webp"
                   loading="lazy"
                 />

@@ -7,6 +7,7 @@
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
+import { orderedSnsLinks, type SnsId } from '../lib/sns';
 
 interface Props {
   muted?: boolean;
@@ -31,33 +32,15 @@ const infoRows = [
   { label: site.access.labels.parking, value: store.parking },
 ].filter((row) => row.label && row.value);
 
-const snsLinks = [
-  {
-    label: 'LINE公式アカウント',
-    href: site.contact.lineUrl,
-    bg: 'bg-accent',
-    icon: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
-  },
-  {
-    label: 'インスタグラム',
-    href: site.contact.instagramUrl,
-    bg: '',
-    style: 'background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);',
-    isFrame: true,
-  },
-  {
-    label: 'エックス',
-    href: site.contact.xUrl,
-    bg: 'bg-secondary',
-    icon: 'M4 3h3.6l4.7 6.3L17.6 3H21l-6.9 8.4L21.4 21h-3.6l-5.1-6.8L6.6 21H3l7.3-8.9L4 3Z',
-  },
-  {
-    label: 'フェイスブック',
-    href: site.contact.facebookUrl,
-    bg: 'bg-[#1877f2]',
-    icon: 'M15 8.5h2.2V5.6h-2.4c-2.4 0-3.8 1.5-3.8 3.9v1.8H8.6v3h2.4V21h3.1v-6.7h2.4l.4-3h-2.8v-1.5c0-.87.23-1.3 1.9-1.3Z',
-  },
-].filter((sns) => sns.href);
+// アイコンの配色はこのセクション独自の見た目（実装詳細）のため、
+// 表示順序・非表示条件（orderedSnsLinks側で判定）とは切り離して管理する。
+const ACCESS_SNS_STYLE: Record<SnsId, { bg: string; style?: string }> = {
+  line: { bg: 'bg-accent' },
+  instagram: { bg: '', style: 'background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);' },
+  x: { bg: 'bg-secondary' },
+  facebook: { bg: 'bg-[#1877f2]' },
+};
+const snsLinks = orderedSnsLinks().map((sns) => ({ ...sns, ...ACCESS_SNS_STYLE[sns.id] }));
 ---
 
 {site.features.enableAccess && (
@@ -105,37 +88,34 @@ const snsLinks = [
         )}
 
         {snsLinks.length > 0 && (
-          <div class="mt-6">
-            <span class="block text-[13px] font-bold text-secondary-light mb-3">{site.access.labels.sns}</span>
-            {/*
-              sm:grid-cols-2にしていた頃は、SNSリンクが奇数個の場合に最後の
-              1個だけ2列のうち片方の列（半分の幅）に取り残され、他のボタンと
-              横幅が揃わずアンバランスに見える問題があった。タブレット幅
-              （lg未満）では1列固定にして全ボタンをコンテナ幅いっぱいの
-              同じ横幅に揃え、PC表示（lg以上、店舗情報が右カラムに収まり
-              十分な横幅がある）でのみ2列に戻す。
-            */}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+          <!--
+            「公式SNS」ラベルのすぐ右隣にアイコンのみのボタンを横並びで配置する。
+            以前はラベル文言も表示したボタンをグリッドで縦（モバイル）／
+            2列（PC）に並べていたが、アイコンのみになった分、ラベルと
+            同じ行にインラインで収まるようにした。
+          -->
+          <div class="mt-6 flex items-center flex-wrap gap-3">
+            <span class="text-[13px] font-bold text-secondary-light">{site.access.labels.sns}</span>
+            <div class="flex items-center gap-2">
               {
                 snsLinks.map((sns) => (
                   <a
                     href={sns.href}
                     aria-label={sns.label}
-                    class:list={['flex items-center gap-3 px-4 py-[9px] rounded-full', sns.bg]}
+                    class:list={['flex-none w-9 h-9 rounded-full flex items-center justify-center', sns.bg]}
                     style={sns.style}
                   >
                     {sns.isFrame ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
                         <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
                         <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
                       </svg>
                     ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d={sns.icon} fill="#fff" />
                       </svg>
                     )}
-                    <span class="text-[13px] font-bold text-white">{sns.label}</span>
                   </a>
                 ))
               }

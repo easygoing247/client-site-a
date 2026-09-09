@@ -32,6 +32,7 @@ export interface SiteInfo {
     lineLabel: string;
     showPhoneButton: boolean;
     showLineButton: boolean;
+    snsOrder: { id: string }[];
   };
   access: {
     eyebrow: string;

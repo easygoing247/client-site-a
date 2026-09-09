@@ -254,6 +254,21 @@ collections:
               - { label: "Instagram URL", name: "instagramUrl", widget: string, required: false, hint: "未入力の場合、サイト上のInstagramアイコンは自動的に非表示になります。" }
               - { label: "X（旧Twitter）URL", name: "xUrl", widget: string, required: false, hint: "未入力の場合、サイト上のXアイコンは自動的に非表示になります。" }
               - { label: "Facebook URL", name: "facebookUrl", widget: string, required: false, hint: "未入力の場合、サイト上のFacebookアイコンは自動的に非表示になります。" }
+              - label: "SNS表示順序"
+                name: "snsOrder"
+                widget: list
+                required: false
+                hint: "ドラッグ&ドロップで並び替えると、「店舗概要・アクセス」やフッターなど、SNSアイコンを掲載しているすべての箇所の表示順に反映されます。URLが未入力のSNSは、ここに残っていても表示されません。"
+                summary: "{{fields.id}}"
+                fields:
+                  - label: "SNS"
+                    name: "id"
+                    widget: select
+                    options:
+                      - { label: "LINE", value: "line" }
+                      - { label: "Instagram", value: "instagram" }
+                      - { label: "X（旧Twitter）", value: "x" }
+                      - { label: "Facebook", value: "facebook" }
               - { label: "「お電話」ボタン文言（スマホ下部固定バー）", name: "phoneLabel", widget: string, required: false }
               - { label: "「LINEで相談」ボタン文言（スマホ下部固定バー）", name: "lineLabel", widget: string, required: false }
               - { label: "「お電話」ボタンを表示する（スマホ下部固定バー）", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }

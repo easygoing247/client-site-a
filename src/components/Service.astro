@@ -35,12 +35,17 @@ const { muted = false } = Astro.props;
             return (
               <article class="border border-surface-border rounded-card overflow-hidden bg-white">
                 {image && (
+                  <!--
+                    スマホ（md未満）はカード全体が横長で平坦に見えないよう、
+                    画像を正方形に近い比率（aspect-square）で表示する。
+                    md以上は元の横長比率（固定高さ150px）に戻す。
+                  -->
                   <Image
                     src={image}
                     alt={item.title ? `${item.title}のイメージ` : ''}
-                    class="w-full h-[150px] object-cover block"
+                    class="w-full aspect-square md:aspect-auto md:h-[150px] object-cover block"
                     width={400}
-                    height={150}
+                    height={400}
                     format="webp"
                     loading="lazy"
                   />

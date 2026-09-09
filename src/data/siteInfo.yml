@@ -182,6 +182,11 @@ contact:
   lineUrl: "#"
   email: info@example.com
   instagramUrl: "#"
+  snsOrder:
+    - id: line
+    - id: instagram
+    - id: x
+    - id: facebook
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
