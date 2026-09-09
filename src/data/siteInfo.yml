@@ -74,11 +74,11 @@ works:
       image: ../assets/works-corporate.jpg
     - title: サービスサイト制作
       industry: 業種：インテリア・寝具
-      tag: "#集客数150%向上"
+      tag: "#集客数向上"
       image: ../assets/works-service.jpg
     - title: LP制作
       industry: 業種：美容サロン
-      tag: "#CVR2.3倍改善"
+      tag: "#CVR改善"
       image: ../assets/works-lp.jpg
 plans:
   eyebrow: PLAN
