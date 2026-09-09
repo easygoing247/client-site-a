@@ -147,9 +147,10 @@
         丸型ボタン（ViewControls）は、Decap本体の既定では
         position: absolute でプレビューペイン右上に重ねて配置されており、
         プレビュー内のコンテンツと干渉してしまう。
-        下部の<script>でこの要素自体をヘッダー右側（アカウントアイコンの
-        左隣、ToolbarSectionMeta内）へDOM移動させるため、絶対配置を解除し、
-        ヘッダーの他の項目と同様に横並びのflexで自然に並ぶようにする。
+        下部の<script>でこの要素自体をヘッダー右側（アカウントアイコン
+        側の区切り線のすぐ左、後述のToolbarSubSectionLast内）へDOM移動
+        させるため、絶対配置を解除し、ヘッダーの他の項目と同様に
+        横並びのflexで自然に並ぶようにする。
       */
       [class*='ViewControls'] {
         position: static !important;
@@ -164,7 +165,19 @@
         gap: 4px;
         width: auto !important;
         height: auto !important;
-        margin-right: 8px;
+      }
+
+      /*
+        「プレビューのチェック」テキストボタン（RefreshPreviewButton）は
+        クリックしても目に見える反応がなく、実質的に不要なため非表示にする
+        （React管理下のノードのため、DOM上から物理的に削除するとReact側の
+        再レンダー時に不整合を起こす恐れがあるため、display:noneで隠す
+        方式を取る）。上のViewControlsをこのボタンの元あった場所
+        （ToolbarSubSectionLast内、アカウントアイコン側の区切り線の
+        すぐ左）へ移動させるため、ここでスペースを空ける。
+      */
+      [class*='PreviewButtonContainer'] {
+        display: none !important;
       }
 
       @media (max-width: 799px) {
@@ -1025,8 +1038,10 @@
         // ==================================================================
         // 7) 「プレビュー表示を切り替える」「スクロール同期を切り替える」
         //    ボタン（ViewControls）を、プレビューペイン右上のフローティング
-        //    表示から、画面最上部のヘッダーバー右側（アカウントアイコンの
-        //    左隣）へ移動する。
+        //    表示から、画面最上部のヘッダーバー内、非表示にした
+        //    「プレビューのチェック」ボタンが元あった場所（アカウント
+        //    アイコン側の区切り線のすぐ左＝ToolbarSubSectionLast内）へ
+        //    移動する。
         //    CSSのposition指定を打ち消すだけではDOM上の位置（プレビュー
         //    ペインの内側）自体は変わらずヘッダーには表示できないため、
         //    実際のDOMノードをヘッダー側のコンテナへ移動させる。
@@ -1037,14 +1052,30 @@
         //    直下へ配置しているのと同じ手法）。
         //    エントリ編集画面への出入りのたびにこの要素は再生成される
         //    ため、MutationObserverで継続的に検知して移動し続ける。
+        //    ToolbarSubSectionLast は「プレビューのチェック」ボタンの
+        //    ラッパー（ToolbarSubSectionFirst-ToolbarSubSectionLast）を
+        //    指す。ToolbarSectionMainの1番目の子要素（公開状態バッジ）は
+        //    "ToolbarSubSectionFirst"のみでLastを含まないため、
+        //    [class*="ToolbarSubSectionLast"]で一意に絞り込める。
         // ==================================================================
+        var lastViewControlsNode = null;
         function relocateViewControls() {
           var viewControls = document.querySelector('[class*="ViewControls"]');
-          if (!viewControls) return;
-          var metaSection = document.querySelector('[class*="ToolbarSectionMeta"]');
-          if (!metaSection) return;
-          if (viewControls.parentElement === metaSection && viewControls === metaSection.firstChild) return;
-          metaSection.insertBefore(viewControls, metaSection.firstChild);
+          if (!viewControls) {
+            lastViewControlsNode = null;
+            return;
+          }
+          if (viewControls !== lastViewControlsNode) {
+            // エントリ編集画面を開き直す・別のエントリへ移動する等で
+            // ボタンが新しく生成された場合は、スクロール同期の状態を
+            // 既定のOFFへ戻す。
+            lastViewControlsNode = viewControls;
+            scrollSyncEnabled = false;
+          }
+          var targetWrapper = document.querySelector('[class*="ToolbarSubSectionLast"]');
+          if (!targetWrapper) return;
+          if (viewControls.parentElement === targetWrapper) return;
+          targetWrapper.appendChild(viewControls);
         }
 
         var viewControlsObserver = new MutationObserver(function () {
@@ -1052,6 +1083,79 @@
         });
         viewControlsObserver.observe(document.body, { childList: true, subtree: true });
         relocateViewControls();
+
+        // ==================================================================
+        // 8) スクロール同期（Scroll Sync）機能の実装。
+        //    Decap本体のスクロール同期機能は、独自のプレビューテンプレート
+        //    （このファイルとpreview.jsで定義しているHTML構造）を想定した
+        //    仕組みではないため、ボタン自体の見た目（アイコンの色）は
+        //    切り替わるものの、実際にプレビュー側は追従しないことを確認
+        //    済み。そのため、フォーム側のスクロール位置に応じてプレビュー
+        //    側（iframe内）を独自に追従スクロールさせる処理をここで
+        //    実装する。
+        //    「スクロール同期を切り替える」ボタンのクリックを検知して
+        //    ON/OFFを自前で管理し、ONの間はフォーム側コンテナの
+        //    スクロール位置の割合（scrollTop ÷ (scrollHeight -
+        //    clientHeight)）を計算し、同じ割合をプレビュー側iframeの
+        //    スクロール位置に反映する（フィールド単位の厳密な対応付けは
+        //    行わないが、フォームをスクロールするとプレビューもおおむね
+        //    同じ箇所まで追従する、という求められている挙動を満たす）。
+        // ==================================================================
+        var scrollSyncEnabled = false;
+
+        function getPreviewScrollElement() {
+          var iframe = document.querySelector('.Pane2 iframe') || document.querySelector('[class*="PreviewPaneContainer"] iframe');
+          if (!iframe || !iframe.contentDocument) return null;
+          return iframe.contentDocument.scrollingElement || iframe.contentDocument.documentElement;
+        }
+
+        function syncPreviewScroll() {
+          if (!scrollSyncEnabled) return;
+          var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
+          var previewEl = getPreviewScrollElement();
+          if (!controlPane || !previewEl) return;
+          var controlRange = controlPane.scrollHeight - controlPane.clientHeight;
+          var previewRange = previewEl.scrollHeight - previewEl.clientHeight;
+          if (controlRange <= 0 || previewRange <= 0) return;
+          var ratio = controlPane.scrollTop / controlRange;
+          previewEl.scrollTop = ratio * previewRange;
+        }
+
+        document.addEventListener(
+          'click',
+          function (e) {
+            var toggle = e.target && e.target.closest && e.target.closest('[class*="EditorToggle"]');
+            if (!toggle || toggle.title !== 'スクロール同期を切り替える') return;
+            scrollSyncEnabled = !scrollSyncEnabled;
+            if (scrollSyncEnabled) syncPreviewScroll();
+          },
+          true
+        );
+
+        // フォーム側コンテナのscrollイベントはバブリングしないため、
+        // キャプチャ段階でdocumentに登録して検知する。
+        document.addEventListener(
+          'scroll',
+          function (e) {
+            if (!scrollSyncEnabled) return;
+            var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
+            if (e.target === controlPane) syncPreviewScroll();
+          },
+          true
+        );
+
+        // 入力欄をタップ・クリックしてフォーカスした際、その時点では
+        // スクロールが発生しない（既に画面内に見えている等）場合でも
+        // 同期を効かせるため、フォーム側のfocusinでも同期をかけ直す。
+        document.addEventListener(
+          'focusin',
+          function (e) {
+            if (!scrollSyncEnabled) return;
+            var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
+            if (controlPane && controlPane.contains(e.target)) syncPreviewScroll();
+          },
+          true
+        );
 
         window.addEventListener('load', function () {
           updateNavButtonVisibility();
