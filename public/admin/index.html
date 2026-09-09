@@ -1067,10 +1067,11 @@
           }
           if (viewControls !== lastViewControlsNode) {
             // エントリ編集画面を開き直す・別のエントリへ移動する等で
-            // ボタンが新しく生成された場合は、スクロール同期の状態を
-            // 既定のOFFへ戻す。
+            // ボタンが新しく生成された場合は、Decap本体の描画も
+            // 「アイコンが青い＝ON」の既定状態に戻るため、自前の
+            // フラグもそれに合わせてONへ戻す。
             lastViewControlsNode = viewControls;
-            scrollSyncEnabled = false;
+            scrollSyncEnabled = true;
           }
           var targetWrapper = document.querySelector('[class*="ToolbarSubSectionLast"]');
           if (!targetWrapper) return;
@@ -1090,35 +1091,80 @@
         //    （このファイルとpreview.jsで定義しているHTML構造）を想定した
         //    仕組みではないため、ボタン自体の見た目（アイコンの色）は
         //    切り替わるものの、実際にプレビュー側は追従しないことを確認
-        //    済み。そのため、フォーム側のスクロール位置に応じてプレビュー
-        //    側（iframe内）を独自に追従スクロールさせる処理をここで
-        //    実装する。
-        //    「スクロール同期を切り替える」ボタンのクリックを検知して
-        //    ON/OFFを自前で管理し、ONの間はフォーム側コンテナの
-        //    スクロール位置の割合（scrollTop ÷ (scrollHeight -
-        //    clientHeight)）を計算し、同じ割合をプレビュー側iframeの
-        //    スクロール位置に反映する（フィールド単位の厳密な対応付けは
-        //    行わないが、フォームをスクロールするとプレビューもおおむね
-        //    同じ箇所まで追従する、という求められている挙動を満たす）。
+        //    済み。そのため、フォーム側の状態に応じてプレビュー側
+        //    （iframe内）を独自に追従スクロールさせる処理をここで実装する。
+        //
+        //    ・ON/OFFの状態表示：このボタンはDecap本体の描画により、
+        //      「初期表示＝アイコンが青くハイライト」「1回目クリック後＝
+        //      グレー」という既定の見た目になる（実測で確認済み）。
+        //      つまり「青＝ON（既定値）」がDecap自身の見た目上の初期状態
+        //      であるため、自前で管理するON/OFFフラグの初期値も
+        //      trueにして、この見た目と一致させる。
+        //    ・同期の精度：単純なスクロール量の割合（％）による同期では、
+        //      フォーム側とプレビュー側でセクションごとの縦の分量が
+        //      大きく異なる（画像1枚だけのセクションと、長文＋リストが
+        //      並ぶセクション等）ため、同じ割合でも対応するセクションが
+        //      ずれてしまう。そのため、「現在フォーム側で表示されている
+        //      のはどの大項目（セクション）か」をラベル文言から特定し、
+        //      プレビュー側の同じid（<section id="services">等、
+        //      preview.js側で各セクションに付与済み）の要素へ直接
+        //      スクロールする、セクション単位のピンポイント同期に変更する。
         // ==================================================================
-        var scrollSyncEnabled = false;
+        var scrollSyncEnabled = true;
 
-        function getPreviewScrollElement() {
+        function getPreviewDocument() {
           var iframe = document.querySelector('.Pane2 iframe') || document.querySelector('[class*="PreviewPaneContainer"] iframe');
-          if (!iframe || !iframe.contentDocument) return null;
-          return iframe.contentDocument.scrollingElement || iframe.contentDocument.documentElement;
+          return iframe && iframe.contentDocument ? iframe.contentDocument : null;
+        }
+
+        // フォーム側で現在最も上（＝編集中）に表示されている大項目の
+        // ラベル文言から、対応するセクションキー（GROUP_LABELSの逆引き）
+        // を特定する。ラベルはDOM順＝表示順のため、フォーム側コンテナの
+        // 表示領域の先頭よりわずかに下（見出し行が隠れきる手前）にある
+        // 最後のラベルを「現在表示中の項目」とみなす（スクロールスパイ）。
+        function findActiveSectionKey() {
+          var root = getFormRoot();
+          var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
+          if (!root || !controlPane) return null;
+          var labels = topLevelFieldLabels(root);
+          if (!labels.length) return null;
+          var threshold = controlPane.getBoundingClientRect().top + 48;
+          var activeLabel = labels[0];
+          for (var i = 0; i < labels.length; i++) {
+            if (labels[i].getBoundingClientRect().top <= threshold) {
+              activeLabel = labels[i];
+            } else {
+              break;
+            }
+          }
+          var text = stripOptionalSuffix(activeLabel.textContent).trim();
+          for (var key in GROUP_LABELS) {
+            if (GROUP_LABELS[key] === text) return key;
+          }
+          return null;
         }
 
         function syncPreviewScroll() {
           if (!scrollSyncEnabled) return;
-          var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
-          var previewEl = getPreviewScrollElement();
-          if (!controlPane || !previewEl) return;
-          var controlRange = controlPane.scrollHeight - controlPane.clientHeight;
-          var previewRange = previewEl.scrollHeight - previewEl.clientHeight;
-          if (controlRange <= 0 || previewRange <= 0) return;
-          var ratio = controlPane.scrollTop / controlRange;
-          previewEl.scrollTop = ratio * previewRange;
+          var previewDoc = getPreviewDocument();
+          if (!previewDoc) return;
+          var key = findActiveSectionKey();
+          if (!key) return;
+          var target = previewDoc.getElementById(key);
+          if (!target) return;
+          var headerEl = previewDoc.querySelector('header');
+          var headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+          // 各セクションは <section id="..."> 自身の内側にpy-16分の
+          // 上パディングを持ち、見出しブロックはその内側（1番目の子要素）
+          // から始まる。section要素自体ではなくこの内側の子要素を基準に
+          // することで、見出しがヘッダー直下にぴったり収まる位置を
+          // 正確に計算できる（サイト本体側のSmoothScroll.astroと
+          // 同じ考え方）。
+          var contentEl = target.firstElementChild || target;
+          var scrollEl = previewDoc.scrollingElement || previewDoc.documentElement;
+          var targetTop = contentEl.getBoundingClientRect().top + scrollEl.scrollTop;
+          var destination = Math.max(0, targetTop - headerHeight - 12);
+          scrollEl.scrollTop = destination;
         }
 
         document.addEventListener(

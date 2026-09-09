@@ -271,7 +271,7 @@
     var items = section.items || [];
     return h(
       'section',
-      { className: cx('py-16 px-5', muted && 'bg-surface-muted') },
+      { id: 'features', className: cx('py-16 px-5', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-[1100px] mx-auto' },
@@ -312,7 +312,7 @@
     var items = section.items || [];
     return h(
       'section',
-      { className: cx('py-16 px-5', muted && 'bg-surface-muted') },
+      { id: 'services', className: cx('py-16 px-5', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-[1100px] mx-auto' },
@@ -352,7 +352,7 @@
     var steps = section.steps || [];
     return h(
       'section',
-      { className: cx('py-16', muted && 'bg-surface-muted') },
+      { id: 'flow', className: cx('py-16', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5' },
@@ -401,7 +401,7 @@
     var items = section.items || [];
     return h(
       'section',
-      { className: cx('py-16 px-5', muted && 'bg-surface-muted') },
+      { id: 'works', className: cx('py-16 px-5', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-[1100px] mx-auto' },
@@ -443,7 +443,7 @@
     var section = data.productsSection || {};
     return h(
       'section',
-      { className: cx('py-16 px-5', muted && 'bg-surface-muted') },
+      { id: 'products', className: cx('py-16 px-5', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-[1100px] mx-auto' },
@@ -465,7 +465,7 @@
     var items = section.items || [];
     return h(
       'section',
-      { className: cx('py-16', muted && 'bg-surface-muted') },
+      { id: 'plans', className: cx('py-16', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5' },
@@ -574,7 +574,7 @@
 
     return h(
       'section',
-      { className: cx('py-16', muted && 'bg-surface-muted') },
+      { id: 'access', className: cx('py-16', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5' },
@@ -654,7 +654,7 @@
     });
     return h(
       'section',
-      { className: cx('py-16', muted && 'bg-surface-muted') },
+      { id: 'faq', className: cx('py-16', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-xl sm:max-w-2xl lg:max-w-[760px] mx-auto px-4 sm:px-6 lg:px-0' },
@@ -698,7 +698,7 @@
     var ui = data.ui || {};
     return h(
       'section',
-      { className: cx('py-16', muted && 'bg-surface-muted') },
+      { id: 'contact', className: cx('py-16', muted && 'bg-surface-muted') },
       h(
         'div',
         { className: 'max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5' },
