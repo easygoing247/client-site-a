@@ -89,12 +89,13 @@ const snsLinks = orderedSnsLinks().map((sns) => ({ ...sns, ...ACCESS_SNS_STYLE[s
 
         {snsLinks.length > 0 && (
           <!--
-            「公式SNS」ラベルのすぐ右隣にアイコンのみのボタンを横並びで配置する。
-            以前はラベル文言も表示したボタンをグリッドで縦（モバイル）／
-            2列（PC）に並べていたが、アイコンのみになった分、ラベルと
-            同じ行にインラインで収まるようにした。
+            上のdl（郵便番号・住所・...・駐車場）と同じ
+            grid-cols-[100px_1fr] gap-x-4 を使うことで、「公式SNS」の
+            ラベル幅を上の項目のdt（ラベル）列とぴったり揃え、結果として
+            アイコンの開始位置が上の項目の値（dd）の文頭と縦軸で
+            一致するようにする。
           -->
-          <div class="mt-6 flex items-center flex-wrap gap-3">
+          <div class="grid grid-cols-[100px_1fr] gap-x-4 items-center mt-[14px]">
             <span class="text-[13px] font-bold text-secondary-light">{site.access.labels.sns}</span>
             <div class="flex items-center gap-2">
               {
