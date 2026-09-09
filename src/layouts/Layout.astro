@@ -5,6 +5,7 @@ import '../styles/global.css';
 import { site } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
 import { siteSettings } from '../lib/siteSettings';
+import SmoothScroll from '../components/SmoothScroll.astro';
 
 interface Props {
   title?: string;
@@ -70,5 +71,6 @@ const ogImageURL = optimizedOgImage ? new URL(optimizedOgImage.src, Astro.site).
   </head>
   <body class="bg-surface overflow-x-hidden">
     <slot />
+    <SmoothScroll />
   </body>
 </html>

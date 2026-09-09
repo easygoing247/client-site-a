@@ -1,0 +1,95 @@
+---
+// ============================================================================
+// SmoothScroll.astro — ページ内アンカー（#services 等）スクロールの一元処理
+// ============================================================================
+// CSSの scroll-margin-top / scroll-padding-top だけに頼る方式は、
+// ・ヘッダーの実際の高さ（フォントの折返し・ブラウザのズーム設定・実機ごとの
+//   描画差）とCSS側の想定値がズレると、見出しが追従ヘッダーの下に隠れたり
+//   逆に大きく余白が空いたりする
+// ・sticky要素と組み合わさった際の scroll-margin-top の扱いはブラウザ実装差
+//   （特にモバイルSafari）が知られており、狙った位置にぴったり止まらない
+//   ことがある
+// という問題があり、実機での見え方がCSSの理論値どおりにならないことが
+// 繰り返し発生した。
+// そのため、ページ内アンカーへのスクロールは「クリック時点のヘッダーの
+// 実測高さ（getBoundingClientRect().height）」を毎回JSで取得し、その分だけ
+// 差し引いた位置へ window.scrollTo() で移動する方式に一本化する。
+// CSS側の scroll-margin-top（global.css）は、JS無効時や読み込み中の
+// フォールバックとしてheader高さ相当の値を残しておくが、通常はこちらの
+// JSの計算結果が優先される（preventDefault()でブラウザ標準のジャンプを
+// 止めた上で自前スクロールするため）。
+// ============================================================================
+---
+
+<script>
+  // 見出しの直上に少しだけ余白を持たせる（ヘッダーに文字が接触して見えるのを防ぐ）
+  const EXTRA_GAP = 12;
+
+  function getHeaderHeight(): number {
+    const header = document.querySelector('header');
+    // sticky要素の実際のレンダリング高さをクリックの都度取得する。
+    // 固定値をハードコードしないため、ヘッダーの中身が変わって高さが
+    // 変化した場合も追従する。
+    return header ? header.getBoundingClientRect().height : 0;
+  }
+
+  function scrollToHash(hash: string, behavior: ScrollBehavior): boolean {
+    if (!hash || hash === '#') return false;
+    const target = document.getElementById(hash.slice(1));
+    if (!target) return false;
+    const headerHeight = getHeaderHeight();
+    // 各セクションは <section id="..."> 自身にpy-16相当の上パディングを
+    // 持たせており、見出し（見出し上部ラベル＋h2）が実際に見え始めるのは
+    // その内側の最初の子要素（max-w-*/mx-autoの内側コンテナ）の位置から。
+    // section要素自体のgetBoundingClientRect().topを基準にすると、この
+    // 内部パディング分（実測60〜70px程度）だけ実際の見出し位置とズレて
+    // しまうため、必ず内側コンテナの位置を基準にする
+    // （target自身しか無い場合のみtargetにフォールバック）。
+    const contentEl = (target.firstElementChild as HTMLElement | null) ?? target;
+    // 現在の画面上の位置（getBoundingClientRect）に現在のスクロール量を
+    // 足し戻すことで、ドキュメント先頭からの絶対位置を求める。
+    const targetTop = contentEl.getBoundingClientRect().top + window.scrollY;
+    const destination = Math.max(0, targetTop - headerHeight - EXTRA_GAP);
+    window.scrollTo({ top: destination, behavior });
+    return true;
+  }
+
+  document.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest('a[href^="#"]');
+    if (!(link instanceof HTMLAnchorElement)) return;
+    const hash = link.getAttribute('href') ?? '';
+    if (scrollToHash(hash, 'smooth')) {
+      e.preventDefault();
+      // ブラウザ標準のジャンプは止めているが、URLのハッシュ自体は
+      // 通常の挙動（ブラウザバック対応・共有用URL）に合わせて更新しておく。
+      history.pushState(null, '', hash);
+    }
+  });
+
+  // ページ読み込み時点でURLに既にハッシュが含まれている場合
+  // （他ページからの直リンク・ブラウザの再読み込み等）も同様に補正する。
+  // 画像等の読み込みでレイアウトが確定してから計算する必要があるため、
+  // 本来は load イベントを待ちたいが、このスクリプト自体の実行タイミング
+  // （モジュールスクリプトのため、DOMContentLoaded 後・load 前後のどこかに
+  // なる）によっては、addEventListener('load', ...) を呼んだ時点で
+  // 既に load が発火済みのことがあり、その場合はイベントを永遠に
+  // 待ち続けてしまう。readyStateが既に'complete'ならその場で即実行する。
+  if (location.hash) {
+    const initialHash = location.hash;
+    // ブラウザ自身も「URLにハッシュが付いた状態での初回表示」に対して
+    // 独自の自動スクロール（scroll-margin-topを無視した既定位置への
+    // ジャンプ等）を行うことがあり、しかもそれがload後・画像読み込みに
+    // よるレイアウト変動後など複数タイミングで再実行されることがある。
+    // こちらの補正が先に効いても後からブラウザ側の処理で上書きされて
+    // しまう場合があるため、load後にも時間差を置いて複数回
+    // 補正をかけ直し、最終的に必ずこちらの計算結果に落ち着かせる。
+    const reapply = () => scrollToHash(initialHash, 'auto');
+    if (document.readyState === 'complete') {
+      reapply();
+    } else {
+      window.addEventListener('load', reapply);
+    }
+    window.setTimeout(reapply, 150);
+    window.setTimeout(reapply, 500);
+  }
+</script>
