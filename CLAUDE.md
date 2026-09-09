@@ -130,3 +130,48 @@ public/
 
 `node_modules/`, `dist/`, `.astro/`, `.env` 系は Git 管理対象外（`.gitignore` 参照）。
 `src/assets/` の画像ファイルは案件ごとに差し替わる資産のためコミット対象に含める。
+
+## 7. Decap CMSライブプレビュー（`public/admin/preview.js`）の保守ルール
+
+- 「サイト設定」「商品・施工事例」コレクションには `CMS.registerPreviewTemplate` による
+  独自のライブプレビューを実装済み（Decap既定のMarkdownプレビューではなく、
+  実サイトに近い見た目をリアルタイム表示するため）。
+- `preview.js` は `src/components/*.astro` の対応するセクションと**同じマークアップ・
+  Tailwindクラス**をJS（`h()` = React.createElement呼び出し）で再現する二重管理構成。
+  そのため、コンポーネント側（`.astro`）のマークアップ・クラス・条件分岐を変更した場合は、
+  `preview.js` 内の対応する `render*()` 関数（`renderHeader` / `renderHero` /
+  `renderFeatures` / `renderServices` / `renderFlow` / `renderWorks` / `renderPlans` /
+  `renderAccess` / `renderFaq` / `renderContact` / `renderFooter` 等）も必ず追従修正すること。
+  自動同期の仕組みは無いため、変更の都度手動で見比べる必要がある。
+- ヘッダー・フッターのナビゲーション項目は、実サイト（`src/lib/site.ts` の
+  `visibleNavItems()`）・プレビュー（`preview.js` の `filterVisibleNavForPreview()`）の
+  どちらも、リンク先セクションの機能フラグ（`features.enableFaq` 等）と連動して
+  自動的に表示/非表示が切り替わる。新しいセクション／ナビ項目を追加する場合は、
+  両方の `href → フラグ` 対応表（`navHrefToFeatureFlag` と `NAV_HREF_TO_FLAG`）に
+  同じキーを追加すること。
+- Decap自身の内部スクロール同期・プレビュー表示切替ボタン（`ViewControls`）は
+  カスタムプレビューテンプレートと非互換なため、`public/admin/index.html` 側で
+  スクロール同期・アイコン状態を完全に自前実装している（`scrollSyncEnabled`,
+  `applyScrollSyncIcon()`, `findActiveSectionKey()`, `syncPreviewScroll()` 等）。
+  Decap本体のバージョンアップ等でこの内部DOM構造（`ToolbarSubSectionLast`,
+  `ControlPaneContainer`, `EditorToggle` 等のクラス名）が変わった場合は
+  再調整が必要になる可能性がある。
+
+## 8. デプロイ手順
+
+このリポジトリはCloudflare Pages（プロジェクト名 `master-template`、
+本番ドメイン `master-template-c2u.pages.dev`）に手動デプロイする運用。
+CI/CD連携は行っていないため、コード変更をデプロイに反映するには以下を実行する：
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name=master-template
+```
+
+Decap CMSからクライアントが直接編集・保存した内容はGitHubの `main` に直接コミット
+されるが、それだけではCloudflare Pagesは自動再デプロイされない（Gitとの自動連携は
+未設定）ため、コンテンツ更新分も含めて上記コマンドで都度デプロイし直す必要がある。
+
+コード側に変更を加える際は、CMSからの同時コミット（`Update サイト設定 "siteInfo"` 等）
+と衝突しないよう、必ず `git fetch origin` → 差分確認 → （必要なら）`git pull` で
+マージしてからコミット・push・デプロイする。進捗の詳細は `PROGRESS.md` を参照。
