@@ -1067,11 +1067,10 @@
           }
           if (viewControls !== lastViewControlsNode) {
             // エントリ編集画面を開き直す・別のエントリへ移動する等で
-            // ボタンが新しく生成された場合は、Decap本体の描画も
-            // 「アイコンが青い＝ON」の既定状態に戻るため、自前の
-            // フラグもそれに合わせてONへ戻す。
+            // ボタンが新しく生成された場合は、既定のON（アイコン青）へ戻す。
             lastViewControlsNode = viewControls;
             scrollSyncEnabled = true;
+            applyScrollSyncIcon();
           }
           var targetWrapper = document.querySelector('[class*="ToolbarSubSectionLast"]');
           if (!targetWrapper) return;
@@ -1111,6 +1110,33 @@
         //      スクロールする、セクション単位のピンポイント同期に変更する。
         // ==================================================================
         var scrollSyncEnabled = true;
+
+        // ボタンの見た目（アイコンの色）をDecap本体の内部状態に頼らず、
+        // 自前のscrollSyncEnabledの値から直接・確実に描画する。
+        // Decap本体が独自に付け替えるCSSクラス（ビルドごとにハッシュ値が
+        // 変わり、どちらが「ON」の配色かを外部から安定して読み取れない）
+        // に依存すると、Decap側の描画タイミングや内部実装の変化により
+        // 「青＝ON」の対応関係がずれるおそれがある。そのため、青／グレーの
+        // 配色そのものをこちらで責任を持って適用し、見た目と実際の同期
+        // 挙動が常に一致するようにする。
+        var SCROLL_SYNC_COLOR_ON = '#3a69c7';
+        var SCROLL_SYNC_COLOR_OFF = '#798291';
+
+        function findScrollSyncToggleButton() {
+          var toggles = document.querySelectorAll('[class*="EditorToggle"]');
+          for (var i = 0; i < toggles.length; i++) {
+            if (toggles[i].title === 'スクロール同期を切り替える') return toggles[i];
+          }
+          return null;
+        }
+
+        function applyScrollSyncIcon() {
+          var toggle = findScrollSyncToggleButton();
+          if (!toggle) return;
+          var path = toggle.querySelector('svg path');
+          if (!path) return;
+          path.style.fill = scrollSyncEnabled ? SCROLL_SYNC_COLOR_ON : SCROLL_SYNC_COLOR_OFF;
+        }
 
         function getPreviewDocument() {
           var iframe = document.querySelector('.Pane2 iframe') || document.querySelector('[class*="PreviewPaneContainer"] iframe');
@@ -1173,6 +1199,7 @@
             var toggle = e.target && e.target.closest && e.target.closest('[class*="EditorToggle"]');
             if (!toggle || toggle.title !== 'スクロール同期を切り替える') return;
             scrollSyncEnabled = !scrollSyncEnabled;
+            applyScrollSyncIcon();
             if (scrollSyncEnabled) syncPreviewScroll();
           },
           true
@@ -1210,6 +1237,10 @@
             syncSectionLabels();
             markRequiredFieldLabels();
             relocateViewControls();
+            // Decapが自身の状態変化等でボタンのSVGを再描画し、こちらの
+            // 見た目上書き（fill）が失われることがあるため、常にこちらの
+            // scrollSyncEnabledの値と一致した色に維持し続ける。
+            applyScrollSyncIcon();
           }, 500);
         });
       })();
