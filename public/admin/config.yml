@@ -16,7 +16,7 @@
 
 backend:
   name: github
-  repo: easygoing247/master-template
+  repo: easygoing247/master-template-multi
   branch: main
   base_url: https://master-template-oauth.easygoing247.workers.dev
   auth_endpoint: /auth
@@ -400,4 +400,127 @@ collections:
         field: { label: "項目", name: "spec", widget: string, required: false }
       - { label: "表示順（小さいほど先頭）", name: "order", widget: number, value_type: int, default: 0, required: false }
       - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
+      - { label: "本文", name: "body", widget: markdown, required: false }
+
+  # ==========================================================================
+  # ③ 複数ページ版（master-template-multi）専用：下層ページのファイルコレクション
+  #    各下層ページのテキスト・数値は src/data/*.yml に集約し、
+  #    対応する下層ページ（src/pages/*.astro）が siteInfo.yml と同じ要領で
+  #    型付き参照する。1ファイル = 1下層ページ。
+  # ==========================================================================
+  - name: "pages"
+    label: "下層ページ"
+    files:
+      # --- サービス内容・料金 -------------------------------------------------
+      - name: "services"
+        label: "サービス内容・料金（services）"
+        file: "src/data/services.yml"
+        fields:
+          - { label: "ページ見出し", name: "heading", widget: string, required: false }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - label: "サービス詳細"
+            name: "items"
+            widget: list
+            required: false
+            fields:
+              - { label: "サービス名", name: "title", widget: string, required: false }
+              - { label: "説明（Enterキーで改行可）", name: "description", widget: text, required: false }
+              - { label: "画像", name: "image", widget: image, required: false }
+              - label: "含まれる内容"
+                name: "features"
+                widget: list
+                required: false
+                field: { label: "項目", name: "feature", widget: string, required: false }
+          - label: "料金表"
+            name: "priceTable"
+            widget: list
+            required: false
+            fields:
+              - { label: "項目名", name: "name", widget: string, required: false }
+              - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+              - { label: "備考", name: "note", widget: string, required: false }
+          - { label: "料金に関する注記文", name: "priceNote", widget: text, required: false }
+
+      # --- 店舗概要・アクセス -----------------------------------------------
+      - name: "about"
+        label: "店舗概要・アクセス（about）"
+        file: "src/data/about.yml"
+        fields:
+          - { label: "ページ見出し", name: "heading", widget: string, required: false }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - label: "代表挨拶"
+            name: "greeting"
+            widget: object
+            fields:
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "本文（Enterキーで改行可）", name: "body", widget: text, required: false }
+              - { label: "代表者名", name: "name", widget: string, required: false }
+              - { label: "代表者写真", name: "image", widget: image, required: false }
+          - label: "会社概要（表形式）"
+            name: "profile"
+            widget: list
+            required: false
+            fields:
+              - { label: "項目名", name: "label", widget: string, required: false }
+              - { label: "内容（Enterキーで改行可）", name: "value", widget: text, required: false }
+          - label: "アクセス情報"
+            name: "access"
+            widget: object
+            fields:
+              - { label: "住所", name: "address", widget: string, required: false }
+              - { label: "最寄り駅・交通手段（Enterキーで改行可）", name: "directions", widget: text, required: false }
+              - { label: "駐車場", name: "parking", widget: string, required: false }
+              - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string, required: false }
+
+      # --- お問い合わせ・ご予約 ---------------------------------------------
+      - name: "contact"
+        label: "お問い合わせ・ご予約（contact）"
+        file: "src/data/contactPage.yml"
+        fields:
+          - { label: "ページ見出し", name: "heading", widget: string, required: false }
+          - { label: "フォーム上部の案内文（Enterキーで改行可）", name: "intro", widget: text, required: false }
+          - label: "ご予約・お問い合わせの注意事項"
+            name: "notes"
+            widget: list
+            required: false
+            field: { label: "注意事項", name: "note", widget: string, required: false }
+          - { label: "送信後の案内文", name: "afterSubmit", widget: text, required: false }
+          - label: "プライバシーポリシー"
+            name: "privacyPolicy"
+            widget: object
+            fields:
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "本文（Markdown可）", name: "body", widget: markdown, required: false }
+              - { label: "最終改定日", name: "updatedAt", widget: string, required: false }
+
+  # ==========================================================================
+  # ④ 複数ページ版（master-template-multi）専用：お知らせ・ブログ（投稿型）
+  #    1記事 = src/content/news/*.md（frontmatter + Markdown本文）。
+  #    ファイル名がURLスラッグになる（例: hello.md → /news/hello/）。
+  # ==========================================================================
+  - name: "news"
+    label: "お知らせ・ブログ"
+    folder: "src/content/news"
+    create: true
+    delete: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    sortable_fields: ["publishedAt", "title"]
+    fields:
+      - { label: "記事タイトル", name: "title", widget: string, required: false }
+      - { label: "アイキャッチ画像", name: "eyecatch", widget: image, required: false }
+      - { label: "アイキャッチ 代替テキスト", name: "eyecatchAlt", widget: string, required: false }
+      - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
+      - label: "カテゴリ"
+        name: "category"
+        widget: select
+        required: false
+        options:
+          - { label: "お知らせ", value: "info" }
+          - { label: "ブログ", value: "blog" }
+          - { label: "イベント", value: "event" }
+          - { label: "実績紹介", value: "works" }
+      - { label: "抜粋（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
+      - { label: "下書き（チェック中はサイトに公開されません）", name: "draft", widget: boolean, default: false }
       - { label: "本文", name: "body", widget: markdown, required: false }

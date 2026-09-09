@@ -1,0 +1,30 @@
+heading: 店舗概要・アクセス
+lead: 私たちの想いと会社情報、アクセスのご案内です。
+greeting:
+  heading: 代表挨拶
+  body: |-
+    数あるWEB制作会社の中から当社のページをご覧いただき、ありがとうございます。
+    私たちは「想いをカタチにし、成果につながるWeb」をモットーに、
+    お客様一人ひとりの課題に寄り添った制作を心がけています。
+  name: 山田 太郎
+  image: ../assets/hero.jpg
+profile:
+  - label: 会社名
+    value: LOGO
+  - label: 代表者
+    value: 山田 太郎
+  - label: 設立
+    value: 2018年
+  - label: 所在地
+    value: 北海道札幌市中央区北一条西3丁目 LOGOビル5F
+  - label: 事業内容
+    value: |-
+      Webサイト制作・LP制作
+      SEO・集客支援／運用保守サポート
+access:
+  address: 〒060-0001 北海道札幌市中央区北一条西3丁目 LOGOビル5F
+  directions: |-
+    札幌市営地下鉄 大通駅 徒歩5分
+    JR札幌駅 徒歩10分
+  parking: 3台（近隣コインパーキングもご利用いただけます）
+  mapEmbedUrl: https://www.google.com/maps?q=43.0606,141.3568&z=16&output=embed

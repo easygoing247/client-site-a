@@ -23,4 +23,22 @@ const products = defineCollection({
     }),
 });
 
-export const collections = { products };
+// 複数ページ版（master-template-multi）専用：お知らせ・ブログの投稿コレクション。
+// config.yml の「お知らせ・ブログ」コレクションと対応。CMS側で全項目を任意入力に
+// しているため、スキーマ側も未入力を許容する。draft: true の記事は一覧・詳細の
+// 表示側で除外する想定。
+const news = defineCollection({
+  type: 'content',
+  schema: ({ image }) =>
+    z.object({
+      title: z.string().optional(),
+      eyecatch: image().optional(),
+      eyecatchAlt: z.string().optional(),
+      publishedAt: z.coerce.date().optional(),
+      category: z.enum(['info', 'blog', 'event', 'works']).optional(),
+      summary: z.string().optional(),
+      draft: z.boolean().default(false),
+    }),
+});
+
+export const collections = { products, news };

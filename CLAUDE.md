@@ -175,3 +175,57 @@ Decap CMSからクライアントが直接編集・保存した内容はGitHub�
 コード側に変更を加える際は、CMSからの同時コミット（`Update サイト設定 "siteInfo"` 等）
 と衝突しないよう、必ず `git fetch origin` → 差分確認 → （必要なら）`git pull` で
 マージしてからコミット・push・デプロイする。進捗の詳細は `PROGRESS.md` を参照。
+
+## 9. リポジトリ複製時の注意・複数ページ版（master-template-multi）の構成ルール
+
+### 9.1 このリポジトリの位置づけ
+
+- このリポジトリは **`easygoing247/master-template-multi`**（複数ページ版マスター
+  テンプレート）。1ページLP版の `master-template` をコードごと複製して作成した派生元。
+- 実案件へ着せ替える際も、原則 `src/data/*.yml` とデザイントークンのみを変更する
+  （セクション2の方針を踏襲）。
+
+### 9.2 複製直後に必ず再設定するもの
+
+`master-template` を複製して新しいリポジトリを作った場合、以下は元リポジトリを
+向いたまま／未作成なので、実案件で使う前に必ず再設定すること。
+
+1. **`public/admin/config.yml` の `backend.repo`** … 複製先リポジトリ名に変更する
+   （最優先。放置すると複製先の `/admin` から誤って元リポジトリへ保存される事故になる）。
+   → 本リポジトリでは `easygoing247/master-template-multi` に変更済み。
+2. **`public/admin/config.yml` の `backend.base_url`** … 複製先専用の Cloudflare Worker
+   OAuth プロキシ（`cms-oauth-worker/` の別デプロイ）の URL に変更する。**未対応**
+   （現状は `master-template-oauth.easygoing247.workers.dev` のまま）。
+3. **複製先専用の GitHub OAuth App** … 既存 App の使い回し禁止。新規作成し、
+   Client ID / Secret を Worker 側の環境変数に設定する。**未作成**。
+4. **複製先専用の Cloudflare Pages プロジェクト** … `wrangler pages deploy` の
+   `--project-name` を複製先用に変更する。**未作成**。
+5. **`astro.config.mjs` の `site` URL** … 複製先の本番ドメインに合わせる。
+
+### 9.3 複数ページ版で追加した下層ページ・コレクション
+
+`public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」
+「商品・施工事例（型化ページ）」を保持したまま、以下を追加している。
+
+| コレクション | 種別 | データファイル | 内容 |
+|---|---|---|---|
+| 下層ページ ＞ サービス内容・料金（services） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
+| 下層ページ ＞ 店舗概要・アクセス（about） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報 |
+| 下層ページ ＞ お問い合わせ・ご予約（contact） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
+| お知らせ・ブログ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
+
+- 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
+  対応する下層ページ（`src/pages/services.astro` 等）を作る際は、`src/lib/` に
+  パーサ（`site.ts` と同様のもの）を追加し、型付きで参照すること。コンポーネントへの
+  テキスト直書きは禁止（絶対ルール①）。
+- `news` コレクションのスキーマは `src/content/config.ts` の `news` で定義。
+  `draft: true` の記事は一覧・詳細の表示側で除外する想定。画像は `image()` ヘルパー
+  経由で `../../assets/` からの相対パスで指定する（絶対ルール②）。
+- `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
+
+### 9.4 CMSライブプレビュー・ナビ連動との整合
+
+- 下層ページ用コンポーネントを追加した場合は、`public/admin/preview.js` の対応する
+  `render*()` 関数も追従修正すること（セクション7の二重管理ルール）。
+- 下層ページへのナビ項目を追加する場合は、`src/lib/site.ts`（`navHrefToFeatureFlag`）と
+  `preview.js`（`NAV_HREF_TO_FLAG`）の両方に同じキーを追加すること。
