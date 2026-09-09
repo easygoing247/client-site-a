@@ -174,18 +174,33 @@ public/
 
 ## 8. デプロイ手順
 
-このリポジトリはCloudflare Pages（プロジェクト名 `master-template`、
-本番ドメイン `master-template-c2u.pages.dev`）に手動デプロイする運用。
-CI/CD連携は行っていないため、コード変更をデプロイに反映するには以下を実行する：
+Cloudflare Pages へ手動デプロイする運用（CI/CD連携なし）。派生元 `master-template`
+（LP版）は プロジェクト名 `master-template` / 本番ドメイン `master-template-c2u.pages.dev`。
+
+**このリポジトリ（`master-template-multi`）専用の Cloudflare Pages プロジェクトは
+まだ作成されていない。** 初回デプロイ前に、ユーザーが Cloudflare 側で一度だけ
+以下のいずれかを行う必要がある（Claude Code からは Cloudflare 認証が無いため実行不可）：
+
+- **Wrangler で作成**：`npx wrangler login`（ブラウザ認証）→
+  `npx wrangler pages project create master-template-multi --production-branch main`
+- **ダッシュボードで作成**：Workers & Pages → Create → Pages → 「Connect to Git」で
+  `easygoing247/master-template-multi` を接続（Build command: `npm run build` /
+  Output: `dist`）。Git 接続にすると push 毎に自動ビルド・デプロイされる。
+
+プロジェクト作成後、コード変更をデプロイに反映する手順（Git 未接続の場合）：
 
 ```bash
 npm run build
-npx wrangler pages deploy dist --project-name=master-template
+npx wrangler pages deploy dist --project-name=master-template-multi
 ```
 
+デプロイ後、`astro.config.mjs` の `site` を実際の本番ドメイン（`*.pages.dev` または
+独自ドメイン）に更新し、`public/admin/config.yml` の `backend.base_url` も
+複製先専用 OAuth プロキシに向ける（セクション9.2 の 2〜4 と合わせて対応）。
+
 Decap CMSからクライアントが直接編集・保存した内容はGitHubの `main` に直接コミット
-されるが、それだけではCloudflare Pagesは自動再デプロイされない（Gitとの自動連携は
-未設定）ため、コンテンツ更新分も含めて上記コマンドで都度デプロイし直す必要がある。
+されるが、Git 未接続なら Cloudflare Pages は自動再デプロイされないため、
+コンテンツ更新分も含めて上記コマンドで都度デプロイし直す。
 
 コード側に変更を加える際は、CMSからの同時コミット（`Update サイト設定 "siteInfo"` 等）
 と衝突しないよう、必ず `git fetch origin` → 差分確認 → （必要なら）`git pull` で
@@ -264,3 +279,31 @@ Decap CMSからクライアントが直接編集・保存した内容はGitHub�
 - ナビ項目とセクション表示フラグの連動は `src/lib/site.ts`（`navHrefToFeatureFlag`、
   `#works` と `/#works` の両形式を登録）と `preview.js`（`NAV_HREF_TO_FLAG`、同様に両形式）
   の2箇所で管理。新規セクション／ナビ項目を追加する場合は両方に同じキーを追加すること。
+
+### 9.6 パフォーマンス方針（PageSpeed Insights Mobile 90+ の維持）
+
+複数ページ化後も、以下の前提により全ページで軽量な構成を保っている。
+ビルド出力（`dist/`）実測：JS 合計 約2.7KB・CSS 1ファイル約20KB（全ページ共有）・
+各HTML 12〜19KB（トップのみ約51KB）・画像は全て WebP（`astro:assets` で自動最適化）。
+
+- **フォント**：OS標準のシステムフォントのみ（`tailwind.config.mjs` の `font-sans`）。
+  外部フォントCDN・`@import`・`<link rel="preconnect">` は一切使わない。
+- **スクリプト**：外部CDN読み込みゼロ。`SmoothScroll` / `StickyContactBar` /
+  `BackToTop` / `MobileNavDrawer` の hoisted スクリプトのみ（合計数KB）。
+- **画像**：必ず `astro:assets` の `<Image />`（`<img>` 直書き禁止＝絶対ルール②）。
+  各ページで**ファーストビューに入る先頭画像1枚だけ** `fetchpriority="high"` +
+  `loading="eager"`、それ以外は `loading="lazy"`。`width` / `height` を必ず指定して
+  CLS を防ぐ。
+  - トップ：`Hero.astro` の背景画像
+  - `/services`：サービス詳細の1枚目（`i === 0`）
+  - `/about`：代表挨拶の写真
+  - `/news`：一覧カードの1枚目（`i === 0`）
+  - `/news/<slug>`：アイキャッチ画像
+  - `/contact`：画像なし
+- **Googleマップ**：`about.astro` / `Access.astro` の埋め込み `<iframe>` は
+  `loading="lazy"`（ファーストビュー外）。重い外部リソースのため、上部には置かない。
+- 新しい下層ページ・画像を追加する際も、この「先頭1枚 eager / 残り lazy」ルールと
+  システムフォント・外部CDN不使用を必ず踏襲すること。
+- 本番URL確定後の PSI 実測は、`https://pagespeed.web.dev/` に各URL
+  （`/` `/services` `/about` `/contact` `/news` `/news/<slug>`）を入力して確認する
+  （デプロイ前はローカルの `npm run preview` ＋ Lighthouse で代替検証）。

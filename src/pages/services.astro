@@ -49,7 +49,8 @@ const priceTable = servicesPage.priceTable ?? [];
                       width={600}
                       height={360}
                       format="webp"
-                      loading="lazy"
+                      fetchpriority={i === 0 ? 'high' : undefined}
+                      loading={i === 0 ? 'eager' : 'lazy'}
                     />
                   </div>
                 )}

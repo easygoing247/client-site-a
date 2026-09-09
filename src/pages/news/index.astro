@@ -32,7 +32,7 @@ const heading = 'お知らせ・ブログ';
           <p class="text-center text-[14px] text-ink-soft py-10">まだ記事がありません。</p>
         ) : (
           <ul class="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {posts.map((post) => {
+            {posts.map((post, i) => {
               const image = post.data.eyecatch;
               const category = newsCategoryLabel(post.data.category);
               return (
@@ -46,7 +46,8 @@ const heading = 'お知らせ・ブログ';
                         width={450}
                         height={253}
                         format="webp"
-                        loading="lazy"
+                        fetchpriority={i === 0 ? 'high' : undefined}
+                        loading={i === 0 ? 'eager' : 'lazy'}
                       />
                     )}
                     <div class="flex-1 px-5 py-5">
