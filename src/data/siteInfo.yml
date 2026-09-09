@@ -176,9 +176,9 @@ contact:
   facebookUrl: "#"
   phone: 000-000-0000
   snsOrder:
-    - id: x
     - id: line
     - id: instagram
+    - id: x
     - id: facebook
   xUrl: "#"
   phoneHref: tel:0000000000
