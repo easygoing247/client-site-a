@@ -1060,4 +1060,497 @@
   });
 
   window.CMS.registerPreviewTemplate('products', ProductPreview);
+
+  // ==========================================================================
+  // 複数ページ版（master-template-multi）専用：下層ページのプレビュー
+  // src/pages/services.astro / about.astro / contact.astro / news/[slug].astro
+  // のマークアップ・Tailwindクラスをそのまま再現する。
+  // これらは siteInfo.yml とは別エントリのため、ヘッダー・フッターは
+  // 商品プレビューと同様に「公開済みの実HTML」（publishedHeaderHtml /
+  // publishedFooterHtml）を流用する（編集中の siteInfo.yml の値は参照不可）。
+  // ==========================================================================
+
+  // --- 共通：ページ見出し＋パンくず（src/components/PageHeader.astro） --------
+  function renderPagePreviewHeading(h, opts) {
+    var crumbs = opts.crumbs || [];
+    return h(
+      'section',
+      { key: opts.key || 'page-heading', className: 'pt-10 pb-8 px-5 border-b border-surface-border bg-white' },
+      h(
+        'div',
+        { className: 'max-w-[900px] mx-auto' },
+        crumbs.length > 0 &&
+          h(
+            'nav',
+            { className: 'text-[12px] text-ink-faint mb-5 flex flex-wrap items-center gap-1.5' },
+            crumbs.reduce(function (acc, crumb, i) {
+              if (i > 0) acc.push(h('span', { key: 'sep-' + i }, '›'));
+              acc.push(
+                crumb.href
+                  ? h('a', { key: 'c-' + i, href: '#', className: 'hover:text-primary transition-colors' }, crumb.label)
+                  : h('span', { key: 'c-' + i, className: 'text-ink-soft' }, crumb.label)
+              );
+              return acc;
+            }, [])
+          ),
+        opts.eyebrow && h('div', { className: 'text-[12px] tracking-[0.2em] text-primary font-bold mb-2' }, opts.eyebrow),
+        h('h1', { className: 'font-bold m-0', style: styleObj('font-size:clamp(24px,3.6vw,34px);') }, opts.title),
+        opts.lead &&
+          h('p', { className: 'mt-4 text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' }, opts.lead)
+      )
+    );
+  }
+
+  // --- 共通：CTAボタン（src/components/Button.astro） -----------------------
+  function renderPreviewButton(h, label, variant) {
+    var base =
+      'inline-flex items-center justify-center gap-2 font-bold text-[15px] px-8 py-4 rounded-full transition-opacity hover:opacity-90';
+    var styles =
+      variant === 'outline'
+        ? 'text-primary bg-white border border-primary'
+        : 'text-white bg-gradient-to-br from-primary to-primary-dark';
+    return h('a', { href: '#', className: cx(base, styles) }, (label || '') + ' ›');
+  }
+
+  // --- 共通：プレーンテキスト → ブロック配列（src/lib/pages.ts parseTextBlocks） -
+  function parseTextBlocksForPreview(source) {
+    if (!source) return [];
+    return source
+      .split(/\n{2,}/)
+      .map(function (chunk) {
+        return chunk.trim();
+      })
+      .filter(Boolean)
+      .map(function (chunk) {
+        var m = chunk.match(/^#{1,6}\s+(.*)$/);
+        if (m && chunk.indexOf('\n') === -1) return { type: 'heading', text: m[1].trim() };
+        return { type: 'paragraph', text: chunk };
+      });
+  }
+
+  // --- 共通：下層ページのラッパー（ヘッダー／フッターは公開HTMLを流用） ----
+  function pagePreviewShell(h, children) {
+    return h(
+      'div',
+      { 'data-theme': currentTheme, className: 'font-sans bg-surface text-ink' },
+      publishedHeaderHtml && h('div', htmlProp(publishedHeaderHtml)),
+      h('main', {}, children),
+      publishedFooterHtml && h('div', htmlProp(publishedFooterHtml))
+    );
+  }
+
+  function makePagePreview(renderBody) {
+    return createClass({
+      componentDidMount: function () {
+        var self = this;
+        this._unmounted = false;
+        stylesReady.then(function () {
+          if (!self._unmounted) self.forceUpdate();
+        });
+      },
+      componentWillUnmount: function () {
+        this._unmounted = true;
+      },
+      render: function () {
+        var data = getData(this.props.entry);
+        return pagePreviewShell(
+          h,
+          renderBody(h, data, this.props.getAsset, this.props.widgetFor)
+        );
+      },
+    });
+  }
+
+  // ==========================================================================
+  // サービス内容・料金（src/pages/services.astro）
+  // ==========================================================================
+  var ServicesPagePreview = makePagePreview(function (h, data, getAsset) {
+    var heading = data.heading || 'サービス内容・料金';
+    var items = data.items || [];
+    var priceTable = data.priceTable || [];
+    return [
+      renderPagePreviewHeading(h, {
+        key: 'head',
+        eyebrow: 'SERVICE',
+        title: heading,
+        lead: data.lead,
+        crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
+      }),
+      items.length > 0 &&
+        h(
+          'section',
+          { key: 'items', className: 'py-14 px-5' },
+          h(
+            'div',
+            { className: 'max-w-[900px] mx-auto flex flex-col gap-12' },
+            items.map(function (item, i) {
+              var imageUrl = assetUrl(getAsset, item.image);
+              var features = (item.features || []).filter(Boolean);
+              return h(
+                'article',
+                { key: i, className: 'grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center' },
+                imageUrl &&
+                  h(
+                    'div',
+                    { className: cx('rounded-2xl overflow-hidden border border-surface-border', i % 2 === 1 && 'md:order-2') },
+                    h('img', {
+                      src: imageUrl,
+                      alt: item.title ? item.title + 'のイメージ' : '',
+                      className: 'w-full h-[220px] sm:h-[260px] object-cover block',
+                    })
+                  ),
+                h(
+                  'div',
+                  {},
+                  item.title && h('h2', { className: 'text-[19px] font-bold mb-3' }, item.title),
+                  item.description &&
+                    h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4' }, item.description),
+                  features.length > 0 &&
+                    h(
+                      'ul',
+                      { className: 'list-none m-0 p-0 flex flex-col gap-2' },
+                      features.map(function (feature, fi) {
+                        return h(
+                          'li',
+                          { key: fi, className: 'flex gap-2 items-start text-[13px] text-secondary-light' },
+                          h('span', { className: 'text-primary flex-none' }, '✓'),
+                          feature
+                        );
+                      })
+                    )
+                )
+              );
+            })
+          )
+        ),
+      priceTable.length > 0 &&
+        h(
+          'section',
+          { key: 'price', className: 'py-14 px-5 bg-surface-muted' },
+          h(
+            'div',
+            { className: 'max-w-[760px] mx-auto' },
+            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, '料金表'),
+            h(
+              'div',
+              { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white' },
+              priceTable.map(function (row, i) {
+                return h(
+                  'div',
+                  {
+                    key: i,
+                    className: cx(
+                      'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4',
+                      i > 0 && 'border-t border-surface-border'
+                    ),
+                  },
+                  h('div', { className: 'text-[14px] font-bold text-secondary' }, row.name),
+                  h(
+                    'div',
+                    { className: 'text-[15px] font-bold text-primary' },
+                    typeof row.price === 'number'
+                      ? [
+                          '￥' + Number(row.price).toLocaleString('ja-JP'),
+                          h('span', { key: 's', className: 'text-[12px] font-normal text-ink-soft' }, '〜'),
+                        ]
+                      : null
+                  ),
+                  row.note && h('div', { className: 'w-full text-[12px] text-ink-faint' }, row.note)
+                );
+              })
+            ),
+            data.priceNote &&
+              h('p', { className: 'mt-5 text-[12px] leading-[1.8] text-ink-faint whitespace-pre-line' }, data.priceNote)
+          )
+        ),
+      h(
+        'section',
+        { key: 'cta', className: 'py-14 px-5 text-center' },
+        renderPreviewButton(h, 'お問い合わせ')
+      ),
+    ];
+  });
+
+  window.CMS.registerPreviewTemplate('services', ServicesPagePreview);
+
+  // ==========================================================================
+  // 店舗概要・アクセス（src/pages/about.astro）
+  // ==========================================================================
+  var AboutPagePreview = makePagePreview(function (h, data, getAsset) {
+    var heading = data.heading || '店舗概要・アクセス';
+    var greeting = data.greeting || {};
+    var greetingImg = assetUrl(getAsset, greeting.image);
+    var profile = (data.profile || []).filter(function (row) {
+      return row.label && row.value;
+    });
+    var access = data.access || {};
+    var hasAccess = access.address || access.directions || access.parking || access.mapEmbedUrl;
+    return [
+      renderPagePreviewHeading(h, {
+        key: 'head',
+        eyebrow: 'ABOUT',
+        title: heading,
+        lead: data.lead,
+        crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
+      }),
+      (greeting.heading || greeting.body || greeting.name) &&
+        h(
+          'section',
+          { key: 'greeting', className: 'py-14 px-5' },
+          h(
+            'div',
+            { className: 'max-w-[900px] mx-auto grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8 items-start' },
+            greetingImg &&
+              h(
+                'div',
+                { className: 'rounded-2xl overflow-hidden border border-surface-border' },
+                h('img', {
+                  src: greetingImg,
+                  alt: greeting.name ? greeting.name + 'の写真' : '',
+                  className: 'w-full h-[240px] md:h-[260px] object-cover block',
+                })
+              ),
+            h(
+              'div',
+              {},
+              greeting.heading && h('h2', { className: 'text-[19px] font-bold mb-4' }, greeting.heading),
+              greeting.body &&
+                h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4' }, greeting.body),
+              // 実サイトでは「{会社名}　代表　{氏名}」だが、会社名は siteInfo.yml
+              // 側の別エントリのためプレビューでは氏名のみ表示する。
+              greeting.name && h('p', { className: 'text-[13px] text-secondary font-bold m-0' }, '代表　' + greeting.name)
+            )
+          )
+        ),
+      profile.length > 0 &&
+        h(
+          'section',
+          { key: 'profile', className: 'py-14 px-5 bg-surface-muted' },
+          h(
+            'div',
+            { className: 'max-w-[760px] mx-auto' },
+            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, '会社概要'),
+            h(
+              'dl',
+              { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white m-0' },
+              profile.map(function (row, i) {
+                return h(
+                  'div',
+                  { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[140px_1fr]', i > 0 && 'border-t border-surface-border') },
+                  h('dt', { className: 'px-5 py-4 text-[13px] font-bold text-secondary bg-surface-muted sm:bg-transparent' }, row.label),
+                  h(
+                    'dd',
+                    { className: 'px-5 pb-4 pt-0 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
+                    row.value
+                  )
+                );
+              })
+            )
+          )
+        ),
+      hasAccess &&
+        h(
+          'section',
+          { key: 'access', className: 'py-14 px-5' },
+          h(
+            'div',
+            { className: 'max-w-[900px] mx-auto' },
+            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, 'アクセス'),
+            h(
+              'dl',
+              { className: 'grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light max-w-[600px] mx-auto m-0' },
+              [
+                access.address && [
+                  h('dt', { key: 'dt1', className: 'font-bold text-secondary' }, '住所'),
+                  h('dd', { key: 'dd1', className: 'm-0' }, access.address),
+                ],
+                access.directions && [
+                  h('dt', { key: 'dt2', className: 'font-bold text-secondary' }, '交通'),
+                  h('dd', { key: 'dd2', className: 'm-0 whitespace-pre-line' }, access.directions),
+                ],
+                access.parking && [
+                  h('dt', { key: 'dt3', className: 'font-bold text-secondary' }, '駐車場'),
+                  h('dd', { key: 'dd3', className: 'm-0' }, access.parking),
+                ],
+              ].filter(Boolean)
+            ),
+            access.mapEmbedUrl &&
+              h(
+                'div',
+                { className: 'mt-8 rounded-2xl overflow-hidden border border-surface-border' },
+                h('iframe', {
+                  title: 'Googleマップ',
+                  src: access.mapEmbedUrl,
+                  className: 'w-full h-[300px] sm:h-[360px] border-0 block',
+                  loading: 'lazy',
+                })
+              )
+          )
+        ),
+    ];
+  });
+
+  window.CMS.registerPreviewTemplate('about', AboutPagePreview);
+
+  // ==========================================================================
+  // お問い合わせ・ご予約（src/pages/contact.astro）
+  // フォーム項目の文言は siteInfo.yml（contactSection.form）の値だが、
+  // 別エントリのため参照できない。現行のデフォルト文言を固定値で用意する。
+  // ==========================================================================
+  var CONTACT_FORM_DEFAULTS = {
+    namePlaceholder: 'お名前',
+    companyPlaceholder: '会社名（任意）',
+    emailPlaceholder: 'メールアドレス',
+    messagePlaceholder: 'お問い合わせ内容',
+    submitLabel: '送信する',
+    privacyPolicyLabel: 'プライバシーポリシー',
+    privacyConsentSuffix: 'に同意の上、送信してください。',
+  };
+
+  var ContactPagePreview = makePagePreview(function (h, data) {
+    var heading = data.heading || 'お問い合わせ・ご予約';
+    var notes = (data.notes || []).filter(Boolean);
+    var f = CONTACT_FORM_DEFAULTS;
+    var privacy = data.privacyPolicy || {};
+    var privacyBlocks = parseTextBlocksForPreview(privacy.body);
+    return [
+      renderPagePreviewHeading(h, {
+        key: 'head',
+        eyebrow: 'CONTACT',
+        title: heading,
+        lead: data.intro,
+        crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
+      }),
+      h(
+        'section',
+        { key: 'form', className: 'py-14 px-5' },
+        h(
+          'div',
+          { className: 'max-w-[720px] mx-auto' },
+          notes.length > 0 &&
+            h(
+              'ul',
+              { className: 'list-none p-0 m-0 mb-8 flex flex-col gap-2 bg-surface-muted rounded-2xl px-6 py-5' },
+              notes.map(function (note, i) {
+                return h('li', { key: i, className: 'text-[13px] leading-[1.8] text-secondary-light' }, '・' + note);
+              })
+            ),
+          h(
+            'div',
+            { className: 'flex flex-col gap-3' },
+            h(
+              'div',
+              { className: 'grid grid-cols-1 sm:grid-cols-2 gap-3' },
+              h('input', { type: 'text', readOnly: true, placeholder: f.namePlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
+              h('input', { type: 'text', readOnly: true, placeholder: f.companyPlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' })
+            ),
+            h('input', { type: 'email', readOnly: true, placeholder: f.emailPlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
+            h('textarea', { readOnly: true, placeholder: f.messagePlaceholder, rows: 5, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
+            h(
+              'button',
+              { type: 'button', className: 'mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full bg-gradient-to-br from-primary to-primary-dark' },
+              f.submitLabel + ' ›'
+            ),
+            h(
+              'p',
+              { className: 'text-[12px] text-ink-faint text-center m-0' },
+              h('span', { className: 'text-primary underline' }, f.privacyPolicyLabel),
+              f.privacyConsentSuffix
+            )
+          ),
+          // 実サイトでは送信完了後にのみ表示される（hidden）が、編集内容が
+          // 確認できるようプレビューでは常時表示する。
+          data.afterSubmit &&
+            h(
+              'p',
+              { className: 'mt-6 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line text-center bg-primary-light rounded-2xl px-6 py-5' },
+              data.afterSubmit
+            )
+        )
+      ),
+      (privacy.heading || privacyBlocks.length > 0) &&
+        h(
+          'section',
+          { key: 'privacy', className: 'py-14 px-5 bg-surface-muted' },
+          h(
+            'div',
+            { className: 'max-w-[760px] mx-auto' },
+            privacy.heading && h('h2', { className: 'font-bold mb-6', style: styleObj('font-size:clamp(20px,3vw,26px);') }, privacy.heading),
+            h(
+              'div',
+              { className: 'flex flex-col gap-4 text-[14px] leading-[1.9] text-secondary-light' },
+              privacyBlocks.map(function (block, i) {
+                return block.type === 'heading'
+                  ? h('h3', { key: i, className: 'text-[15px] font-bold text-secondary mt-2' }, block.text)
+                  : h('p', { key: i, className: 'whitespace-pre-line m-0' }, block.text);
+              })
+            ),
+            privacy.updatedAt && h('p', { className: 'mt-6 text-[12px] text-ink-faint' }, '最終改定日：' + privacy.updatedAt)
+          )
+        ),
+    ];
+  });
+
+  window.CMS.registerPreviewTemplate('contact', ContactPagePreview);
+
+  // ==========================================================================
+  // お知らせ・ブログ 記事詳細（src/pages/news/[slug].astro）
+  // ==========================================================================
+  var NEWS_CATEGORY_LABELS = { info: 'お知らせ', blog: 'ブログ', event: 'イベント', works: '実績紹介' };
+
+  function formatNewsDateForPreview(value) {
+    if (!value) return '';
+    var d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  }
+
+  var NewsPreview = makePagePreview(function (h, data, getAsset, widgetFor) {
+    var category = data.category ? NEWS_CATEGORY_LABELS[data.category] || data.category : '';
+    var dateText = formatNewsDateForPreview(data.publishedAt);
+    var eyecatchUrl = assetUrl(getAsset, data.eyecatch);
+    return h(
+      'article',
+      { className: 'py-12 px-5' },
+      h(
+        'div',
+        { className: 'max-w-[760px] mx-auto' },
+        h(
+          'nav',
+          { className: 'text-[12px] text-ink-faint mb-6 flex flex-wrap items-center gap-1.5' },
+          h('a', { href: '#', className: 'hover:text-primary transition-colors' }, 'トップ'),
+          h('span', {}, '›'),
+          h('a', { href: '#', className: 'hover:text-primary transition-colors' }, 'お知らせ・ブログ'),
+          h('span', {}, '›'),
+          h('span', { className: 'text-ink-soft' }, data.title || '')
+        ),
+        (category || dateText) &&
+          h(
+            'div',
+            { className: 'flex items-center gap-2 mb-3 text-[12px]' },
+            category && h('span', { className: 'font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full' }, category),
+            dateText && h('time', { className: 'text-ink-faint' }, dateText)
+          ),
+        data.title && h('h1', { className: 'font-bold mb-6', style: styleObj('font-size:clamp(22px,3.4vw,32px);') }, data.title),
+        eyecatchUrl &&
+          h(
+            'div',
+            { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8' },
+            h('img', { src: eyecatchUrl, alt: data.eyecatchAlt || data.title || '', className: 'w-full h-auto object-cover block' })
+          ),
+        h(
+          'div',
+          { className: 'prose-content text-[14px] leading-[1.9] text-secondary-light mb-12' },
+          widgetFor ? widgetFor('body') : null
+        ),
+        h(
+          'div',
+          { className: 'text-center border-t border-surface-border pt-10' },
+          renderPreviewButton(h, '一覧へ戻る', 'outline')
+        )
+      )
+    );
+  });
+
+  window.CMS.registerPreviewTemplate('news', NewsPreview);
 })();

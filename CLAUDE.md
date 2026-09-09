@@ -133,16 +133,31 @@ public/
 
 ## 7. Decap CMSライブプレビュー（`public/admin/preview.js`）の保守ルール
 
-- 「サイト設定」「商品・施工事例」コレクションには `CMS.registerPreviewTemplate` による
-  独自のライブプレビューを実装済み（Decap既定のMarkdownプレビューではなく、
-  実サイトに近い見た目をリアルタイム表示するため）。
-- `preview.js` は `src/components/*.astro` の対応するセクションと**同じマークアップ・
-  Tailwindクラス**をJS（`h()` = React.createElement呼び出し）で再現する二重管理構成。
-  そのため、コンポーネント側（`.astro`）のマークアップ・クラス・条件分岐を変更した場合は、
-  `preview.js` 内の対応する `render*()` 関数（`renderHeader` / `renderHero` /
-  `renderFeatures` / `renderServices` / `renderFlow` / `renderWorks` / `renderPlans` /
-  `renderAccess` / `renderFaq` / `renderContact` / `renderFooter` 等）も必ず追従修正すること。
-  自動同期の仕組みは無いため、変更の都度手動で見比べる必要がある。
+- 「サイト設定」「商品・施工事例」および複数ページ版で追加した「下層ページ
+  （services / about / contact）」「お知らせ・ブログ（news）」の各コレクションには
+  `CMS.registerPreviewTemplate` による独自のライブプレビューを実装済み（Decap既定の
+  Markdownプレビューではなく、実サイトに近い見た目をリアルタイム表示するため）。
+  file コレクションの登録名は**ファイルの `name`**（`siteInfo` / `siteSettings` /
+  `services` / `about` / `contact`）、folder コレクションは**コレクション名**
+  （`products` / `news`）。
+- `preview.js` は `src/components/*.astro`・`src/pages/*.astro` の対応するマークアップと
+  **同じマークアップ・Tailwindクラス**をJS（`h()` = React.createElement呼び出し）で
+  再現する二重管理構成。そのため、コンポーネント／ページ側の
+  マークアップ・クラス・条件分岐を変更した場合は、`preview.js` 内の対応する関数
+  （トップページ：`renderHeader` / `renderHero` / `renderFeatures` / `renderServices` /
+  `renderFlow` / `renderWorks` / `renderPlans` / `renderAccess` / `renderFaq` /
+  `renderContact` / `renderFooter`。下層ページ：`renderPagePreviewHeading`
+  （＝`PageHeader.astro`）/ `renderPreviewButton`（＝`Button.astro`）/
+  `parseTextBlocksForPreview`（＝`src/lib/pages.ts` の `parseTextBlocks`）/
+  `ServicesPagePreview` / `AboutPagePreview` / `ContactPagePreview` / `NewsPreview`）も
+  必ず追従修正すること。自動同期の仕組みは無いため、変更の都度手動で見比べる必要がある。
+- 下層ページ（`services` / `about` / `contact` / `news`）のプレビューは siteInfo.yml とは
+  別エントリのため、ヘッダー・フッターは商品プレビューと同様に「公開済みの実HTML」
+  （`publishedHeaderHtml` / `publishedFooterHtml`）を流用する。会社名・フォーム項目文言など
+  siteInfo.yml 側の値はプレビューでは既定値で代替する（`CONTACT_FORM_DEFAULTS` 等）。
+- 下層ページのプレビューでは、`index.html` のスクロール同期（`findActiveSectionKey()` が
+  siteInfo.yml 固有の大項目ラベルを前提とする）は対象セクションを見つけられず自動的に
+  no-op になる（CSS崩れ・エラーは発生しない）。
 - ヘッダー・フッターのナビゲーション項目は、実サイト（`src/lib/site.ts` の
   `visibleNavItems()`）・プレビュー（`preview.js` の `filterVisibleNavForPreview()`）の
   どちらも、リンク先セクションの機能フラグ（`features.enableFaq` 等）と連動して
