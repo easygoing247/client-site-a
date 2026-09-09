@@ -1,23 +1,31 @@
 /* ============================================================================
  * public/admin/preview.js
  * Decap CMS の「サイト全体設定（siteInfo.yml）」「デザインテーマ設定
- * （site-settings.json）」に対するリアルタイムプレビューテンプレート。
+ * （site-settings.json）」「商品・施工事例（型化ページ／products）」に
+ * 対するリアルタイムプレビューテンプレート。
  *
  * Astroコンポーネント（.astro）はビルド時にHTMLへ変換されるサーバー
  * サイド専用の仕組みのため、CMSの編集画面内でそのまま動かすことはできない。
  * そのため、本番の各コンポーネント（Hero/Features/Service/Flow/Works/
- * Plans/Access/Faq/Contact/Header/Footer）のマークアップ・Tailwind
- * クラスをこのファイル内でReact要素として再現し、フォームの入力値
- * （entry）を直接バインドすることで、保存・ビルドを待たずに実際のサイトに
- * 近い見た目でリアルタイムにプレビューする。
+ * Plans/Access/Faq/Contact/Header/Footer、および商品詳細ページ
+ * products/[slug].astro）のマークアップ・Tailwindクラスをこのファイル内で
+ * React要素として再現し、フォームの入力値（entry）を直接バインドする
+ * ことで、保存・ビルドを待たずに実際のサイトに近い見た目でリアルタイムに
+ * プレビューする。
  *
  * スタイルは、実際にビルドされたサイトが読み込んでいるCSS（Tailwindの
  * コンパイル済みスタイルシート）をトップページのHTMLから動的に見つけ出し、
  * CMS.registerPreviewStyle() でそのままプレビューiframeに読み込ませる。
  * これにより、フォント・配色・コンポーネントの見た目は本番と完全に同一の
  * CSSファイルを使う（このファイル側で独自にスタイルを再定義しない）。
- * 商品・施工事例（Content Collections）一覧セクションのみ、ビルド時に
- * しか取得できないデータのためプレビュー対象外（プレースホルダー表示）。
+ * 同じトップページのHTMLから実際の<header>・<footer>（ロゴ・ナビ・
+ * SNSアイコン等、siteInfo.yml側の最新公開データを反映したもの）もそのまま
+ * 抜き出し、商品詳細ページのプレビューにも本物のヘッダー・フッターとして
+ * 使い回す（productsコレクションのプレビューは別エントリのため、
+ * siteInfo.yml側の"未保存の編集中の値"までは参照できない＝直近に公開
+ * 済みの内容が表示される）。
+ * トップページの「商品・プラン一覧」セクションのみ、ビルド時にしか
+ * 取得できないデータのためプレビュー対象外（プレースホルダー表示）。
  * ============================================================================ */
 (function () {
   var h = window.h;
@@ -28,6 +36,8 @@
   // 0) 本番サイトが実際に読み込んでいるCSSと、現在のテーマカラーを取得する
   // ==========================================================================
   var currentTheme = 'blue';
+  var publishedHeaderHtml = '';
+  var publishedFooterHtml = '';
   function loadSiteStylesheetAndTheme() {
     return fetch('/')
       .then(function (res) {
@@ -47,6 +57,21 @@
             window.CMS.registerPreviewStyle(hrefMatch[1]);
           }
         });
+        // 商品詳細ページのプレビュー用に、実際に公開済みのヘッダー・
+        // フッター（ロゴ・ナビ・SNS等）をそのまま抜き出しておく。
+        // DOMParserで安全に部分木として取り出す（innerHTML挿入時、
+        // 内部の<script>タグは実行されないため、ハンバーガーメニューの
+        // 開閉等の動的挙動はプレビュー上では動かないが、見た目の再現には
+        // 影響しない）。
+        try {
+          var parsed = new DOMParser().parseFromString(html, 'text/html');
+          var headerEl = parsed.querySelector('header');
+          var footerEl = parsed.querySelector('footer');
+          if (headerEl) publishedHeaderHtml = headerEl.outerHTML;
+          if (footerEl) publishedFooterHtml = footerEl.outerHTML;
+        } catch (e) {
+          /* DOMParser非対応環境等では諦め、見出し無しのプレビューにフォールバックする */
+        }
       })
       .catch(function () {
         /* ローカルでのCMS単体確認時など、取得できなくてもプレビュー自体は表示させる */
@@ -901,4 +926,116 @@
   });
 
   window.CMS.registerPreviewTemplate('siteSettings', SiteSettingsPreview);
+
+  // ==========================================================================
+  // 「商品・施工事例（型化ページ）」プレビュー本体
+  // src/pages/products/[slug].astro の構造をそのまま再現する。
+  // パンくずリストの「トップ」表示名・「仕様・含まれる内容」見出し・
+  // 相談CTAボタン文言は siteInfo.yml 側の productPage フィールドの値だが、
+  // productsコレクションのプレビューからは別エントリであるsiteInfo.yml
+  // の“編集中の値”を参照する手段がないため、現時点でのデフォルト文言を
+  // 固定値としてここに用意している（siteInfo.yml側でこれらの文言自体を
+  // 変更した場合、このプレビュー表示だけは追従しない）。
+  // ==========================================================================
+  var PRODUCT_PAGE_DEFAULTS = {
+    breadcrumbHome: 'トップ',
+    specsHeading: '仕様・含まれる内容',
+    ctaLabel: 'このプランで相談する',
+  };
+
+  var ProductPreview = createClass({
+    componentDidMount: function () {
+      var self = this;
+      this._unmounted = false;
+      stylesReady.then(function () {
+        if (!self._unmounted) self.forceUpdate();
+      });
+    },
+    componentWillUnmount: function () {
+      this._unmounted = true;
+    },
+    render: function () {
+      var entry = this.props.entry;
+      var getAsset = this.props.getAsset;
+      var widgetFor = this.props.widgetFor;
+      var data = getData(entry);
+      var imageUrl = assetUrl(getAsset, data.mainImage);
+      var specs = (data.specs || []).filter(Boolean);
+
+      return h(
+        'div',
+        { 'data-theme': currentTheme, className: 'font-sans bg-surface text-ink' },
+        publishedHeaderHtml && h('div', htmlProp(publishedHeaderHtml)),
+        h(
+          'main',
+          {},
+          h(
+            'article',
+            { className: 'py-12 px-5' },
+            h(
+              'div',
+              { className: 'max-w-[820px] mx-auto' },
+              h(
+                'nav',
+                { className: 'text-[12px] text-ink-faint mb-6' },
+                h('a', { href: '#', className: 'hover:text-primary' }, PRODUCT_PAGE_DEFAULTS.breadcrumbHome),
+                ' › ',
+                data.title || ''
+              ),
+              imageUrl &&
+                h(
+                  'div',
+                  { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8' },
+                  h('img', { src: imageUrl, alt: data.title || '', className: 'w-full h-auto object-cover block' })
+                ),
+              data.title &&
+                h('h1', { className: 'font-bold mb-3', style: styleObj('font-size:clamp(24px,3.6vw,34px);') }, data.title),
+              !!data.price &&
+                h(
+                  'div',
+                  { className: 'text-[26px] font-bold text-primary mb-6' },
+                  '￥' + Number(data.price).toLocaleString('ja-JP'),
+                  h('span', { className: 'text-[14px] font-normal text-ink-soft' }, '〜')
+                ),
+              data.summary &&
+                h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light mb-8 whitespace-pre-line' }, data.summary),
+              specs.length > 0 &&
+                h(
+                  'div',
+                  { className: 'mb-10 bg-surface-muted rounded-2xl p-6' },
+                  h('h2', { className: 'text-[14px] font-bold mb-4' }, PRODUCT_PAGE_DEFAULTS.specsHeading),
+                  h(
+                    'ul',
+                    { className: 'list-none m-0 p-0 flex flex-col gap-2.5' },
+                    specs.map(function (spec, i) {
+                      return h(
+                        'li',
+                        { key: i, className: 'flex gap-2 items-start text-[13px] text-secondary-light' },
+                        h('span', { className: 'text-primary flex-none' }, '✓'),
+                        spec
+                      );
+                    })
+                  )
+                ),
+              // 本文（markdownウィジェット）はDecap自身のwidgetFor()で
+              // レンダリングさせる。自前でmarkdownパースを行うより、
+              // 実際のエディタ・保存後の変換結果と確実に一致する。
+              h('div', { className: 'prose-content text-[14px] leading-[1.9] text-secondary-light mb-10' }, widgetFor ? widgetFor('body') : null),
+              h(
+                'a',
+                {
+                  href: '#',
+                  className: 'inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full bg-gradient-to-br from-primary to-primary-dark',
+                },
+                PRODUCT_PAGE_DEFAULTS.ctaLabel + ' ›'
+              )
+            )
+          )
+        ),
+        publishedFooterHtml && h('div', htmlProp(publishedFooterHtml))
+      );
+    },
+  });
+
+  window.CMS.registerPreviewTemplate('products', ProductPreview);
 })();
