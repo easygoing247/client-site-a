@@ -177,17 +177,32 @@ public/
 Cloudflare Pages へ手動デプロイする運用（CI/CD連携なし）。派生元 `master-template`
 （LP版）は プロジェクト名 `master-template` / 本番ドメイン `master-template-c2u.pages.dev`。
 
+このプロジェクトは **`output` 未指定＝完全な静的サイト（SSG）**。`dist/` に
+プレーンなHTML/CSS/JS/画像のみを出力する。`@astrojs/cloudflare` アダプターや
+`output: "hybrid"`、`wrangler.jsonc` は**入れない**（SSR不要／`master-template` と
+同じ静的ホスティングモデルを維持するため）。
+
 **このリポジトリ（`master-template-multi`）専用の Cloudflare Pages プロジェクトは
-まだ作成されていない。** 初回デプロイ前に、ユーザーが Cloudflare 側で一度だけ
-以下のいずれかを行う必要がある（Claude Code からは Cloudflare 認証が無いため実行不可）：
+まだ作成されていない。** 初回のみユーザーが Cloudflare ダッシュボードで作成する
+（Claude Code からは Cloudflare 認証が無いため実行不可）：
 
-- **Wrangler で作成**：`npx wrangler login`（ブラウザ認証）→
-  `npx wrangler pages project create master-template-multi --production-branch main`
-- **ダッシュボードで作成**：Workers & Pages → Create → Pages → 「Connect to Git」で
-  `easygoing247/master-template-multi` を接続（Build command: `npm run build` /
-  Output: `dist`）。Git 接続にすると push 毎に自動ビルド・デプロイされる。
+- **ダッシュボードで Git 連携作成（推奨）**：Cloudflare ダッシュボード →
+  Workers & Pages → Create → **Pages** タブ → 「Connect to Git」→
+  `easygoing247/master-template-multi` を選択し、以下を設定：
+  - Project name: `master-template-multi`
+  - Production branch: `main`
+  - Framework preset: `Astro`（または None）
+  - **Build command: `npm run build`**
+  - **Build output directory: `dist`**
+  - Root directory: （空欄＝リポジトリ直下）
+  Git 連携にすると `main` への push 毎に自動ビルド・デプロイされる。
+- ⚠️ `npx wrangler pages project create` は wrangler 4.13x で挙動が変わり、
+  レガシー Pages ではなく **Workers（SSRアダプター構成）へ自動変換・デプロイ**して
+  しまう（`astro.config.mjs` / `package.json` / `package-lock.json` を書き換える）。
+  静的サイトのまま Pages に載せたい場合は**このコマンドを使わず、上記ダッシュボードの
+  Git 連携で作成すること**。
 
-プロジェクト作成後、コード変更をデプロイに反映する手順（Git 未接続の場合）：
+プロジェクト作成後、Git 未連携で手動デプロイする場合の手順：
 
 ```bash
 npm run build
@@ -198,9 +213,9 @@ npx wrangler pages deploy dist --project-name=master-template-multi
 独自ドメイン）に更新し、`public/admin/config.yml` の `backend.base_url` も
 複製先専用 OAuth プロキシに向ける（セクション9.2 の 2〜4 と合わせて対応）。
 
-Decap CMSからクライアントが直接編集・保存した内容はGitHubの `main` に直接コミット
-されるが、Git 未接続なら Cloudflare Pages は自動再デプロイされないため、
-コンテンツ更新分も含めて上記コマンドで都度デプロイし直す。
+Git 連携なら push で自動再デプロイされる。Git 未連携の場合、Decap CMS から
+クライアントが直接編集・保存した内容（`main` への直接コミット）も含めて、
+上記コマンドで都度デプロイし直す必要がある。
 
 コード側に変更を加える際は、CMSからの同時コミット（`Update サイト設定 "siteInfo"` 等）
 と衝突しないよう、必ず `git fetch origin` → 差分確認 → （必要なら）`git pull` で
