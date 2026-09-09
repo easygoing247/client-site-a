@@ -238,7 +238,7 @@ icons:
 copyright: © 2026 LOGO. All Rights Reserved.
 features:
   enableFeatures: true
-  enableServices: false
+  enableServices: true
   enableProducts: true
   enableAccess: true
   enablePlans: true
