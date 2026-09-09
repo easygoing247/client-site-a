@@ -66,7 +66,7 @@ collections:
                 field: { label: "バッジ文言", name: "badge", widget: string, required: false }
 
           # --- 2. 「セクション表示順序」に含まれる各セクション -------------
-          - label: "選ばれる理由セクション"
+          - label: "選ばれる理由"
             name: "features_section"
             widget: object
             fields:
@@ -82,7 +82,7 @@ collections:
                   - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
                   - { label: "アイコン画像", name: "icon", widget: image, required: false }
 
-          - label: "サービスセクション"
+          - label: "サービス"
             name: "services"
             widget: object
             fields:
@@ -97,7 +97,7 @@ collections:
                   - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
                   - { label: "画像", name: "image", widget: image, required: false }
 
-          - label: "制作の流れセクション"
+          - label: "制作の流れ"
             name: "flow"
             widget: object
             fields:
@@ -112,14 +112,14 @@ collections:
                   - { label: "タイトル", name: "title", widget: string, required: false }
                   - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
 
-          - label: "商品一覧セクション（竹/松プラン）"
+          - label: "商品一覧（竹/松プラン）"
             name: "productsSection"
             widget: object
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
 
-          - label: "実績セクション"
+          - label: "実績"
             name: "works"
             widget: object
             fields:
@@ -135,7 +135,7 @@ collections:
                   - { label: "タグ", name: "tag", widget: string, required: false }
                   - { label: "画像", name: "image", widget: image, required: false }
 
-          - label: "料金プランセクション"
+          - label: "料金プラン"
             name: "plans"
             widget: object
             fields:
@@ -158,7 +158,7 @@ collections:
                     required: false
                     field: { label: "項目", name: "feature", widget: string, required: false }
 
-          - label: "アクセスセクション"
+          - label: "アクセス"
             name: "access"
             widget: object
             fields:
@@ -192,7 +192,7 @@ collections:
                   - { label: "駐車場", name: "parking", widget: string, required: false }
                   - { label: "公式SNS", name: "sns", widget: string, required: false }
 
-          - label: "FAQセクション"
+          - label: "FAQ"
             name: "faq"
             widget: object
             fields:
@@ -206,7 +206,7 @@ collections:
                   - { label: "質問", name: "q", widget: string, required: false }
                   - { label: "回答（Enterキーで改行可）", name: "a", widget: text, required: false }
 
-          - label: "お問い合わせセクション"
+          - label: "お問い合わせ"
             name: "contactSection"
             widget: object
             fields:
