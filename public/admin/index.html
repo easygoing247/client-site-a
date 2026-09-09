@@ -1070,6 +1070,7 @@
             // ボタンが新しく生成された場合は、既定のON（アイコン青）へ戻す。
             lastViewControlsNode = viewControls;
             scrollSyncEnabled = true;
+            lastSyncedScrollTop = null;
             applyScrollSyncIcon();
           }
           var targetWrapper = document.querySelector('[class*="ToolbarSubSectionLast"]');
@@ -1200,32 +1201,51 @@
             if (!toggle || toggle.title !== 'スクロール同期を切り替える') return;
             scrollSyncEnabled = !scrollSyncEnabled;
             applyScrollSyncIcon();
-            if (scrollSyncEnabled) syncPreviewScroll();
+            if (scrollSyncEnabled) {
+              // OFFだった間の基準値を引き継がないよう、ONに戻した直後は
+              // 必ず一度だけ同期を実行する。
+              lastSyncedScrollTop = null;
+              syncPreviewScroll();
+            }
           },
           true
         );
 
         // フォーム側コンテナのscrollイベントはバブリングしないため、
         // キャプチャ段階でdocumentに登録して検知する。
+        //
+        // 以前はここに加えて「入力欄にフォーカスした瞬間にも同期をかけ
+        // 直す」focusinリスナーを設けていたが、これが以下の不具合の
+        // 原因になっていた：
+        //  ・入力欄をクリックすると、ブラウザが「フォーカスした要素を
+        //    表示領域内に収めるための自動スクロール」をわずかに行う
+        //    ことがある（ちょうど画面端に近い項目ほど起きやすい）。
+        //  ・この“わずかな”scrollイベントとfocusinの両方が
+        //    syncPreviewScroll()を呼び、プレビュー側をセクション見出し
+        //    位置まで強制的に巻き戻してしまっていた。
+        //  ・その結果、プレビュー側で手動スクロールして下部の項目
+        //    （例：ステップ5）を見えるようにしていても、フォーム側で
+        //    文字入力を始めた途端に見出し位置へリセットされ、その項目が
+        //    再び見切れてしまっていた。
+        // フォーカスやカーソル移動・文字入力そのものは「セクションを
+        // 移動する意図」ではないため、focusinでの同期は完全に廃止する。
+        // さらにscrollイベント側にも、移動量が一定以上（＝明確な
+        // スクロール操作）の場合のみ同期する閾値を設け、フォーカス時の
+        // 数px程度の自動スクロールでは反応しないようにする。
+        var lastSyncedScrollTop = null;
+        var SCROLL_SYNC_THRESHOLD = 80;
+
         document.addEventListener(
           'scroll',
           function (e) {
             if (!scrollSyncEnabled) return;
             var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
-            if (e.target === controlPane) syncPreviewScroll();
-          },
-          true
-        );
-
-        // 入力欄をタップ・クリックしてフォーカスした際、その時点では
-        // スクロールが発生しない（既に画面内に見えている等）場合でも
-        // 同期を効かせるため、フォーム側のfocusinでも同期をかけ直す。
-        document.addEventListener(
-          'focusin',
-          function (e) {
-            if (!scrollSyncEnabled) return;
-            var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
-            if (controlPane && controlPane.contains(e.target)) syncPreviewScroll();
+            if (e.target !== controlPane) return;
+            if (lastSyncedScrollTop !== null && Math.abs(controlPane.scrollTop - lastSyncedScrollTop) < SCROLL_SYNC_THRESHOLD) {
+              return;
+            }
+            lastSyncedScrollTop = controlPane.scrollTop;
+            syncPreviewScroll();
           },
           true
         );
