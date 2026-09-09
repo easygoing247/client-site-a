@@ -424,7 +424,8 @@
                 'div',
                 { className: 'flex-1 px-4 py-4 md:py-6' },
                 item.title && h('h3', { className: 'font-bold text-[15px] mb-1' }, item.title),
-                item.industry && h('p', { className: 'text-[12px] text-ink-soft mb-[10px]' }, item.industry),
+                item.industry &&
+                  h('p', { className: 'text-[12px] text-ink-soft mb-[10px]', style: { whiteSpace: 'pre-wrap' } }, item.industry),
                 item.tag &&
                   h('span', { className: 'inline-block text-[11px] font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full' }, item.tag)
               )

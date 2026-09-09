@@ -131,7 +131,7 @@ collections:
                 required: false
                 fields:
                   - { label: "タイトル", name: "title", widget: string, required: false }
-                  - { label: "業種", name: "industry", widget: string, required: false }
+                  - { label: "本文（Enterキーで改行可）", name: "industry", widget: text, required: false }
                   - { label: "タグ", name: "tag", widget: string, required: false }
                   - { label: "画像", name: "image", widget: image, required: false }
 

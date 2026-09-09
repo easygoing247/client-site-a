@@ -58,7 +58,7 @@ const { muted = false } = Astro.props;
                 )}
                 <div class="flex-1 px-4 py-4 md:py-6">
                   {item.title && <h3 class="font-bold text-[15px] mb-1">{item.title}</h3>}
-                  {item.industry && <p class="text-[12px] text-ink-soft mb-[10px]">{item.industry}</p>}
+                  {item.industry && <p class="text-[12px] text-ink-soft mb-[10px] whitespace-pre-wrap">{item.industry}</p>}
                   {item.tag && (
                     <span class="inline-block text-[11px] font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full">
                       {item.tag}
