@@ -142,6 +142,31 @@
         background: #f1f5fb;
       }
 
+      /*
+        「プレビュー表示を切り替える」「スクロール同期を切り替える」の
+        丸型ボタン（ViewControls）は、Decap本体の既定では
+        position: absolute でプレビューペイン右上に重ねて配置されており、
+        プレビュー内のコンテンツと干渉してしまう。
+        下部の<script>でこの要素自体をヘッダー右側（アカウントアイコンの
+        左隣、ToolbarSectionMeta内）へDOM移動させるため、絶対配置を解除し、
+        ヘッダーの他の項目と同様に横並びのflexで自然に並ぶようにする。
+      */
+      [class*='ViewControls'] {
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        bottom: auto !important;
+        z-index: auto !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 4px;
+        width: auto !important;
+        height: auto !important;
+        margin-right: 8px;
+      }
+
       @media (max-width: 799px) {
         /*
           html/body は overflow-x のみ隠しており、overflow-y は既定（visible）
@@ -267,11 +292,13 @@
         }
 
         /*
-          プレビュー表示切替／スクロール同期切替の丸型フローティングボタン
-          （EditorToggle）も、プレビューペイン自体を非表示にしている以上不要
-          なため、画面端にはみ出さないよう非表示にする。
+          プレビュー表示切替／スクロール同期切替ボタン（下部の<script>で
+          ヘッダー右側へ移動させているEditorToggle／ViewControls）も、
+          プレビューペイン自体を非表示にしている以上不要なため、
+          移動先のヘッダー内でも非表示にする。
         */
-        [class*='EditorToggle'] {
+        [class*='EditorToggle'],
+        [class*='ViewControls'] {
           display: none !important;
         }
       }
@@ -995,12 +1022,44 @@
           true
         );
 
+        // ==================================================================
+        // 7) 「プレビュー表示を切り替える」「スクロール同期を切り替える」
+        //    ボタン（ViewControls）を、プレビューペイン右上のフローティング
+        //    表示から、画面最上部のヘッダーバー右側（アカウントアイコンの
+        //    左隣）へ移動する。
+        //    CSSのposition指定を打ち消すだけではDOM上の位置（プレビュー
+        //    ペインの内側）自体は変わらずヘッダーには表示できないため、
+        //    実際のDOMノードをヘッダー側のコンテナへ移動させる。
+        //    Reactが生成・管理しているノードをそのまま別の場所へ
+        //    appendChild/insertBeforeで移動させても、React内部の参照は
+        //    そのノードを指し続けるため、以降の再レンダー・イベント処理は
+        //    移動先でも問題なく機能する（クイックナビボタンをdocument.body
+        //    直下へ配置しているのと同じ手法）。
+        //    エントリ編集画面への出入りのたびにこの要素は再生成される
+        //    ため、MutationObserverで継続的に検知して移動し続ける。
+        // ==================================================================
+        function relocateViewControls() {
+          var viewControls = document.querySelector('[class*="ViewControls"]');
+          if (!viewControls) return;
+          var metaSection = document.querySelector('[class*="ToolbarSectionMeta"]');
+          if (!metaSection) return;
+          if (viewControls.parentElement === metaSection && viewControls === metaSection.firstChild) return;
+          metaSection.insertBefore(viewControls, metaSection.firstChild);
+        }
+
+        var viewControlsObserver = new MutationObserver(function () {
+          relocateViewControls();
+        });
+        viewControlsObserver.observe(document.body, { childList: true, subtree: true });
+        relocateViewControls();
+
         window.addEventListener('load', function () {
           updateNavButtonVisibility();
           setInterval(function () {
             updateNavButtonVisibility();
             syncSectionLabels();
             markRequiredFieldLabels();
+            relocateViewControls();
           }, 500);
         });
       })();
