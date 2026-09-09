@@ -142,9 +142,7 @@
   // ==========================================================================
   function renderHeader(h, data, getAsset) {
     var company = data.company || {};
-    var nav = (data.nav || []).filter(function (n) {
-      return n && n.label && n.href;
-    });
+    var nav = filterVisibleNavForPreview(data, data.nav);
     var navCta = data.navCta || {};
     var logoUrl = assetUrl(getAsset, company.logo);
 
@@ -755,9 +753,7 @@
   // ==========================================================================
   function renderFooter(h, data, getAsset) {
     var company = data.company || {};
-    var footerNav = (data.footerNav || []).filter(function (n) {
-      return n && n.label && n.href;
-    });
+    var footerNav = filterVisibleNavForPreview(data, data.footerNav);
     var logoUrl = assetUrl(getAsset, company.logo);
     var snsLinks = orderedSnsForPreview(data);
 
@@ -810,6 +806,26 @@
     access: 'enableAccess',
     contact: 'enableContact',
   };
+
+  // ヘッダー・フッターのナビゲーション項目は、リンク先セクションが
+  // 「セクションの表示・非表示」機能フラグでOFFになっている場合、
+  // 実サイト側（src/lib/site.ts の visibleNavItems）と同様に連動して
+  // 非表示にする。キーはFEATURE_FLAG_MAPと同じ対応関係を「#セクションID」
+  // の形（nav/footerNavのhref表記）に変換したもの。
+  var NAV_HREF_TO_FLAG = Object.keys(FEATURE_FLAG_MAP).reduce(function (acc, id) {
+    acc['#' + id] = FEATURE_FLAG_MAP[id];
+    return acc;
+  }, {});
+
+  function filterVisibleNavForPreview(data, items) {
+    var features = data.features || {};
+    return (items || []).filter(function (item) {
+      if (!item || !item.label || !item.href) return false;
+      var flag = NAV_HREF_TO_FLAG[item.href];
+      // 対応するセクションフラグが無いリンク（外部リンク等）は常に表示する
+      return flag === undefined || features[flag];
+    });
+  }
 
   function computeVisibleSections(data) {
     var order = (data.sectionOrder || [])
