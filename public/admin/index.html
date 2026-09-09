@@ -916,6 +916,85 @@
           });
         }
 
+        // ==================================================================
+        // 6) PC表示：フォーム／プレビューの境界線（.Resizer）をドラッグして
+        //    幅を変更した後、スクロールが効かなくなる不具合の対策。
+        //    Decap本体が内部で使っているreact-split-paneは、ドラッグ中に
+        //    プレビュー側のiframeがマウス／タッチイベントを奪ってドラッグの
+        //    追従が止まってしまうのを防ぐため、ドラッグ中だけiframe（および
+        //    フォーム側コンテナ）に pointer-events:none 相当の制限を一時的に
+        //    かける実装になっている。ドラッグ終了のタイミングによっては、
+        //    この制限や、リサイズに伴うレイアウト再計算で上書きされた
+        //    overflow-y の指定が正しい状態に戻らないまま残ってしまい、
+        //    フォーム側・プレビュー側のどちらもスクロール操作を受け付け
+        //    なくなることがある。
+        //    .Resizer 上で開始したドラッグが終了した際に、フォーム側
+        //    コンテナのoverflow-yと、プレビュー側iframeのpointer-eventsを
+        //    強制的に正しい値へ戻すことで復旧する。
+        // ==================================================================
+        var resizerDragActive = false;
+
+        function isResizerTarget(target) {
+          return !!(target && target.closest && target.closest('.Resizer'));
+        }
+
+        document.addEventListener(
+          'mousedown',
+          function (e) {
+            if (isResizerTarget(e.target)) resizerDragActive = true;
+          },
+          true
+        );
+        document.addEventListener(
+          'touchstart',
+          function (e) {
+            if (isResizerTarget(e.target)) resizerDragActive = true;
+          },
+          true
+        );
+
+        function restoreScrollAfterResize() {
+          // フォーム側：ドラッグ中の一時的な指定が残っていても、常に
+          // 縦スクロール可能・横スクロール不可の状態に戻す。
+          var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
+          if (controlPane) {
+            controlPane.style.overflowY = 'auto';
+            controlPane.style.overflowX = 'hidden';
+          }
+          // プレビュー側：ドラッグ中にiframeへ掛けたpointer-events制限を解除する。
+          var pane2 = document.querySelector('.Pane2');
+          if (pane2) {
+            pane2.style.pointerEvents = '';
+            var iframe = pane2.querySelector('iframe');
+            if (iframe) iframe.style.pointerEvents = '';
+          }
+          // ドラッグ用に付与されるカーソル／テキスト選択禁止の指定も
+          // 元に戻す（残っていてもスクロール自体は妨げないが、念のため）。
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+
+        function endResizerDrag() {
+          if (!resizerDragActive) return;
+          resizerDragActive = false;
+          // Decap側（react-split-pane）自身の状態更新・再レンダーと
+          // 競合しないよう、直後とレイアウト確定後の2回に分けて実行する。
+          setTimeout(restoreScrollAfterResize, 0);
+          setTimeout(restoreScrollAfterResize, 150);
+        }
+
+        document.addEventListener('mouseup', endResizerDrag, true);
+        document.addEventListener('touchend', endResizerDrag, true);
+        document.addEventListener('touchcancel', endResizerDrag, true);
+        // ドラッグ中にウィンドウ外へマウスが出て離された場合の保険。
+        document.addEventListener(
+          'mouseleave',
+          function (e) {
+            if (e.target === document.documentElement) endResizerDrag();
+          },
+          true
+        );
+
         window.addEventListener('load', function () {
           updateNavButtonVisibility();
           setInterval(function () {
