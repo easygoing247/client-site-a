@@ -174,44 +174,52 @@ public/
 
 ## 8. デプロイ手順
 
-Cloudflare Pages へ手動デプロイする運用（CI/CD連携なし）。派生元 `master-template`
-（LP版）は プロジェクト名 `master-template` / 本番ドメイン `master-template-c2u.pages.dev`。
+派生元 `master-template`（LP版）は Cloudflare **Pages**（プロジェクト名
+`master-template` / 本番ドメイン `master-template-c2u.pages.dev`）で運用。
+
+**このリポジトリ（`master-template-multi`）は Cloudflare Workers（Workers Builds）で
+静的アセットとして配信する。** 本番URL：`master-template-multi.easygoing247.workers.dev`。
 
 このプロジェクトは **`output` 未指定＝完全な静的サイト（SSG）**。`dist/` に
 プレーンなHTML/CSS/JS/画像のみを出力する。`@astrojs/cloudflare` アダプターや
-`output: "hybrid"`、`wrangler.jsonc` は**入れない**（SSR不要／`master-template` と
-同じ静的ホスティングモデルを維持するため）。
+`output: "hybrid"` は**入れない**（SSR不要）。Workers での配信は
+`_worker.js` を使わず、ビルド済み `dist/` を静的アセットとして返すだけの
+`wrangler.json` で行う（下記）。
 
-**このリポジトリ（`master-template-multi`）専用の Cloudflare Pages プロジェクトは
-まだ作成されていない。** 初回のみユーザーが Cloudflare ダッシュボードで作成する
-（Claude Code からは Cloudflare 認証が無いため実行不可）：
+### `wrangler.json`（プロジェクトルート、Git 管理対象）
 
-- **ダッシュボードで Git 連携作成（推奨）**：Cloudflare ダッシュボード →
-  Workers & Pages → Create → **Pages** タブ → 「Connect to Git」→
-  `easygoing247/master-template-multi` を選択し、以下を設定：
-  - Project name: `master-template-multi`
-  - Production branch: `main`
-  - Framework preset: `Astro`（または None）
-  - **Build command: `npm run build`**
-  - **Build output directory: `dist`**
-  - Root directory: （空欄＝リポジトリ直下）
-  Git 連携にすると `main` への push 毎に自動ビルド・デプロイされる。
-- ⚠️ `npx wrangler pages project create` は wrangler 4.13x で挙動が変わり、
-  レガシー Pages ではなく **Workers（SSRアダプター構成）へ自動変換・デプロイ**して
-  しまう（`astro.config.mjs` / `package.json` / `package-lock.json` を書き換える）。
-  静的サイトのまま Pages に載せたい場合は**このコマンドを使わず、上記ダッシュボードの
-  Git 連携で作成すること**。
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "master-template-multi",
+  "compatibility_date": "2024-09-23",
+  "assets": { "directory": "./dist" }
+}
+```
 
-プロジェクト作成後、Git 未連携で手動デプロイする場合の手順：
+- `main` が無い＝Worker スクリプトは持たず、`assets.directory` の中身をそのまま配信。
+- Cloudflare 側の Workers Builds（Git 連携）が `main` への push 毎に
+  Build command `npm run build` を実行し、生成された `dist/` を配信する。
+  Build settings：Build command `npm run build` / Deploy command は既定
+  （`wrangler deploy` 相当）/ ルートディレクトリはリポジトリ直下。
+- ⚠️ `npx wrangler pages project create` は使わない。wrangler 4.13x では
+  レガシー Pages ではなく Workers＋SSRアダプター構成へ自動変換し、
+  `astro.config.mjs` / `package.json` / `package-lock.json` を書き換えてしまう。
+
+### 手動デプロイ（Git 連携を使わない場合）
 
 ```bash
 npm run build
-npx wrangler pages deploy dist --project-name=master-template-multi
+npx wrangler deploy
 ```
 
-デプロイ後、`astro.config.mjs` の `site` を実際の本番ドメイン（`*.pages.dev` または
-独自ドメイン）に更新し、`public/admin/config.yml` の `backend.base_url` も
-複製先専用 OAuth プロキシに向ける（セクション9.2 の 2〜4 と合わせて対応）。
+### 本番URL関連の設定
+
+`astro.config.mjs` の `site` と `public/admin/config.yml` の `site_url` /
+`display_url` は本番URL（`https://master-template-multi.easygoing247.workers.dev`）
+に設定済み。独自ドメインに切り替えた場合は両方を更新すること。
+`config.yml` の `backend.base_url` は複製先専用 OAuth プロキシに向ける
+（セクション9.2 の 2〜4 と合わせて対応）。
 
 Git 連携なら push で自動再デプロイされる。Git 未連携の場合、Decap CMS から
 クライアントが直接編集・保存した内容（`main` への直接コミット）も含めて、
