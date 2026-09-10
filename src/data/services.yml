@@ -58,8 +58,8 @@ priceTable:
   - name: 月額運用サポート
     price: 20000
     note: 更新代行・保守・改善提案を含む
-    showBadge: false
-    badgeText: ""
+    showBadge: true
+    badgeText: 限定
     features:
       - コンテンツ更新代行（月2回まで）
       - サーバー・ドメイン保守
