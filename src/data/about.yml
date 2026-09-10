@@ -11,7 +11,7 @@ greeting:
     私たちは「想いをカタチにし、成果につながるWeb」をモットーに、
     お客様一人ひとりの課題に寄り添った制作を心がけています。
   name: 山田 太郎
-  image: ../assets/hero.jpg
+  image: /src/assets/ceo-image.png
 profile:
   - label: 会社名
     value: LOGO
