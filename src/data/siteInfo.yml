@@ -3,7 +3,7 @@ hero:
   body: シンプルで伝わるデザインと、<br class="sm:hidden" />使いやすいWebサイトで<br class="hidden
     sm:inline md:hidden" />ビジネスの成長をサポートします。
   ctaLabel: 無料で相談する
-  ctaHref: "#contact"
+  ctaHref: https://master-template-multi.easygoing247.workers.dev/contact/
   image: /src/assets/hero.jpg
   imageAlt: Web制作の作業風景（ノートパソコンでコーディングする様子）
   badges:
@@ -249,9 +249,9 @@ features:
   enablePlans: true
   enableFlow: true
   enableFaq: true
+  enableNews: true
   enableContact: true
   enableWorks: true
-  enableNews: true
 productPage:
   breadcrumbHome: トップ
   specsHeading: 仕様・含まれる内容
