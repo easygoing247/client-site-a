@@ -290,11 +290,14 @@ collections:
               - { label: "お問い合わせフォーム同意文（末尾）", name: "privacyConsentSuffix", widget: string, required: false }
 
           # --- 5b. お問い合わせフォーム送信設定 -----------------------------
-          - label: "お問い合わせフォーム送信先（Web3Forms）のアクセスキー"
-            name: "web3forms_access_key"
-            widget: string
+          # siteInfo.yml のトップレベル web3forms_access_key に対応。
+          # お問い合わせフォーム（Contact.astro / contact.astro）の送信先
+          # （Web3Forms）で使う公開キー。src/scripts/contactForm.ts が参照する。
+          - name: "web3forms_access_key"
+            label: "Web3Forms アクセスキー"
+            widget: "string"
             required: false
-            hint: "https://web3forms.com/ でメールアドレスを登録して取得したキーを入力してください。未設定だと送信は失敗します（このキーは公開ページのHTMLに埋め込まれる公開キーです）。"
+            hint: "Web3Formsで取得した36桁のアクセスキー（e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）を入力してください"
 
           # --- 6. その他既存セクション ---------------------------------------
           - label: "セクション表示順序"
