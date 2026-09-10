@@ -32,7 +32,7 @@ public/
 - コンポーネント（`.astro`）内に日本語テキスト・電話番号・住所・価格などを直接書き込まないこと。
 - すべてのテキスト／数値／リンク先は `src/data/siteInfo.yml` に定義し、
   `src/lib/site.ts` の `site` オブジェクト経由で参照すること。
-- 型化ページ（商品・施工事例）のテキストは `src/content/products/*.md` の frontmatter に書く。
+- 型化ページ（商品一覧）のテキストは `src/content/products/*.md` の frontmatter に書く。
 - 例外：aria-label の補助文言、SVGのpath座標など「コンテンツではない実装詳細」のみ許容。
 
 ### 絶対ルール②：画像は astro:assets の `<Image />` を使用する
@@ -86,8 +86,10 @@ public/
 
 ### 型化ページ（`src/content/products/`）
 
-- 1商品・1施工事例 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
+- 1商品 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
   URLスラッグになる（例: `sample.md` → `/products/sample/`）。
+  ※ CMS 上のコレクション名は「商品一覧」（旧「商品・施工事例」）。「お知らせ」
+  （旧「お知らせ・ブログ」）と合わせて表記を統一済み。
 - frontmatterのスキーマは `src/content/config.ts` で定義されている。
   必須フィールド：`title`, `price`, `mainImage`, `summary`, `specs`, `order`。
 - 型化ページのファイル自体は、機能フラグの状態に関わらず `npm run build` 時に
@@ -135,7 +137,7 @@ public/
 
 ## 7. Decap CMSライブプレビュー（`public/admin/preview.js`）の保守ルール
 
-- 「サイト設定」「商品・施工事例」および複数ページ版で追加した「下層ページ
+- 「サイト設定」「商品一覧」および複数ページ版で追加した「下層ページ
   （services / about / contact）」「お知らせ（news）」の各コレクションには
   `CMS.registerPreviewTemplate` による独自のライブプレビューを実装済み（Decap既定の
   Markdownプレビューではなく、実サイトに近い見た目をリアルタイム表示するため）。
@@ -275,7 +277,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 ### 9.3 複数ページ版で追加した下層ページ・コレクション
 
 `public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」
-「商品・施工事例（型化ページ）」を保持したまま、以下を追加している。
+「商品一覧（型化ページ）」を保持したまま、以下を追加している。
 
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
@@ -413,8 +415,11 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   `label` / `name`（送信キー。英数字＋`_` に正規化）/ `placeholder` / `type`
   （text/number/tel/email/textarea/select）/ `options`（select用）/ `enabled` / `required`。
   解決は `src/lib/pages.ts` の **`resolveCustomContactFields()`**
-  （予約語・重複・空欄・`enabled: false` を除外）→ `ContactRenderField` に正規化して
-  固定項目の後ろにレンダリング。
+  （予約語・重複・空欄・`enabled: false` を除外）→ `ContactRenderField` に正規化。
+  **表示順は「お名前 → 会社名 → メールアドレス → 電話番号 →〈カスタム項目〉→
+  お問い合わせ内容」で固定**（＝カスタム項目は「電話番号」の直後・「お問い合わせ内容」の
+  直前に挿入。`ContactFields.astro` の `beforeCustom` / `custom` / `messageField` の
+  並び）。`preview.js` の `ContactPagePreview` も同順。
 - 送信は `contactForm.ts` が `input[name], textarea[name], select[name]` を明示的に
   走査して `FormData` に集約する（固定・電話番号・カスタム・`<select>`・hidden の
   `subject`/`from_name`・checked の `botcheck` を含む。非表示項目は DOM に無い＝送信されない）。
@@ -474,3 +479,40 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - 本番URL確定後の PSI 実測は、`https://pagespeed.web.dev/` に各URL
   （`/` `/services` `/about` `/contact` `/news` `/news/<slug>`）を入力して確認する
   （デプロイ前はローカルの `npm run preview` ＋ Lighthouse で代替検証）。
+
+### 9.8 最近の仕様変更サマリ（2026-09 複数ページ版バッチ）
+
+上記 9.3〜9.7 の該当箇所に詳細を記載。ここは全体像の索引。
+
+- **Decap CMS「サイト設定」コレクション** … file 項目は 3 つ、この順で固定：
+  1. サイト全体設定（`siteInfo.yml`）／2. デザインテーマ設定（`site-settings.json`）／
+  3. お問い合わせフォーム設定（`contact-form.json`）。
+  - **SNS設定**は「連絡先」から独立し、`siteInfo.yml` トップレベルの `sns` リスト
+    （CMS では「サイト全体設定」内の独立フィールド群）として一括管理（→ 9.3）。
+  - **下層ページ**コレクションの各 file（services / about / contact）は
+    `summary: "{{fields.heading}}"` で「ページ見出し」を管理画面に動的表示（→ 9.3）。
+  - コレクション名の表記統一：「商品・施工事例」→「**商品一覧**」、
+    「お知らせ・ブログ」→「**お知らせ**」（実サイト側の見出し・パンくず、`preview.js`、
+    コメントまで一括置換済み）。
+- **ライブプレビュー** … 全コレクションでスクロール追従（サイト設定はセクション
+  `id` スナップ、その他は進捗率比例）。`/about` の背景ゼブラは毎レンダー再計算で
+  トグル切替に即追従（→ 9.4「背景ゼブラ」）。
+- **トップページ** … ヒーロー直下に「お知らせ」セクション（`News.astro`、`sectionOrder`
+  対象外の固定配置。CMS「セクションの表示・非表示」でも先頭項目）。「サービス内容を見る ›」
+  リンク（`services.linkLabel/linkHref`）、料金プラン各カードの「詳しく見る ›」ボタン
+  （`plans.buttonLabel/buttonHref`。人気プランはテーマカラー連動で強調）。
+- **`/about`** … 代表挨拶／会社概要（末尾に「公式SNS」行）／アクセス（`access.items[]`＝
+  郵便番号・住所・最寄り駅・駐車場を可変リスト化）の 3 セクションを個別 enabled 制御、
+  表示状況に応じた白／`bg-surface-muted` の自動交互配色（→ 9.4）。
+- **`/news`** … カテゴリ絞り込みタブ＋カード／リスト表示切替（クライアント JS。→ 9.4）。
+- **`/services`** … サービス詳細の左右反転（`reverseLayout`／`md:order-2`）、料金表の
+  「含まれる内容／特徴」チェックリスト（`priceTable[].features`）、項目名左のテーマカラー
+  連動バッジ（`showBadge` boolean＋`badgeText` string。どちらも `required: false`、
+  boolean は `default: false` を明示して Decap の保存バリデーションエラーを回避）、
+  ページ最下部の問い合わせ CTA セクションは廃止（→ 9.4）。
+- **お問い合わせフォーム（Web3Forms）** … 送信設定（アクセスキー／`subject`／`from_name`）は
+  `contact-form.json` に集約。入力欄は `formFields.<key>` で 表示・ラベル・
+  プレースホルダー・必須 を動的制御。カスタム項目（`custom_fields[]`）は「電話番号」の
+  直後・「お問い合わせ内容」の直前に挿入。送信成功時はフォーム全体を
+  `hidden`＋`display:none` で確実に隠し、`mt-8` の余白を付けた `#contact-success` のみ表示
+  （→ 9.7）。

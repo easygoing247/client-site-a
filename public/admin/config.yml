@@ -380,8 +380,8 @@ collections:
               - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
               - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
 
-          # --- 9. 商品・施工事例ページ（共通文言）（一番最下部） -------------
-          - label: "商品・施工事例ページ（共通文言）"
+          # --- 9. 商品一覧ページ（共通文言）（一番最下部） -------------
+          - label: "商品一覧ページ（共通文言）"
             name: "productPage"
             widget: object
             fields:
