@@ -127,7 +127,6 @@ access:
   heading: アクセス
   store:
     closedDays: 土曜・日曜・祝日
-    imagePosition: center
     name: LOGO 札幌本店（ショールーム）
     imageAlt: ショールーム外観イメージ
     businessHours: 10:00〜18:00
