@@ -319,18 +319,23 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   で読み込む。フォームのマークアップも2箇所でほぼ同一に保つこと。
 - Fetch API で `https://api.web3forms.com/submit` に `FormData`（各入力欄＋
   `access_key`＋hidden の `subject` / `from_name`）を POST。送信中は送信ボタンを
-  `disabled` にし `.contact-submit-label` を「送信中…」に差し替え、成功で
-  **フォーム全体を `hidden`（入力欄・送信ボタン・同意文とも）** にして
-  `#contact-success` のみをフェードイン、失敗で `#contact-error` フェードイン＋ボタン復帰。
-- **アクセスキー**は独立ファイル **`src/data/web3forms.json`**（CMS「サイト設定」の
-  3つ目のタブ「Web3Formsアクセスキー設定」）で管理。パーサは
-  **`src/lib/web3forms.ts`**（`web3forms.accessKey`）。`siteInfo.yml` には持たせない。
-  各フォームは `web3forms.accessKey` を `<form data-access-key>` に埋め込み、
-  スクリプトは `form.dataset` からのみ値を読む（サーバー変数を直接参照しない）。
-- ボタン文言・「送信中」文言・成功／失敗メッセージ・通知メールの件名／差出人名は
-  すべて `siteInfo.yml` の `contactSection.form.*`（`submitLabel` / `sendingLabel` /
-  `successMessage` / `errorMessage` / `mailSubject` / `mailFromName`）。
-  コンポーネントへの直書き禁止（絶対ルール①）。
+  `disabled` にし `.contact-submit-label` を「送信中…」に差し替え、
+  **成功で `<form>` を `hidden` 属性＋`style.display = 'none'` の両方で確実に非表示**
+  （form には Tailwind の `.flex` が付いており UA の `[hidden]{display:none}` より
+  詳細度が高いため、hidden 属性だけでは消えない＝「送信ボタンだけ『送信中…』の
+  まま残る」不具合の原因）にして `#contact-success` のみをフェードイン、
+  失敗で送信ボタンの `disabled` 解除・ラベルを「送信する」に戻してから
+  `#contact-error` をフェードイン。
+- **送信設定は `siteInfo.yml` のトップレベル `contactForm` グループに集約**
+  （`web3forms_access_key` / `contact_email_subject` / `contact_email_from_name`）。
+  CMS 上は「サイト全体設定（siteInfo.yml）」内の **「お問い合わせフォーム設定」**
+  グループで編集する（旧・独立タブ「Web3Formsアクセスキー設定」＋
+  `src/data/web3forms.json` / `src/lib/web3forms.ts` は廃止済み）。
+  各フォームは `site.contactForm.*` を `<form data-access-key>` と hidden
+  `subject` / `from_name` に埋め込み、スクリプトは `form.dataset` からのみ読む。
+- ボタン文言・「送信中」文言・成功／失敗メッセージは `siteInfo.yml` の
+  `contactSection.form.*`（`submitLabel` / `sendingLabel` / `successMessage` /
+  `errorMessage`）。コンポーネントへの直書き禁止（絶対ルール①）。
 - `#contact-success` / `#contact-error` のフェードインは `src/styles/global.css` の
   `.is-visible` クラス＋`contactForm.ts` の `reveal()`（hidden 解除 → 1回だけ
   `offsetWidth` でリフローを確定 → クラス付与）。`prefers-reduced-motion` 尊重。

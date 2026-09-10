@@ -234,8 +234,8 @@ collections:
                   - { label: "送信中のボタン文言", name: "sendingLabel", widget: string, required: false }
                   - { label: "送信成功時のメッセージ", name: "successMessage", widget: text, required: false }
                   - { label: "送信失敗時のメッセージ", name: "errorMessage", widget: text, required: false }
-                  - { label: "通知メールの件名（Web3Forms）", name: "mailSubject", widget: string, required: false }
-                  - { label: "通知メールの差出人名（Web3Forms）", name: "mailFromName", widget: string, required: false }
+              # ※ 送信先（Web3Formsキー）・通知メールの件名／送信者名は
+              #   この下の「お問い合わせフォーム設定」グループにまとめている。
 
           # --- 3. 会社・サイト基本情報 --------------------------------------
           - label: "会社・サイト基本情報"
@@ -290,8 +290,22 @@ collections:
             fields:
               - { label: "「プライバシーポリシー」リンク文言", name: "privacyPolicyLabel", widget: string, required: false }
               - { label: "お問い合わせフォーム同意文（末尾）", name: "privacyConsentSuffix", widget: string, required: false }
-          # ※ Web3Forms アクセスキーは独立した「Web3Formsアクセスキー設定」
-          #   （src/data/web3forms.json）へ分離。この siteInfo.yml には持たせない。
+
+          # --- 5b. お問い合わせフォーム設定 --------------------------------
+          # 送信先（Web3Forms）と通知メールの件名・送信者名。トップページの
+          # #contact セクションと /contact ページの両フォームがこの値を参照する。
+          - label: "お問い合わせフォーム設定"
+            name: "contactForm"
+            widget: object
+            hint: "お問い合わせフォームの送信先（Web3Forms）と、届く通知メールの件名・送信者名を設定します。"
+            fields:
+              - name: "web3forms_access_key"
+                label: "Web3Forms アクセスキー"
+                widget: "string"
+                required: false
+                hint: "Web3Formsで取得した36桁のアクセスキー（e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）を入力してください"
+              - { label: "通知メールの件名", name: "contact_email_subject", widget: string, required: false }
+              - { label: "通知メールの送信者名", name: "contact_email_from_name", widget: string, required: false }
 
           # --- 6. その他既存セクション ---------------------------------------
           - label: "セクション表示順序"
@@ -388,20 +402,9 @@ collections:
               - { label: "パープル", value: "purple" }
               - { label: "オレンジ", value: "orange" }
 
-      # ----------------------------------------------------------------------
-      # 「サイト全体設定」「デザインテーマ設定」と並ぶ独立タブ。
-      # お問い合わせフォーム（Contact.astro / contact.astro）の送信先
-      # Web3Forms の公開アクセスキーのみを管理する（src/lib/web3forms.ts が参照）。
-      # ----------------------------------------------------------------------
-      - name: "web3formsSettings"
-        label: "Web3Formsアクセスキー設定（web3forms.json）"
-        file: "src/data/web3forms.json"
-        fields:
-          - name: "web3forms_access_key"
-            label: "Web3Forms アクセスキー"
-            widget: "string"
-            required: false
-            hint: "Web3Formsで取得した36桁のアクセスキー（e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）を入力してください"
+      # ※ お問い合わせフォームの送信設定（Web3Formsキー・メール件名・送信者名）は
+      #   「サイト全体設定（siteInfo.yml）」内の「お問い合わせフォーム設定」
+      #   グループに統合済み（旧・独立タブ「Web3Formsアクセスキー設定」は廃止）。
 
   # ==========================================================================
   # ② フォルダコレクション：型化ページ（products）を追加・編集・削除

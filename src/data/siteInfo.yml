@@ -162,8 +162,6 @@ contactSection:
     sendingLabel: 送信中...
     successMessage: お問い合わせを受け付けました。担当者よりご連絡いたします。
     errorMessage: 送信に失敗しました。時間をおいて再度お試しください。
-    mailSubject: 【Webサイト】お問い合わせを受け付けました
-    mailFromName: Webサイトお問い合わせフォーム
 company:
   name: LOGO
   logo: ../assets/logo.svg
@@ -193,6 +191,14 @@ contact:
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
+# お問い合わせフォーム（トップページ #contact ／ /contact ページ）の送信設定。
+# web3forms_access_key は https://web3forms.com/ で取得した公開キー。
+# contact_email_subject / contact_email_from_name は Web3Forms の通知メールの
+# 件名・差出人名として hidden フィールド（subject / from_name）で送信される。
+contactForm:
+  web3forms_access_key: a4086dba-db39-445e-9b52-920dd2912309
+  contact_email_subject: 【Webサイト】お問い合わせを受け付けました
+  contact_email_from_name: Webサイトお問い合わせフォーム
 sectionOrder:
   - id: features
   - id: services

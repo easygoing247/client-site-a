@@ -5,14 +5,14 @@
 // リンク付き注記を標準配置（/privacy へリンク）。
 // ============================================================================
 import { site } from '../lib/site';
-import { web3forms } from '../lib/web3forms';
 
 interface Props {
   muted?: boolean;
 }
 
 const { muted = false } = Astro.props;
-const contactForm = site.contactSection.form;
+const formText = site.contactSection.form;
+const cf = site.contactForm;
 ---
 
 {site.features.enableContact && (
@@ -49,15 +49,15 @@ const contactForm = site.contactSection.form;
         id="contact-form"
         novalidate
         class="flex flex-col gap-3"
-        data-access-key={web3forms.accessKey}
-        data-submit-label={contactForm.submitLabel}
-        data-sending-label={contactForm.sendingLabel}
+        data-access-key={cf.web3forms_access_key}
+        data-submit-label={formText.submitLabel}
+        data-sending-label={formText.sendingLabel}
       >
         {/* スパム対策のハニーポット（人間には非表示。ボットが入力すると送信を弾く） */}
         <input type="checkbox" name="botcheck" class="hidden" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true" />
-        {/* Web3Forms 通知メールの件名・差出人名（日本語で分かりやすく） */}
-        {contactForm.mailSubject && <input type="hidden" name="subject" value={contactForm.mailSubject} />}
-        {contactForm.mailFromName && <input type="hidden" name="from_name" value={contactForm.mailFromName} />}
+        {/* Web3Forms 通知メールの件名・差出人名（siteInfo.yml の contactForm を参照） */}
+        {cf.contact_email_subject && <input type="hidden" name="subject" value={cf.contact_email_subject} />}
+        {cf.contact_email_from_name && <input type="hidden" name="from_name" value={cf.contact_email_from_name} />}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             type="text"
@@ -95,7 +95,7 @@ const contactForm = site.contactSection.form;
           type="submit"
           class="mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-progress bg-gradient-to-br from-primary to-primary-dark"
         >
-          <span class="contact-submit-label">{contactForm.submitLabel}</span> <span aria-hidden="true">›</span>
+          <span class="contact-submit-label">{formText.submitLabel}</span> <span aria-hidden="true">›</span>
         </button>
         {site.ui.privacyPolicyLabel && (
           <p class="text-[12px] text-ink-faint text-center m-0">
@@ -103,24 +103,24 @@ const contactForm = site.contactSection.form;
           </p>
         )}
       </form>
-      {contactForm.successMessage && (
+      {formText.successMessage && (
         <p
           id="contact-success"
           hidden
           role="status"
           class="mt-8 text-[14px] leading-[1.9] text-secondary-light text-center bg-primary-light rounded-2xl px-6 py-7"
         >
-          {contactForm.successMessage}
+          {formText.successMessage}
         </p>
       )}
-      {contactForm.errorMessage && (
+      {formText.errorMessage && (
         <p
           id="contact-error"
           hidden
           role="alert"
           class="mt-3 text-[13px] leading-[1.8] text-center text-[#b3261e] bg-[#fce8e6] rounded-lg px-5 py-3"
         >
-          {contactForm.errorMessage}
+          {formText.errorMessage}
         </p>
       )}
     </div>

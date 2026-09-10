@@ -12,12 +12,12 @@ import PageHeader from '../components/PageHeader.astro';
 import StickyContactBar from '../components/StickyContactBar.astro';
 import BackToTop from '../components/BackToTop.astro';
 import { site } from '../lib/site';
-import { web3forms } from '../lib/web3forms';
 import { contactPage, parseTextBlocks } from '../lib/pages';
 
 const heading = contactPage.heading || 'お問い合わせ・ご予約';
 const notes = (contactPage.notes ?? []).filter(Boolean);
 const form = site.contactSection.form;
+const cf = site.contactForm;
 const privacy = contactPage.privacyPolicy ?? {};
 const privacyBlocks = parseTextBlocks(privacy.body);
 ---
@@ -46,15 +46,15 @@ const privacyBlocks = parseTextBlocks(privacy.body);
           id="contact-form"
           novalidate
           class="flex flex-col gap-3"
-          data-access-key={web3forms.accessKey}
+          data-access-key={cf.web3forms_access_key}
           data-submit-label={form.submitLabel}
           data-sending-label={form.sendingLabel}
         >
           {/* スパム対策のハニーポット（人間には非表示。ボットが入力すると送信を弾く） */}
           <input type="checkbox" name="botcheck" class="hidden" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true" />
-          {/* Web3Forms 通知メールの件名・差出人名（日本語で分かりやすく） */}
-          {form.mailSubject && <input type="hidden" name="subject" value={form.mailSubject} />}
-          {form.mailFromName && <input type="hidden" name="from_name" value={form.mailFromName} />}
+          {/* Web3Forms 通知メールの件名・差出人名（siteInfo.yml の contactForm を参照） */}
+          {cf.contact_email_subject && <input type="hidden" name="subject" value={cf.contact_email_subject} />}
+          {cf.contact_email_from_name && <input type="hidden" name="from_name" value={cf.contact_email_from_name} />}
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input type="text" name="name" placeholder={form.namePlaceholder} required
               class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]" aria-label={form.namePlaceholder} />

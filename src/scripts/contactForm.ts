@@ -3,9 +3,10 @@
 // お問い合わせフォームの非同期送信（Web3Forms / Fetch API）。
 // #contact-form を持つページ（Contact.astro / contact.astro）で読み込むと
 // 自動的に初期化される。アクセスキー・各種文言はサーバー側
-// （web3forms.json / siteInfo.yml → src/lib/*）から <form> の data-* 属性で
-// 受け取る。成功／失敗メッセージは #contact-success / #contact-error を
-// .is-visible クラスでフェードイン表示する（CSS は src/styles/global.css）。
+// （siteInfo.yml の contactForm / contactSection.form → src/lib/site.ts）から
+// <form> の data-* 属性で受け取る。成功／失敗メッセージは
+// #contact-success / #contact-error を .is-visible クラスでフェードイン表示する
+// （CSS は src/styles/global.css）。
 // ============================================================================
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
 
@@ -63,19 +64,28 @@ function initContactForm(): void {
       const data = (await res.json().catch(() => ({}))) as { success?: boolean };
 
       if (res.ok && data.success) {
-        // 入力欄・送信ボタン・同意文を含むフォーム全体を隠し、
-        // 成功メッセージだけをスムーズに表示する（「送信完了」状態）
+        // 入力欄・送信ボタン・同意文を含む <form> 全体を確実に非表示にする。
+        // form には Tailwind の .flex（display:flex）が付いており、これは
+        // UAの [hidden]{display:none} より詳細度が高いため、hidden 属性だけでは
+        // 消えない。inline style の display:none（最優先）で確実に隠し、
+        // 併せて hidden 属性も付けてアクセシビリティツリーからも除外する。
+        // （これにより「送信ボタンだけ『送信中...』のまま残る」不具合を解消）
+        if (submitBtn) submitBtn.disabled = false;
+        if (labelEl && submitLabel) labelEl.textContent = submitLabel;
         form.reset();
         form.hidden = true;
+        form.style.display = 'none';
         hide(errorEl);
         reveal(successEl);
         return;
       }
       throw new Error('Web3Forms responded without success');
     } catch {
-      reveal(errorEl);
+      // 送信失敗：送信ボタンの disabled を解除し、ラベルを元に戻してから
+      // エラーメッセージを表示する。
       if (submitBtn) submitBtn.disabled = false;
       if (labelEl && submitLabel) labelEl.textContent = submitLabel;
+      reveal(errorEl);
     }
   });
 }
