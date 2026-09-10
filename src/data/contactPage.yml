@@ -6,9 +6,6 @@ notes:
   - 内容によってはご返信までお時間をいただく場合があります。
   - いただいた個人情報はお問い合わせ対応の目的以外には使用しません。
   - 営業目的のご連絡はお断りしております。
-# フォーム入力項目の設定。表示順は お名前 → 会社名 → メールアドレス →
-# 電話番号 → お問い合わせ内容 で固定。enabled: false の項目はフォームに
-# 表示されず、送信データにも含まれない。
 formFields:
   name:
     enabled: true
@@ -35,9 +32,19 @@ formFields:
     label: お問い合わせ内容
     placeholder: お問い合わせ内容をご記入ください
     required: true
-# 固定項目（上記 formFields）の後ろに表示される、CMS で自由に追加・削除できる項目。
-# name は送信データのキー名（半角英数字と _ のみ／固定項目と同名は不可）。
-custom_fields: []
+custom_fields:
+  - type: text
+    enabled: true
+    required: false
+    label: テスト
+    name: test
+    placeholder: テスト欄
+  - type: text
+    enabled: true
+    required: false
+    label: テスト２
+    name: test2
+    placeholder: テスト２欄
 privacyPolicy:
   heading: プライバシーポリシー
   body: |-
