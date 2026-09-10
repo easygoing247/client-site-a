@@ -198,7 +198,7 @@ sectionOrder:
   - id: faq
   - id: contact
 nav:
-  - label: サービス・料金
+  - label: サービス
     href: /services
   - label: 実績
     href: /#works
@@ -206,7 +206,7 @@ nav:
     href: /#plans
   - label: よくある質問
     href: /#faq
-  - label: 会社概要・アクセス
+  - label: 会社概要
     href: /about
   - label: お知らせ
     href: /news
