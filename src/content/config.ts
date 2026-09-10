@@ -23,8 +23,8 @@ const products = defineCollection({
     }),
 });
 
-// 複数ページ版（master-template-multi）専用：お知らせ・ブログの投稿コレクション。
-// config.yml の「お知らせ・ブログ」コレクションと対応。CMS側で全項目を任意入力に
+// 複数ページ版（master-template-multi）専用：お知らせの投稿コレクション。
+// config.yml の「お知らせ」コレクションと対応。CMS側で全項目を任意入力に
 // しているため、スキーマ側も未入力を許容する。draft: true の記事は一覧・詳細の
 // 表示側で除外する想定。
 const news = defineCollection({

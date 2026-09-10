@@ -136,7 +136,7 @@ public/
 ## 7. Decap CMSライブプレビュー（`public/admin/preview.js`）の保守ルール
 
 - 「サイト設定」「商品・施工事例」および複数ページ版で追加した「下層ページ
-  （services / about / contact）」「お知らせ・ブログ（news）」の各コレクションには
+  （services / about / contact）」「お知らせ（news）」の各コレクションには
   `CMS.registerPreviewTemplate` による独自のライブプレビューを実装済み（Decap既定の
   Markdownプレビューではなく、実サイトに近い見た目をリアルタイム表示するため）。
   file コレクションの登録名は**ファイルの `name`**（`siteInfo` / `siteSettings` /
@@ -282,7 +282,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 | 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
 | 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
 | 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
-| お知らせ・ブログ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
+| お知らせ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
 
 - 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
   パーサは **`src/lib/pages.ts`**（`servicesPage` / `aboutPage` / `contactPage`、

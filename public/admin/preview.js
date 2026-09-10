@@ -1815,7 +1815,7 @@
   window.CMS.registerPreviewTemplate('contact', ContactPagePreview);
 
   // ==========================================================================
-  // お知らせ・ブログ 記事詳細（src/pages/news/[slug].astro）
+  // お知らせ 記事詳細（src/pages/news/[slug].astro）
   // ==========================================================================
   var NEWS_CATEGORY_LABELS = { info: 'お知らせ', blog: 'ブログ', event: 'イベント', works: '実績紹介' };
 
@@ -1841,7 +1841,7 @@
           { className: 'text-[12px] text-ink-faint mb-6 flex flex-wrap items-center gap-1.5' },
           h('a', { href: '#', className: 'hover:text-primary transition-colors' }, 'トップ'),
           h('span', {}, '›'),
-          h('a', { href: '#', className: 'hover:text-primary transition-colors' }, 'お知らせ・ブログ'),
+          h('a', { href: '#', className: 'hover:text-primary transition-colors' }, 'お知らせ'),
           h('span', {}, '›'),
           h('span', { className: 'text-ink-soft' }, data.title || '')
         ),

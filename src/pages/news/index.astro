@@ -1,6 +1,6 @@
 ---
 // ============================================================================
-// src/pages/news/index.astro — 「お知らせ・ブログ」一覧
+// src/pages/news/index.astro — 「お知らせ」一覧
 // news コレクションを公開日の新しい順に一覧表示する（下書きは除外）。
 // ・カテゴリフィルター（ボタン）でクライアントサイド絞り込み
 // ・カード形式／リスト形式の表示切り替え
@@ -22,7 +22,7 @@ import {
 
 const posts = await getPublishedNews();
 const categories = collectNewsCategories(posts);
-const heading = 'お知らせ・ブログ';
+const heading = 'お知らせ';
 
 // アクティブ／非アクティブで付け外しするクラスは JS 側（ACTIVE_FILTER / INACTIVE_FILTER）と
 // 一致させる。ベースクラスには背景・文字色・枠線色を含めない（競合を避けるため）。
@@ -34,7 +34,7 @@ const viewActive = 'bg-primary text-white';
 const viewInactive = 'text-secondary';
 ---
 
-<Layout title={`${heading} | ${site.company.siteName}`} description={`${site.company.name}からのお知らせ・ブログ記事の一覧です。`}>
+<Layout title={`${heading} | ${site.company.siteName}`} description={`${site.company.name}からのお知らせ一覧です。`}>
   <Header />
   <main>
     <PageHeader

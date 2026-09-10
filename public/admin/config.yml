@@ -369,6 +369,7 @@ collections:
             widget: object
             hint: "各項目のラベル文言は、対応するセクションの「見出し」フィールドの内容に自動で追従します（上の各セクション設定タブで見出しを変更すると、ここの表示もあわせて更新されます）。"
             fields:
+              - { label: "「お知らせ」セクションを表示する（トップページ／ヒーロー直下）", name: "enableNews", widget: boolean, default: true }
               - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true }
               - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true }
               - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true }
@@ -378,7 +379,6 @@ collections:
               - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true }
               - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
               - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
-              - { label: "「お知らせ」セクションを表示する（トップページ／ヒーロー直下）", name: "enableNews", widget: boolean, default: true }
 
           # --- 9. 商品・施工事例ページ（共通文言）（一番最下部） -------------
           - label: "商品・施工事例ページ（共通文言）"
@@ -657,12 +657,12 @@ collections:
               - { label: "最終改定日", name: "updatedAt", widget: string, required: false }
 
   # ==========================================================================
-  # ④ 複数ページ版（master-template-multi）専用：お知らせ・ブログ（投稿型）
+  # ④ 複数ページ版（master-template-multi）専用：お知らせ（投稿型）
   #    1記事 = src/content/news/*.md（frontmatter + Markdown本文）。
   #    ファイル名がURLスラッグになる（例: hello.md → /news/hello/）。
   # ==========================================================================
   - name: "news"
-    label: "お知らせ・ブログ"
+    label: "お知らせ"
     folder: "src/content/news"
     create: true
     delete: true

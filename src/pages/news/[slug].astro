@@ -1,6 +1,6 @@
 ---
 // ============================================================================
-// src/pages/news/[slug].astro — 「お知らせ・ブログ」記事詳細
+// src/pages/news/[slug].astro — 「お知らせ」記事詳細
 // news コレクションの各記事を静的生成する動的ルート。
 // ============================================================================
 import { Image } from 'astro:assets';
@@ -36,7 +36,7 @@ const home = site.productPage.breadcrumbHome || 'トップ';
         <nav class="text-[12px] text-ink-faint mb-6 flex flex-wrap items-center gap-1.5" aria-label="パンくずリスト">
           <a href="/" class="hover:text-primary transition-colors">{home}</a>
           <span aria-hidden="true">›</span>
-          <a href="/news" class="hover:text-primary transition-colors">お知らせ・ブログ</a>
+          <a href="/news" class="hover:text-primary transition-colors">お知らせ</a>
           <span aria-hidden="true">›</span>
           <span class="text-ink-soft">{post.data.title}</span>
         </nav>
