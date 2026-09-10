@@ -389,6 +389,14 @@ collections:
     folder: "src/content/products"
     create: true
     delete: true
+    # このコレクションは src/content/products/*.md（リポジトリ直下から2階層）に
+    # 保存される。画像は全コレクション共通の src/assets/ に保存しつつ、
+    # frontmatter・本文には .md から見た相対パス（../../assets/xxx）で記録する。
+    # グローバル設定（public_folder: /src/assets）のままだと、frontmatter の
+    # image() は解決できるが本文中の Markdown 画像（![](...)）が最適化されず
+    # /src/assets/... のまま出力され本番で404になるため、ここで上書きする。
+    media_folder: "/src/assets"
+    public_folder: "../../assets"
     slug: "{{slug}}"
     extension: "md"
     format: "frontmatter"
@@ -507,6 +515,10 @@ collections:
     folder: "src/content/news"
     create: true
     delete: true
+    # products と同様、本文中の Markdown 画像も含めて .md からの相対パス
+    # （../../assets/xxx）で記録する（詳細は products コレクションのコメント参照）。
+    media_folder: "/src/assets"
+    public_folder: "../../assets"
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     extension: "md"
     format: "frontmatter"

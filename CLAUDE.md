@@ -275,6 +275,14 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で
   `../../assets/` からの相対パスで指定する（絶対ルール②）。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
+- **画像パスの必須設定**：`products` / `news` の各 folder コレクションには
+  `media_folder: "/src/assets"` ＋ `public_folder: "../../assets"` を個別指定している。
+  グローバル設定（`public_folder: /src/assets`）のままだと、CMS が挿入する画像パスが
+  `/src/assets/xxx` になり、frontmatter の `image()` は解決できても**本文中の
+  Markdown 画像（`![](...)`）が Astro の最適化対象外**となって `/src/assets/...` の
+  まま出力され、本番（`dist/` に `src/` は存在しない）で 404 になる。
+  `../../assets/xxx` にすることで frontmatter・本文の両方が最適化される。
+  新規 folder コレクション（`src/content/**/*.md`）を追加する場合も同じ2行を必ず入れること。
 
 ### 9.4 下層ページ本体（`src/pages/`）とルーティング
 
