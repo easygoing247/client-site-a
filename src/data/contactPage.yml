@@ -1,4 +1,4 @@
-heading: お問い合わせ・ご予約
+heading: お問い合わせ
 intro: |-
   ご相談・お見積りは無料です。
   下記フォームまたはお電話よりお気軽にお問い合わせください。
@@ -32,19 +32,7 @@ formFields:
     label: お問い合わせ内容
     placeholder: お問い合わせ内容をご記入ください
     required: true
-custom_fields:
-  - type: text
-    enabled: true
-    required: false
-    label: テスト２
-    name: test2
-    placeholder: テスト２欄
-  - type: text
-    enabled: true
-    required: false
-    label: テスト
-    name: test
-    placeholder: テスト欄
+custom_fields: []
 privacyPolicy:
   heading: プライバシーポリシー
   body: |-
