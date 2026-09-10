@@ -55,24 +55,42 @@ function initContactForm(): void {
     try {
       // 表示中の name 付きコントロール（固定項目・電話番号・カスタム追加項目の
       // <input> / <textarea> / <select>、hidden の subject / from_name、
-      // ハニーポットの botcheck）を明示的に収集する。ContactFields.astro は
-      // 「表示する項目」だけを描画するため、非表示の項目はそもそも DOM に無く
-      // 送信されない。カスタム項目（<select> 含む）も name 属性さえあれば拾われる。
-      const formData = new FormData();
-      form
-        .querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      // ハニーポットの botcheck）を収集する。ContactFields.astro は「表示する
+      // 項目」だけを描画するため、非表示の項目はそもそも DOM に無く送信されない。
+      const controls = Array.from(
+        form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
           'input[name], textarea[name], select[name]',
-        )
-        .forEach((el) => {
-          if (
-            el instanceof HTMLInputElement &&
-            (el.type === 'checkbox' || el.type === 'radio')
-          ) {
-            if (el.checked) formData.append(el.name, el.value);
-            return;
-          }
-          formData.append(el.name, el.value);
-        });
+        ),
+      );
+
+      // Web3Forms は FormData に append した順でメール本文の項目を並べるため、
+      // 送信順を画面の表示順（お名前 → 会社名 → メールアドレス → 電話番号 →
+      // カスタム追加項目 → お問い合わせ内容）に一致させる。
+      //  ・カスタム項目は DOM 上で電話番号とお問い合わせ内容の間に描画される
+      //    （ContactFields.astro）ため、message を最後に回すだけで表示順になる。
+      //  ・subject / from_name / botcheck は本文項目ではないので末尾へ。
+      const META_NAMES = new Set(['subject', 'from_name', 'botcheck']);
+      const bodyControls: typeof controls = [];
+      const messageControls: typeof controls = [];
+      const metaControls: typeof controls = [];
+      for (const el of controls) {
+        if (el.name === 'message') messageControls.push(el);
+        else if (META_NAMES.has(el.name)) metaControls.push(el);
+        else bodyControls.push(el);
+      }
+
+      const formData = new FormData();
+      const appendControl = (el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => {
+        if (
+          el instanceof HTMLInputElement &&
+          (el.type === 'checkbox' || el.type === 'radio')
+        ) {
+          if (el.checked) formData.append(el.name, el.value);
+          return;
+        }
+        formData.append(el.name, el.value);
+      };
+      [...bodyControls, ...messageControls, ...metaControls].forEach(appendControl);
       formData.append('access_key', accessKey);
 
       const res = await fetch(WEB3FORMS_ENDPOINT, {

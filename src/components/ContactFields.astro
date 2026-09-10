@@ -6,7 +6,8 @@
 // ・固定項目（お名前 / 会社名 / メールアドレス / 電話番号 / お問い合わせ内容）：
 //   contactPage.yml の formFields で 表示/ラベル/プレースホルダー/必須 を編集
 // ・カスタム追加項目：contactPage.yml の custom_fields[]（CMS で追加・削除）を
-//   固定項目の後ろに表示
+//   「電話番号」の直後・「お問い合わせ内容」の直前に表示
+//   （お名前 → 会社名 → メールアドレス → 電話番号 → カスタム項目 → お問い合わせ内容）
 // enabled: false の項目は描画しない（＝送信データにも含まれない）
 // ============================================================================
 import { contactPage, resolveContactFormFields, resolveCustomContactFields } from '../lib/pages';
@@ -26,7 +27,9 @@ const custom: ContactRenderField[] = resolveCustomContactFields(contactPage.cust
 
 // お名前・会社名は横並び（両方表示のときのみ2カラム）、それ以外は全幅
 const pair = fixed.filter((f) => f.key === 'name' || f.key === 'company');
-const fixedRest = fixed.filter((f) => f.key !== 'name' && f.key !== 'company');
+// 電話番号までの固定項目（メールアドレス・電話番号）→ カスタム項目 → お問い合わせ内容
+const beforeCustom = fixed.filter((f) => f.key === 'email' || f.key === 'phone');
+const messageField = fixed.filter((f) => f.key === 'message');
 ---
 
 {pair.length === 2 ? (
@@ -36,5 +39,6 @@ const fixedRest = fixed.filter((f) => f.key !== 'name' && f.key !== 'company');
 ) : (
   pair.map((f) => <ContactField field={f} />)
 )}
-{fixedRest.map((f) => <ContactField field={f} />)}
+{beforeCustom.map((f) => <ContactField field={f} />)}
 {custom.map((f) => <ContactField field={f} />)}
+{messageField.map((f) => <ContactField field={f} />)}

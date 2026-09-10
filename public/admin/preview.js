@@ -1577,9 +1577,19 @@
     var heading = data.heading || 'お問い合わせ・ご予約';
     var notes = (data.notes || []).filter(Boolean);
     var f = CONTACT_FORM_DEFAULTS;
-    var contactFields = resolveContactFieldsForPreview(data.formFields).concat(
-      resolveCustomContactFieldsForPreview(data.custom_fields)
-    );
+    // 表示順：お名前 → 会社名 → メールアドレス → 電話番号 → カスタム項目 → お問い合わせ内容
+    var fixedFields = resolveContactFieldsForPreview(data.formFields);
+    var customFields = resolveCustomContactFieldsForPreview(data.custom_fields);
+    var contactFields = fixedFields
+      .filter(function (x) {
+        return x.key !== 'message';
+      })
+      .concat(customFields)
+      .concat(
+        fixedFields.filter(function (x) {
+          return x.key === 'message';
+        })
+      );
     var privacy = data.privacyPolicy || {};
     var privacyBlocks = parseTextBlocksForPreview(privacy.body);
     return [
