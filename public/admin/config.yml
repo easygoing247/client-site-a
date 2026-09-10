@@ -566,6 +566,37 @@ collections:
                   - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
                   - { label: "必須にする", name: "required", widget: boolean, default: true }
 
+          # --- カスタム追加項目（固定項目の後ろに表示。CMS で自由に追加・削除できる） ---
+          - label: "カスタム追加項目"
+            name: "custom_fields"
+            label_singular: "カスタム項目"
+            widget: list
+            required: false
+            summary: "{{fields.label}}（{{fields.name}}）"
+            hint: "固定項目（お名前〜お問い合わせ内容）の後ろに追加される入力欄。「+ カスタム項目」で追加、各項目のゴミ箱アイコンで削除できます（固定項目は削除できません）。"
+            fields:
+              - { label: "項目名（ラベル）", name: "label", widget: string, required: false }
+              - { label: "フィールドID（送信データのキー名）", name: "name", widget: string, required: false, hint: "半角英数字と _ のみ（例: budget, deadline）。空欄・固定項目と同名・重複はサイトに表示されません。" }
+              - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+              - label: "入力タイプ"
+                name: "type"
+                widget: select
+                default: "text"
+                options:
+                  - { label: "テキスト", value: "text" }
+                  - { label: "数値", value: "number" }
+                  - { label: "電話番号", value: "tel" }
+                  - { label: "メールアドレス", value: "email" }
+                  - { label: "複数行テキスト", value: "textarea" }
+                  - { label: "選択肢（プルダウン）", value: "select" }
+              - label: "選択肢（入力タイプが「選択肢」のときのみ使用）"
+                name: "options"
+                widget: list
+                required: false
+                field: { label: "選択肢", name: "option", widget: string, required: false }
+              - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+              - { label: "必須にする", name: "required", widget: boolean, default: false }
+
           - label: "プライバシーポリシー"
             name: "privacyPolicy"
             widget: object

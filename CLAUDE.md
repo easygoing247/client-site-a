@@ -165,9 +165,13 @@ public/
   別エントリのため、ヘッダー・フッターは商品プレビューと同様に「公開済みの実HTML」
   （`publishedHeaderHtml` / `publishedFooterHtml`）を流用する。会社名・フォーム項目文言など
   siteInfo.yml 側の値はプレビューでは既定値で代替する（`CONTACT_FORM_DEFAULTS` 等）。
-- 下層ページのプレビューでは、`index.html` のスクロール同期（`findActiveSectionKey()` が
-  siteInfo.yml 固有の大項目ラベルを前提とする）は対象セクションを見つけられず自動的に
-  no-op になる（CSS崩れ・エラーは発生しない）。
+- **プレビュー追従スクロール（全コレクション共通）**：`index.html` の
+  `syncPreviewScroll()` は2モード。(A) サイト全体設定＝フォームの大項目ラベルと
+  プレビューの `<section id>` が対応するため `findActiveSectionKey()` で編集中
+  セクションの見出し位置へスナップ。(B) 商品・下層ページ・お知らせ＝対応 id が
+  無いので、フォーム側のスクロール進捗率をプレビュー側へ比例適用して追従。
+  トリガー（`ControlPaneContainer` の scroll ／ `EditorToggle` のトグルクリック
+  ／80px閾値）はコレクション非依存で共通。
 - ヘッダー・フッターのナビゲーション項目は、実サイト（`src/lib/site.ts` の
   `visibleNavItems()`）・プレビュー（`preview.js` の `filterVisibleNavForPreview()`）の
   どちらも、リンク先セクションの機能フラグ（`features.enableFaq` 等）と連動して
@@ -355,8 +359,19 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   レンダリングは共通コンポーネント **`ContactFields.astro` / `ContactField.astro`**
   （`Contact.astro` と `contact.astro` の両 `<form>` 内で使用）。ラベル横に
   `required` に応じて「必須」（赤 `#c62828`）／「任意」（グレー）バッジを出し分ける。
-  送信は `new FormData(form)` が表示中の入力欄を自動収集するため
-  `contactForm.ts` 側の変更は不要（非表示項目は DOM に無い＝送信されない）。
+- **カスタム追加項目**：`contactPage.yml` の `custom_fields[]`（CMS の list ウィジェット
+  で自由に追加・削除・並べ替え。固定項目は削除不可）。各項目は
+  `label` / `name`（送信キー。英数字＋`_` に正規化）/ `placeholder` / `type`
+  （text/number/tel/email/textarea/select）/ `options`（select用）/ `enabled` / `required`。
+  解決は `src/lib/pages.ts` の **`resolveCustomContactFields()`**
+  （予約語・重複・空欄・`enabled: false` を除外）→ `ContactRenderField` に正規化して
+  固定項目の後ろにレンダリング。
+- 送信は `contactForm.ts` が `input[name], textarea[name], select[name]` を明示的に
+  走査して `FormData` に集約する（固定・電話番号・カスタム・`<select>`・hidden の
+  `subject`/`from_name`・checked の `botcheck` を含む。非表示項目は DOM に無い＝送信されない）。
+- 上記フォーム系の定義を変えたら `preview.js` の `resolveContactFieldsForPreview` /
+  `resolveCustomContactFieldsForPreview` / `renderContactFieldPreview` /
+  `renderContactFields` も `src/lib/pages.ts` と一致させること。
 - `#contact-success` / `#contact-error` のフェードインは `src/styles/global.css` の
   `.is-visible` クラス＋`contactForm.ts` の `reveal()`（hidden 解除 → 1回だけ
   `offsetWidth` でリフローを確定 → クラス付与）。`prefers-reduced-motion` 尊重。

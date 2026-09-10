@@ -1171,27 +1171,49 @@
           return null;
         }
 
+        // すべてのコレクション（サイト全体設定／商品・施工事例／下層ページ／
+        // お知らせ・ブログ）で共通のプレビュー追従スクロール。
+        //  (A) サイト全体設定 … フォームの大項目ラベルとプレビューの
+        //      <section id="..."> が1対1に対応するため、編集中セクションの
+        //      見出し位置へスナップする（従来どおりの精度重視の同期）。
+        //  (B) それ以外（プレビューが1枚の連続ページ）… 対応する section id が
+        //      無いので、フォーム側のスクロール進捗率をプレビュー側へ比例
+        //      適用して追従させる（編集位置に応じてプレビューも同じ割合の
+        //      位置まで移動する）。
         function syncPreviewScroll() {
           if (!scrollSyncEnabled) return;
           var previewDoc = getPreviewDocument();
           if (!previewDoc) return;
-          var key = findActiveSectionKey();
-          if (!key) return;
-          var target = previewDoc.getElementById(key);
-          if (!target) return;
-          var headerEl = previewDoc.querySelector('header');
-          var headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
-          // 各セクションは <section id="..."> 自身の内側にpy-16分の
-          // 上パディングを持ち、見出しブロックはその内側（1番目の子要素）
-          // から始まる。section要素自体ではなくこの内側の子要素を基準に
-          // することで、見出しがヘッダー直下にぴったり収まる位置を
-          // 正確に計算できる（サイト本体側のSmoothScroll.astroと
-          // 同じ考え方）。
-          var contentEl = target.firstElementChild || target;
+          var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
+          if (!controlPane) return;
           var scrollEl = previewDoc.scrollingElement || previewDoc.documentElement;
-          var targetTop = contentEl.getBoundingClientRect().top + scrollEl.scrollTop;
-          var destination = Math.max(0, targetTop - headerHeight - 12);
-          scrollEl.scrollTop = destination;
+          if (!scrollEl) return;
+
+          // (A) セクション単位のピンポイント同期
+          var key = findActiveSectionKey();
+          if (key) {
+            var target = previewDoc.getElementById(key);
+            if (target) {
+              var headerEl = previewDoc.querySelector('header');
+              var headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+              // section要素自体ではなく内側の子要素（見出しブロック）を基準に
+              // することで、見出しがヘッダー直下に収まる位置を正確に計算できる。
+              var contentEl = target.firstElementChild || target;
+              var targetTop = contentEl.getBoundingClientRect().top + scrollEl.scrollTop;
+              scrollEl.scrollTop = Math.max(0, targetTop - headerHeight - 12);
+              return;
+            }
+          }
+
+          // (B) スクロール進捗率による比例同期
+          var formMax = controlPane.scrollHeight - controlPane.clientHeight;
+          var viewportH = previewDoc.documentElement ? previewDoc.documentElement.clientHeight : 0;
+          var previewMax = scrollEl.scrollHeight - viewportH;
+          if (formMax <= 0 || previewMax <= 0) return;
+          var ratio = controlPane.scrollTop / formMax;
+          if (ratio < 0) ratio = 0;
+          if (ratio > 1) ratio = 1;
+          scrollEl.scrollTop = Math.round(ratio * previewMax);
         }
 
         document.addEventListener(

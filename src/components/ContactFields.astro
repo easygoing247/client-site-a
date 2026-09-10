@@ -2,19 +2,31 @@
 // ============================================================================
 // ContactFields.astro — お問い合わせフォームの入力欄ブロック（共通）
 // トップページ #contact（Contact.astro）と /contact ページ（contact.astro）の
-// 両方の <form> 内で使う。表示/非表示・ラベル・プレースホルダー・必須は
-// src/data/contactPage.yml の formFields（CMS 編集可）で決まる。
-// ・enabled: false の項目は描画しない（＝送信データにも含まれない）
-// ・required の項目は <input required> ＋ ラベル横に「必須」バッジ
-// ・電話番号（phone）はメールアドレスとお問い合わせ内容の間に入る
+// 両方の <form> 内で使う。
+// ・固定項目（お名前 / 会社名 / メールアドレス / 電話番号 / お問い合わせ内容）：
+//   contactPage.yml の formFields で 表示/ラベル/プレースホルダー/必須 を編集
+// ・カスタム追加項目：contactPage.yml の custom_fields[]（CMS で追加・削除）を
+//   固定項目の後ろに表示
+// enabled: false の項目は描画しない（＝送信データにも含まれない）
 // ============================================================================
-import { contactPage, resolveContactFormFields } from '../lib/pages';
+import { contactPage, resolveContactFormFields, resolveCustomContactFields } from '../lib/pages';
+import type { ContactRenderField } from '../lib/pages';
 import ContactField from './ContactField.astro';
 
-const fields = resolveContactFormFields(contactPage.formFields);
+const fixed = resolveContactFormFields(contactPage.formFields);
+const custom: ContactRenderField[] = resolveCustomContactFields(contactPage.custom_fields).map((f) => ({
+  key: f.key,
+  label: f.label,
+  placeholder: f.placeholder,
+  required: f.required,
+  type: f.type,
+  options: f.options,
+  autocomplete: 'off',
+}));
+
 // お名前・会社名は横並び（両方表示のときのみ2カラム）、それ以外は全幅
-const pair = fields.filter((f) => f.key === 'name' || f.key === 'company');
-const rest = fields.filter((f) => f.key !== 'name' && f.key !== 'company');
+const pair = fixed.filter((f) => f.key === 'name' || f.key === 'company');
+const fixedRest = fixed.filter((f) => f.key !== 'name' && f.key !== 'company');
 ---
 
 {pair.length === 2 ? (
@@ -24,4 +36,5 @@ const rest = fields.filter((f) => f.key !== 'name' && f.key !== 'company');
 ) : (
   pair.map((f) => <ContactField field={f} />)
 )}
-{rest.map((f) => <ContactField field={f} />)}
+{fixedRest.map((f) => <ContactField field={f} />)}
+{custom.map((f) => <ContactField field={f} />)}

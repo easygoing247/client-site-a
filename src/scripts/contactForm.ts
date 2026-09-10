@@ -53,11 +53,26 @@ function initContactForm(): void {
     if (labelEl && sendingLabel) labelEl.textContent = sendingLabel;
 
     try {
-      // new FormData(form) は <form> 内の name 付きコントロールを全て収集する。
-      // ContactFields.astro は「表示する項目」だけを描画するため、非表示の項目は
-      // そもそも DOM に無く送信されない。追加された電話番号（name="phone"）も
-      // 表示されていれば自動的に含まれる。
-      const formData = new FormData(form);
+      // 表示中の name 付きコントロール（固定項目・電話番号・カスタム追加項目の
+      // <input> / <textarea> / <select>、hidden の subject / from_name、
+      // ハニーポットの botcheck）を明示的に収集する。ContactFields.astro は
+      // 「表示する項目」だけを描画するため、非表示の項目はそもそも DOM に無く
+      // 送信されない。カスタム項目（<select> 含む）も name 属性さえあれば拾われる。
+      const formData = new FormData();
+      form
+        .querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+          'input[name], textarea[name], select[name]',
+        )
+        .forEach((el) => {
+          if (
+            el instanceof HTMLInputElement &&
+            (el.type === 'checkbox' || el.type === 'radio')
+          ) {
+            if (el.checked) formData.append(el.name, el.value);
+            return;
+          }
+          formData.append(el.name, el.value);
+        });
       formData.append('access_key', accessKey);
 
       const res = await fetch(WEB3FORMS_ENDPOINT, {

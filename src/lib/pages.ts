@@ -61,11 +61,23 @@ export interface ContactFieldConfig {
   required?: boolean;
 }
 
+/** contactPage.yml の custom_fields[] に入る CMS 側の生データ */
+export interface CustomContactFieldConfig {
+  label?: string;
+  name?: string;
+  placeholder?: string;
+  type?: string;
+  options?: unknown;
+  enabled?: boolean;
+  required?: boolean;
+}
+
 export interface ContactPage {
   heading?: string;
   intro?: string;
   notes?: string[];
   formFields?: Partial<Record<ContactFieldKey, ContactFieldConfig>>;
+  custom_fields?: CustomContactFieldConfig[];
   privacyPolicy?: {
     heading?: string;
     body?: string;
@@ -136,6 +148,93 @@ export function resolveContactFormFields(
   })
     .filter((f) => f.enabled)
     .map(({ enabled, ...rest }) => rest);
+}
+
+// ============================================================================
+// カスタム追加項目（contactPage.custom_fields[]）の解決。
+// 固定項目の後ろに表示。name（キー名）は半角英数字と _ のみに正規化し、
+// 空欄・固定項目と同名・予約語・重複は除外する。
+// ============================================================================
+export type CustomContactFieldType = 'text' | 'number' | 'tel' | 'email' | 'textarea' | 'select';
+
+export interface CustomContactField {
+  /** レンダリング用の一意キー（= name） */
+  key: string;
+  name: string;
+  label: string;
+  placeholder: string;
+  required: boolean;
+  type: CustomContactFieldType;
+  /** type === 'select' のときの選択肢 */
+  options: string[];
+}
+
+const CUSTOM_FIELD_TYPES: readonly CustomContactFieldType[] = [
+  'text',
+  'number',
+  'tel',
+  'email',
+  'textarea',
+  'select',
+];
+
+/** 固定項目や Web3Forms の予約フィールドと衝突させないための予約語 */
+const RESERVED_CONTACT_FIELD_NAMES = new Set<string>([
+  'name',
+  'company',
+  'email',
+  'phone',
+  'message',
+  'subject',
+  'from_name',
+  'access_key',
+  'botcheck',
+  'redirect',
+  'ccemail',
+]);
+
+/**
+ * 固定項目・カスタム項目を ContactField.astro に渡すための共通の形。
+ * （ContactFormField / CustomContactField を正規化したもの）
+ */
+export interface ContactRenderField {
+  key: string;
+  label: string;
+  placeholder: string;
+  required: boolean;
+  type: CustomContactFieldType;
+  autocomplete?: string;
+  options?: string[];
+}
+
+export function resolveCustomContactFields(list?: CustomContactFieldConfig[]): CustomContactField[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: CustomContactField[] = [];
+  for (const c of list) {
+    if (!c || c.enabled === false) continue;
+    const name = (c.name ?? '').trim().replace(/[^A-Za-z0-9_]/g, '');
+    const label = (c.label ?? '').trim();
+    if (!name || !label) continue;
+    if (RESERVED_CONTACT_FIELD_NAMES.has(name) || seen.has(name)) continue;
+    seen.add(name);
+    const type: CustomContactFieldType = CUSTOM_FIELD_TYPES.includes(c.type as CustomContactFieldType)
+      ? (c.type as CustomContactFieldType)
+      : 'text';
+    const options = Array.isArray(c.options)
+      ? (c.options.filter((o): o is string => typeof o === 'string' && o.trim() !== ''))
+      : [];
+    out.push({
+      key: name,
+      name,
+      label,
+      placeholder: c.placeholder ?? '',
+      required: c.required === true,
+      type,
+      options,
+    });
+  }
+  return out;
 }
 
 export function parseTextBlocks(source: string | undefined | null): TextBlock[] {

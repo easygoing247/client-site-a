@@ -766,8 +766,60 @@
     });
   }
 
+  // カスタム追加項目（contactPage.custom_fields[]）。src/lib/pages.ts の
+  // resolveCustomContactFields と同じ判定（予約語・重複・空欄を除外）。
+  var CUSTOM_FIELD_TYPES_PREVIEW = ['text', 'number', 'tel', 'email', 'textarea', 'select'];
+  var RESERVED_CONTACT_NAMES_PREVIEW = {
+    name: 1, company: 1, email: 1, phone: 1, message: 1,
+    subject: 1, from_name: 1, access_key: 1, botcheck: 1, redirect: 1, ccemail: 1,
+  };
+
+  function resolveCustomContactFieldsForPreview(list) {
+    if (!Array.isArray(list)) return [];
+    var seen = {};
+    var out = [];
+    list.forEach(function (c) {
+      if (!c || c.enabled === false) return;
+      var name = String(c.name == null ? '' : c.name).trim().replace(/[^A-Za-z0-9_]/g, '');
+      var label = String(c.label == null ? '' : c.label).trim();
+      if (!name || !label) return;
+      if (RESERVED_CONTACT_NAMES_PREVIEW[name] || seen[name]) return;
+      seen[name] = 1;
+      var type = CUSTOM_FIELD_TYPES_PREVIEW.indexOf(c.type) !== -1 ? c.type : 'text';
+      var options = Array.isArray(c.options)
+        ? c.options.filter(function (o) {
+            return typeof o === 'string' && o.trim() !== '';
+          })
+        : [];
+      out.push({
+        key: name,
+        label: label,
+        placeholder: typeof c.placeholder === 'string' ? c.placeholder : '',
+        required: c.required === true,
+        type: type,
+        options: options,
+      });
+    });
+    return out;
+  }
+
   function renderContactFieldPreview(h, f) {
     var inputClass = 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]';
+    var control;
+    if (f.type === 'textarea') {
+      control = h('textarea', { readOnly: true, rows: 5, placeholder: f.placeholder, className: inputClass + ' resize-y' });
+    } else if (f.type === 'select') {
+      control = h(
+        'select',
+        { disabled: true, className: inputClass + ' bg-white appearance-none' },
+        h('option', {}, f.placeholder || '選択してください'),
+        (f.options || []).map(function (opt, i) {
+          return h('option', { key: i }, opt);
+        })
+      );
+    } else {
+      control = h('input', { type: f.type, readOnly: true, placeholder: f.placeholder, className: inputClass });
+    }
     return h(
       'label',
       { key: f.key, className: 'flex flex-col gap-1.5' },
@@ -779,9 +831,7 @@
           ? h('span', { className: 'text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-[3px] leading-none' }, '必須')
           : h('span', { className: 'text-[10px] font-bold text-ink-faint bg-surface-muted rounded px-1.5 py-[3px] leading-none' }, '任意')
       ),
-      f.type === 'textarea'
-        ? h('textarea', { readOnly: true, rows: 5, placeholder: f.placeholder, className: inputClass + ' resize-y' })
-        : h('input', { type: f.type, readOnly: true, placeholder: f.placeholder, className: inputClass })
+      control
     );
   }
 
@@ -1527,7 +1577,9 @@
     var heading = data.heading || 'お問い合わせ・ご予約';
     var notes = (data.notes || []).filter(Boolean);
     var f = CONTACT_FORM_DEFAULTS;
-    var contactFields = resolveContactFieldsForPreview(data.formFields);
+    var contactFields = resolveContactFieldsForPreview(data.formFields).concat(
+      resolveCustomContactFieldsForPreview(data.custom_fields)
+    );
     var privacy = data.privacyPolicy || {};
     var privacyBlocks = parseTextBlocksForPreview(privacy.body);
     return [

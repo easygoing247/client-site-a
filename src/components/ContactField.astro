@@ -1,16 +1,18 @@
 ---
 // ============================================================================
 // ContactField.astro — お問い合わせフォームの入力欄1つ（ラベル＋必須/任意バッジ＋入力）
-// 表示条件・並び順は ContactFields.astro 側で解決済み。
+// 固定項目（ContactFormField）とカスタム追加項目（CustomContactField）の
+// 両方を、共通の ContactRenderField 形に正規化してから渡す（ContactFields.astro）。
 // ============================================================================
-import type { ContactFormField } from '../lib/pages';
+import type { ContactRenderField } from '../lib/pages';
 
 interface Props {
-  field: ContactFormField;
+  field: ContactRenderField;
 }
 
 const { field } = Astro.props;
 const inputClass = 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]';
+const options = field.options ?? [];
 ---
 
 <label class="flex flex-col gap-1.5">
@@ -30,6 +32,13 @@ const inputClass = 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px
       placeholder={field.placeholder}
       class:list={[inputClass, 'resize-y']}
     />
+  ) : field.type === 'select' ? (
+    <select name={field.key} required={field.required} class:list={[inputClass, 'bg-white appearance-none']}>
+      <option value="" disabled selected>{field.placeholder || '選択してください'}</option>
+      {options.map((opt) => (
+        <option value={opt}>{opt}</option>
+      ))}
+    </select>
   ) : (
     <input
       type={field.type}
