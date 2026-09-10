@@ -29,6 +29,10 @@ export interface ServicesPage {
     note?: string;
     /** 「含まれる内容／特徴」チェックリスト（料金プランの features と同仕様） */
     features?: string[];
+    /** 項目名の左隣に強調バッジ（「人気」等）を表示するか */
+    showBadge?: boolean;
+    /** バッジの表示文言（showBadge が true かつ非空のときのみ表示） */
+    badgeText?: string;
   }[];
   priceNote?: string;
 }

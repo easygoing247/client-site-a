@@ -1488,7 +1488,21 @@
                   h(
                     'div',
                     { className: 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1' },
-                    h('div', { className: 'text-[14px] font-bold text-secondary' }, row.name),
+                    h(
+                      'div',
+                      { className: 'inline-flex items-center flex-wrap gap-x-2 gap-y-1' },
+                      row.showBadge && row.badgeText
+                        ? h(
+                            'span',
+                            {
+                              className:
+                                'inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 whitespace-nowrap',
+                            },
+                            row.badgeText
+                          )
+                        : null,
+                      h('span', { className: 'text-[14px] font-bold text-secondary' }, row.name)
+                    ),
                     h(
                       'div',
                       { className: 'text-[15px] font-bold text-primary' },

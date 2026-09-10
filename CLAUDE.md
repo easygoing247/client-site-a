@@ -330,6 +330,9 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
     スマホ1カラムでは常に画像→テキスト順）。自動交互配置はしない。
   - 「料金表」各行は `note` の下に `features`（`string[]`／`priceTable[].features`）を
     チェックマーク付き箇条書きで表示（サービス詳細・料金プランの features と同じ体裁）。
+  - 「料金表」各行の `showBadge`（boolean）が true かつ `badgeText` が非空のとき、
+    項目名の左隣に強調バッジ（`bg-primary text-white` の pill。テーマカラー連動）を
+    `inline-flex`＋`gap` で表示。PC・スマホとも折り返し対応。
   - ページ最下部の問い合わせ CTA セクションは廃止（ヘッダーCTA・`StickyContactBar` で導線は担保）。
   - 上記はいずれも `preview.js` の `ServicesPagePreview` を一致させること。
 - **`/about`（会社概要）** の3セクション（代表挨拶／会社概要（表形式）／アクセス）は

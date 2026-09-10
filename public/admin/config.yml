@@ -495,6 +495,8 @@ collections:
               - { label: "項目名", name: "name", widget: string, required: false }
               - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
               - { label: "備考", name: "note", widget: string, required: false }
+              - { label: "項目名の左に強調バッジを表示する", name: "showBadge", widget: boolean, default: false, hint: "ONにして下の「バッジ文言」を入力すると、項目名の左隣にテーマカラーのバッジが表示されます。" }
+              - { label: "バッジ文言（例：人気／おすすめ／限定）", name: "badgeText", widget: string, required: false }
               - label: "含まれる内容／特徴"
                 name: "features"
                 widget: list

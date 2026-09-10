@@ -61,6 +61,8 @@ priceTable:
   - name: スタンダードプラン
     price: 300000
     note: 一般的なコーポレートサイトに最適です。
+    showBadge: true
+    badgeText: 人気
     features:
       - トップページ＋下層8ページ
       - スマホ対応
