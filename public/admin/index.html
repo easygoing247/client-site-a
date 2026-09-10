@@ -205,6 +205,55 @@
         }
 
         /*
+          スマホでヘッダー左側の「◯◯のエントリを作成中」「保存済／公開済」が
+          極端に狭い幅（実測14px）へ押し込まれ、1文字ずつ縦積みになって
+          見切れる・下の編集領域に被る不具合の修正。
+          原因：右側の [class*="ToolbarSectionMeta"]（本番サイトURLリンク
+          "master-template-multi.easygoing247.workers.dev" ＋ アカウント
+          アイコン）が幅400px超を占有し、左側の
+          [class*="ToolbarSectionBackLink"] を圧迫していた。
+          → URLリンクはスマホでは非表示（アカウントメニューは残す）、
+            左側セクションに伸長を許可し、テキストは縮小＋省略記号で1行に収める。
+        */
+        [class*='ToolbarSectionBackLink'] {
+          flex: 1 1 auto !important;
+          min-width: 0 !important;
+          max-width: 66% !important;
+          overflow: hidden !important;
+        }
+        /* BackArrow の隣、BackCollection / BackStatus を包む無名 div */
+        [class*='ToolbarSectionBackLink'] > div:not([class*='BackArrow']) {
+          min-width: 0 !important;
+          flex: 1 1 auto !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: center !important;
+          align-items: flex-start !important;
+          overflow: hidden !important;
+          height: auto !important;
+        }
+        [class*='BackCollection'] {
+          font-size: 11px !important;
+          line-height: 1.35 !important;
+          max-width: 100% !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+        [class*='BackStatus'] {
+          font-size: 10px !important;
+          line-height: 1.2 !important;
+          white-space: nowrap !important;
+        }
+        [class*='ToolbarSectionMeta'] {
+          flex: 0 0 auto !important;
+          min-width: 0 !important;
+        }
+        [class*='AppHeaderSiteLink'] {
+          display: none !important;
+        }
+
+        /*
           ツールバー（戻る／公開状態／「公開」ボタン等）をスクロール追従
           （スティッキー）にする。
           Decap本体は既定でこれを position:absolute; top:0 として

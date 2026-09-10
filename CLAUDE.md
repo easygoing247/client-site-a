@@ -315,7 +315,12 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - **`/about`（会社概要）** の3セクション（代表挨拶／会社概要（表形式）／アクセス）は
   `about.yml` の `sections.{greeting,companyOverview,access}`（CMS「セクションの
   表示・非表示」）で個別に enabled 制御。`AboutPage` 型・`about.astro`・`preview.js`
-  の `AboutPagePreview` の3箇所を一致させること。
+  の `AboutPagePreview` の3箇所を一致させること。背景色は**表示中セクションだけを
+  数えて先頭から 白→グレー(`bg-surface-muted`) を交互**に割り当てる
+  （`mutedByKey`。一部を非表示にしても必ず交互になる）。
+  会社概要テーブルの `dt` はスマホで全幅の帯になるため、セクション背景と同化しない
+  よう `bg-primary-light` ＋ 左アクセントボーダー、`sm:` で白カード上に戻す。
+  `dd` はスマホ縦積み時に `pt-3` で余白を確保。
 - **`/news`（一覧）** はカテゴリフィルター＋カード／リスト表示切替をクライアントJSで実装
   （`src/pages/news/index.astro` の `<script>`）。カテゴリ一覧は
   `src/lib/news.ts` の `collectNewsCategories()`（記事に実在するカテゴリのみ）。
@@ -417,10 +422,11 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - **コントラスト（WCAG AA 4.5:1）**：`tailwind.config.mjs` の色トークンは
   白／`#f5f7fb` 背景で AA を満たす値に調整済み。特に注意：
   - `ink.faint`（`#646b7b`）… 補足テキスト・注意書き・パンくず。これより明るくしない。
-  - `accent`（`#04853b`）… LINE相談ボタン等で `text-white` と組む前提。LINE本来の
-    `#06c755` は白文字で 2.26:1（AA未達）のため明度を落としてある。
+  - `accent`（`#06c755`）… **LINE 公式ブランドカラー**。スマホ下部固定バーの
+    「LINEで相談」ボタン・SNSアイコンで使用。白文字のコントラストは AA 未達だが、
+    LINE 自身の UI も同配色のためブランド遵守を優先している（例外）。
   案件ごとの着せ替え（セクション2）で色を差し替える際も、白文字ボタン・
-  補足テキストのコントラスト比 4.5:1 以上を必ず確認すること。
+  補足テキストのコントラスト比 4.5:1 以上を必ず確認すること（`accent` の LINE 緑は除く）。
 - **画像**：必ず `astro:assets` の `<Image />`（`<img>` 直書き禁止＝絶対ルール②）。
   各ページで**ファーストビューに入る先頭画像1枚だけ** `fetchpriority="high"` +
   `loading="eager"`、それ以外は `loading="lazy"`。`width` / `height` を必ず指定して

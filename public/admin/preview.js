@@ -1533,6 +1533,19 @@
     var showCompanyOverview = sections.companyOverview !== false && profile.length > 0;
     var hasAccess =
       sections.access !== false && (access.address || access.directions || access.parking || access.mapEmbedUrl);
+    // 表示中セクションだけを数えて白／グレーを交互に割り当てる（about.astro と同じ）
+    var mutedAbout = {};
+    [
+      { key: 'greeting', show: showGreeting },
+      { key: 'companyOverview', show: showCompanyOverview },
+      { key: 'access', show: hasAccess },
+    ]
+      .filter(function (s) {
+        return s.show;
+      })
+      .forEach(function (s, i) {
+        mutedAbout[s.key] = i % 2 === 1;
+      });
     return [
       renderPagePreviewHeading(h, {
         key: 'head',
@@ -1544,7 +1557,7 @@
       showGreeting &&
         h(
           'section',
-          { key: 'greeting', className: 'py-14 px-5' },
+          { key: 'greeting', className: cx('py-14 px-5', mutedAbout.greeting && 'bg-surface-muted') },
           h(
             'div',
             { className: 'max-w-[900px] mx-auto grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8 items-start' },
@@ -1573,7 +1586,7 @@
       showCompanyOverview &&
         h(
           'section',
-          { key: 'profile', className: 'py-14 px-5 bg-surface-muted' },
+          { key: 'profile', className: cx('py-14 px-5', mutedAbout.companyOverview && 'bg-surface-muted') },
           h(
             'div',
             { className: 'max-w-[760px] mx-auto' },
@@ -1584,11 +1597,15 @@
               profile.map(function (row, i) {
                 return h(
                   'div',
-                  { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[140px_1fr]', i > 0 && 'border-t border-surface-border') },
-                  h('dt', { className: 'px-5 py-4 text-[13px] font-bold text-secondary bg-surface-muted sm:bg-transparent' }, row.label),
+                  { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[150px_1fr]', i > 0 && 'border-t border-surface-border') },
+                  h(
+                    'dt',
+                    { className: 'px-5 py-3 text-[13px] font-bold text-secondary bg-primary-light border-l-4 border-primary sm:bg-transparent sm:border-l-0 sm:py-4' },
+                    row.label
+                  ),
                   h(
                     'dd',
-                    { className: 'px-5 pb-4 pt-0 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
+                    { className: 'px-5 pb-4 pt-3 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
                     row.value
                   )
                 );
@@ -1599,7 +1616,7 @@
       hasAccess &&
         h(
           'section',
-          { key: 'access', className: 'py-14 px-5' },
+          { key: 'access', className: cx('py-14 px-5', mutedAbout.access && 'bg-surface-muted') },
           h(
             'div',
             { className: 'max-w-[900px] mx-auto' },
