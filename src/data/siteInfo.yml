@@ -128,6 +128,7 @@ access:
   heading: アクセス
   store:
     closedDays: 土曜・日曜・祝日
+    imagePosition: center
     name: LOGO 札幌本店（ショールーム）
     imageAlt: ショールーム外観イメージ
     businessHours: 10:00〜18:00
@@ -137,7 +138,6 @@ access:
     postalCode: 〒060-0001
     parking: 3台（近隣コインパーキングもご利用いただけます）
     image: /src/assets/access-store.jpg
-    imagePosition: center
   labels:
     postalCode: 郵便番号
     address: 住所
@@ -187,9 +187,6 @@ contact:
   phone: 000-000-0000
   phoneHref: tel:0000000000
   email: info@example.com
-# 公式SNS設定（サイト全体で一括管理）。ドラッグで並び替え、enabled で表示/非表示。
-# URL 未入力または enabled: false のものはアイコンが表示されない。
-# スマホ下部バーの「LINEで相談」ボタンも、この line の URL / enabled を参照する。
 sns:
   - id: line
     url: "#"
@@ -204,8 +201,8 @@ sns:
     url: "#"
     enabled: true
   - id: youtube
-    url: ""
-    enabled: false
+    url: "#"
+    enabled: true
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
