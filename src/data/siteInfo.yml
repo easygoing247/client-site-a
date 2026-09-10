@@ -63,7 +63,7 @@ flow:
       text: 最終確認のうえサイトを公開し、納品後もサポートを継続します。
 productsSection:
   eyebrow: PRODUCTS
-  heading: 商品・プラン一覧
+  heading: 商品一覧
 works:
   eyebrow: WORKS
   heading: 実績・活用事例
@@ -114,7 +114,7 @@ plans:
         - SEO対策・運用サポート
 access:
   eyebrow: ACCESS
-  heading: 店舗概要・アクセス
+  heading: アクセス
   store:
     closedDays: 土曜・日曜・祝日
     name: LOGO 札幌本店（ショールーム）
