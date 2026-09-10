@@ -16,7 +16,7 @@ items:
   - title: LP制作
     description: 商品・サービスの魅力を伝え、成果につながるランディングページを制作します。
     image: ../assets/service-lp.jpg
-    reverseLayout: false
+    reverseLayout: true
     features:
       - 訴求設計・ワイヤーフレーム
       - デザイン・コーディング
@@ -34,7 +34,7 @@ items:
     image: /src/assets/ceo-image.png
     features:
       - ｄふぁｄｓｆ
-    reverseLayout: false
+    reverseLayout: true
 priceTable:
   - name: Webサイト制作（5ページ程度）
     price: 300000
