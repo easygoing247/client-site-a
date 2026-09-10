@@ -19,14 +19,29 @@
 <script>
   const backToTop = document.getElementById('back-to-top') as HTMLButtonElement;
 
-  function updateBackToTop() {
+  // scroll イベントごとに DOM を触ると強制リフロー／ロングタスクの原因に
+  // なるため、requestAnimationFrame で1フレーム1回に間引き、さらに表示状態が
+  // 変わったときだけ class を書き換える（毎フレームの無駄な DOM 更新を防ぐ）。
+  let ticking = false;
+  let visible: boolean | null = null;
+
+  function applyBackToTop() {
+    ticking = false;
     const show = window.scrollY > 480;
+    if (show === visible) return;
+    visible = show;
     backToTop.classList.toggle('opacity-0', !show);
     backToTop.classList.toggle('pointer-events-none', !show);
   }
 
-  window.addEventListener('scroll', updateBackToTop, { passive: true });
-  updateBackToTop();
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(applyBackToTop);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  applyBackToTop();
 
   backToTop.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -319,8 +319,21 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 
 - **フォント**：OS標準のシステムフォントのみ（`tailwind.config.mjs` の `font-sans`）。
   外部フォントCDN・`@import`・`<link rel="preconnect">` は一切使わない。
+- **CSS**：`astro.config.mjs` の `build.inlineStylesheets: 'always'` で、共有CSS
+  （約20KB／gzip約5KB）を全HTMLの `<head>` に `<style>` インライン展開する。
+  外部 `<link rel="stylesheet">` によるレンダーブロックが発生しないことを
+  ビルド出力で確認すること（`dist/*.html` に `_astro/*.css` への `<link>` が無い）。
 - **スクリプト**：外部CDN読み込みゼロ。`SmoothScroll` / `StickyContactBar` /
   `BackToTop` / `MobileNavDrawer` の hoisted スクリプトのみ（合計数KB）。
+  scroll イベントで DOM を触る処理（`BackToTop`）は `requestAnimationFrame` で
+  間引き、状態変化時のみ class を書き換える（強制リフロー・ロングタスク対策）。
+- **コントラスト（WCAG AA 4.5:1）**：`tailwind.config.mjs` の色トークンは
+  白／`#f5f7fb` 背景で AA を満たす値に調整済み。特に注意：
+  - `ink.faint`（`#646b7b`）… 補足テキスト・注意書き・パンくず。これより明るくしない。
+  - `accent`（`#04853b`）… LINE相談ボタン等で `text-white` と組む前提。LINE本来の
+    `#06c755` は白文字で 2.26:1（AA未達）のため明度を落としてある。
+  案件ごとの着せ替え（セクション2）で色を差し替える際も、白文字ボタン・
+  補足テキストのコントラスト比 4.5:1 以上を必ず確認すること。
 - **画像**：必ず `astro:assets` の `<Image />`（`<img>` 直書き禁止＝絶対ルール②）。
   各ページで**ファーストビューに入る先頭画像1枚だけ** `fetchpriority="high"` +
   `loading="eager"`、それ以外は `loading="lazy"`。`width` / `height` を必ず指定して

@@ -17,4 +17,11 @@ export default defineConfig({
     // astro:assets のデフォルト画像最適化（sharp）を使用
     domains: [],
   },
+  build: {
+    // サイト全体で共有する CSS は1ファイル約20KB（gzip 約5KB）と小さいため、
+    // 外部 <link rel="stylesheet"> による追加リクエスト（レンダーブロック）を
+    // なくし、各HTMLの <head> に直接インライン展開する。
+    // （'auto' は既定4KB未満のみインライン化するため、この規模だと外部化される）
+    inlineStylesheets: 'always',
+  },
 });
