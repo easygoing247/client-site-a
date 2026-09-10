@@ -70,7 +70,14 @@ const ogImageURL = optimizedOgImage ? new URL(optimizedOgImage.src, Astro.site).
     <meta name="generator" content={Astro.generator} />
   </head>
   <body class="bg-surface overflow-x-hidden">
-    <slot />
+    <!--
+      .layout-shell = 縦フレックスの Sticky Footer ラッパー（src/styles/global.css）。
+      中身は各ページが差し込む <Header> / <main> / <Footer> …。<main> が伸縮し、
+      コンテンツが短いページでもフッターが常に画面最下部に来る。
+    -->
+    <div class="layout-shell">
+      <slot />
+    </div>
     <SmoothScroll />
   </body>
 </html>

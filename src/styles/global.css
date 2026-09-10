@@ -61,6 +61,29 @@
   body {
     @apply bg-surface text-ink font-sans overflow-x-hidden;
   }
+  /*
+    Sticky footer（全ページ共通レイアウト）。
+    Layout.astro が <slot>（= 各ページの <Header> / <main> / <Footer> …）を
+    .layout-shell でラップする。縦フレックスにして <main> を伸縮させることで、
+    コンテンツ量が少ないページ（例：/news でカテゴリ絞り込みして表示件数が
+    減ったとき）でもフッターが必ずビューポート最下部に張り付き、
+    フッター下に地色（bg-surface）の余白＝白い帯が出ないようにする。
+    position:fixed の要素（StickyContactBar / BackToTop）はフロー外のため影響なし。
+  */
+  .layout-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  /* 動的ビューポート単位対応ブラウザ（モバイルのアドレスバー考慮）では 100dvh を優先 */
+  @supports (min-height: 100dvh) {
+    .layout-shell {
+      min-height: 100dvh;
+    }
+  }
+  .layout-shell > main {
+    flex: 1 0 auto;
+  }
   input,
   textarea,
   button {

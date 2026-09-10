@@ -326,6 +326,15 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - 共通パーツ：`Header` / `Footer` / `StickyContactBar` / `BackToTop` に加え、
   下層ページ共通の見出し＋パンくずは **`src/components/PageHeader.astro`**、
   CTAボタンは **`src/components/Button.astro`** を再利用する。
+- **Sticky Footer（全ページ共通）**：`Layout.astro` が `<slot>`（各ページの
+  `<Header>` / `<main>` / `<Footer>`）を `<div class="layout-shell">` でラップし、
+  `src/styles/global.css` で `.layout-shell { display:flex; flex-direction:column;
+  min-height:100vh (100dvh) }` ＋ `.layout-shell > main { flex:1 0 auto }` を適用。
+  コンテンツが短いページ（例：`/news` でカテゴリ絞り込みして表示件数が減ったとき）でも
+  フッターが必ずビューポート最下部に付き、フッター下に地色の白い帯が出ない。
+  各ページは `<Header /> <main>…</main> <Footer />` を slot 直下の兄弟として置くこと
+  （`<main>` を別 div で包まない）。`position:fixed` の `StickyContactBar` /
+  `BackToTop` はフロー外なので影響しない。
 - **`/services`（サービス内容・料金）**：
   - 「サービス詳細」各項目の `reverseLayout`（boolean）が true のとき、`md:` 以上で
     画像カードに `md:order-2` を付与し「画像：右／テキスト：左」に反転（既定は画像：左。
