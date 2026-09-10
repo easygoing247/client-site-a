@@ -191,10 +191,7 @@ contact:
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
-# お問い合わせフォームの送信先（Web3Forms）のアクセスキー。
-# https://web3forms.com/ でメールアドレスを登録して取得し、この値を差し替える。
-# （公開ページのHTMLに埋め込まれる前提の公開キー。秘匿情報ではない）
-web3forms_access_key: "YOUR_ACCESS_KEY_HERE"
+web3forms_access_key: a4086dba-db39-445e-9b52-920dd2912309
 sectionOrder:
   - id: features
   - id: services
@@ -207,35 +204,35 @@ sectionOrder:
   - id: contact
 nav:
   - label: サービス・料金
-    href: "/services"
+    href: /services
   - label: 実績
-    href: "/#works"
+    href: /#works
   - label: 料金プラン
-    href: "/#plans"
+    href: /#plans
   - label: よくある質問
-    href: "/#faq"
+    href: /#faq
   - label: 会社概要・アクセス
-    href: "/about"
+    href: /about
   - label: お知らせ
-    href: "/news"
+    href: /news
 navCta:
   label: お問い合わせ
-  href: "/contact"
+  href: /contact
 footerNav:
   - label: サービス・料金
-    href: "/services"
+    href: /services
   - label: 実績
-    href: "/#works"
+    href: /#works
   - label: 料金プラン
-    href: "/#plans"
+    href: /#plans
   - label: よくある質問
-    href: "/#faq"
+    href: /#faq
   - label: 会社概要・アクセス
-    href: "/about"
+    href: /about
   - label: お知らせ
-    href: "/news"
+    href: /news
   - label: お問い合わせ
-    href: "/contact"
+    href: /contact
 icons:
   check: ../assets/icon-check.png
 copyright: © 2026 LOGO. All Rights Reserved.
