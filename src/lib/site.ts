@@ -137,6 +137,10 @@ export interface SiteInfo {
       successMessage: string;
       /** 送信失敗時に表示するメッセージ */
       errorMessage: string;
+      /** Web3Forms 通知メールの件名（hidden の subject） */
+      mailSubject: string;
+      /** Web3Forms 通知メールの差出人名（hidden の from_name） */
+      mailFromName: string;
     };
   };
   productsSection: {
@@ -157,8 +161,6 @@ export interface SiteInfo {
   footerNav: { label: string; href: string }[];
   icons: { check: string };
   copyright: string;
-  /** Web3Forms のアクセスキー（お問い合わせフォームの送信先） */
-  web3forms_access_key: string;
 }
 
 export const site = yaml.load(raw) as SiteInfo;

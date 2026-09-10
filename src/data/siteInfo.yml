@@ -162,6 +162,8 @@ contactSection:
     sendingLabel: 送信中...
     successMessage: お問い合わせを受け付けました。担当者よりご連絡いたします。
     errorMessage: 送信に失敗しました。時間をおいて再度お試しください。
+    mailSubject: 【Webサイト】お問い合わせを受け付けました
+    mailFromName: Webサイトお問い合わせフォーム
 company:
   name: LOGO
   logo: ../assets/logo.svg
@@ -191,7 +193,6 @@ contact:
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
-web3forms_access_key: a4086dba-db39-445e-9b52-920dd2912309
 sectionOrder:
   - id: features
   - id: services

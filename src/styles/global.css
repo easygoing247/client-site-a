@@ -139,4 +139,32 @@
       opacity 0.3s ease,
       transform 0.3s ease;
   }
+
+  /*
+    お問い合わせフォームの送信結果メッセージ。
+    初期は hidden 属性（display:none）。JS が hidden を外した直後は
+    opacity:0 / 少し下、次フレームで .is-visible が付いてフェードイン。
+    （src/scripts/contactForm.ts の reveal()）
+  */
+  #contact-success,
+  #contact-error {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s ease;
+  }
+  #contact-success.is-visible,
+  #contact-error.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #contact-success,
+  #contact-error {
+    transition: none;
+    transform: none;
+  }
 }
