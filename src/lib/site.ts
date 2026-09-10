@@ -139,18 +139,6 @@ export interface SiteInfo {
       errorMessage: string;
     };
   };
-  /**
-   * お問い合わせフォームの送信設定（Web3Forms）。
-   * トップページ #contact セクションと /contact ページの両フォームが参照する。
-   */
-  contactForm: {
-    /** Web3Forms のアクセスキー（36桁UUID。未設定なら送信は失敗） */
-    web3forms_access_key: string;
-    /** 通知メールの件名（hidden の subject） */
-    contact_email_subject: string;
-    /** 通知メールの送信者名（hidden の from_name） */
-    contact_email_from_name: string;
-  };
   productsSection: {
     eyebrow: string;
     heading: string;

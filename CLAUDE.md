@@ -151,6 +151,13 @@ public/
   `parseTextBlocksForPreview`（＝`src/lib/pages.ts` の `parseTextBlocks`）/
   `ServicesPagePreview` / `AboutPagePreview` / `ContactPagePreview` / `NewsPreview`）も
   必ず追従修正すること。自動同期の仕組みは無いため、変更の都度手動で見比べる必要がある。
+- **プレビューへのCSS流し込み**：`loadSiteStylesheetAndTheme()` が本番の `/` を
+  fetch し、`<link rel="stylesheet">`（外部CSS）と `<style>`（インラインCSS）の
+  両方を `CMS.registerPreviewStyle()` に渡す（`<style>` は `{ raw: true }` 指定）。
+  本テンプレートは `astro.config.mjs` の `build.inlineStylesheets: 'always'` により
+  CSSがインライン化されるため、**`<style>` の raw 登録がプレビュー描画の生命線**。
+  `npm run build && npm run preview`（末尾スラッシュ `/admin/`）で確認すること
+  （`astro dev` はCSSがJS注入のため初期HTMLに含まれず、プレビューは無スタイルになる）。
 - 下層ページ（`services` / `about` / `contact` / `news`）のプレビューは siteInfo.yml とは
   別エントリのため、ヘッダー・フッターは商品プレビューと同様に「公開済みの実HTML」
   （`publishedHeaderHtml` / `publishedFooterHtml`）を流用する。会社名・フォーム項目文言など
@@ -326,12 +333,13 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   まま残る」不具合の原因）にして `#contact-success` のみをフェードイン、
   失敗で送信ボタンの `disabled` 解除・ラベルを「送信する」に戻してから
   `#contact-error` をフェードイン。
-- **送信設定は `siteInfo.yml` のトップレベル `contactForm` グループに集約**
-  （`web3forms_access_key` / `contact_email_subject` / `contact_email_from_name`）。
-  CMS 上は「サイト全体設定（siteInfo.yml）」内の **「お問い合わせフォーム設定」**
-  グループで編集する（旧・独立タブ「Web3Formsアクセスキー設定」＋
-  `src/data/web3forms.json` / `src/lib/web3forms.ts` は廃止済み）。
-  各フォームは `site.contactForm.*` を `<form data-access-key>` と hidden
+- **送信設定は独立ファイル `src/data/contact-form.json`**（`web3forms_access_key` /
+  `contact_email_subject` / `contact_email_from_name`）。パーサは
+  **`src/lib/contactFormSettings.ts`**（`contactFormSettings`）。`siteInfo.yml` には
+  持たせない。CMS 上は「サイト設定」コレクションの **3つ目のファイル項目
+  「お問い合わせフォーム設定（contact-form.json）」**（1.サイト全体設定
+  → 2.デザインテーマ設定 → 3.お問い合わせフォーム設定 の順）で編集する。
+  各フォームは `contactFormSettings.*` を `<form data-access-key>` と hidden
   `subject` / `from_name` に埋め込み、スクリプトは `form.dataset` からのみ読む。
 - ボタン文言・「送信中」文言・成功／失敗メッセージは `siteInfo.yml` の
   `contactSection.form.*`（`submitLabel` / `sendingLabel` / `successMessage` /

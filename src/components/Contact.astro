@@ -5,6 +5,7 @@
 // リンク付き注記を標準配置（/privacy へリンク）。
 // ============================================================================
 import { site } from '../lib/site';
+import { contactFormSettings } from '../lib/contactFormSettings';
 
 interface Props {
   muted?: boolean;
@@ -12,7 +13,7 @@ interface Props {
 
 const { muted = false } = Astro.props;
 const formText = site.contactSection.form;
-const cf = site.contactForm;
+const cf = contactFormSettings;
 ---
 
 {site.features.enableContact && (

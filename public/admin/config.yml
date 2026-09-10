@@ -290,22 +290,9 @@ collections:
             fields:
               - { label: "「プライバシーポリシー」リンク文言", name: "privacyPolicyLabel", widget: string, required: false }
               - { label: "お問い合わせフォーム同意文（末尾）", name: "privacyConsentSuffix", widget: string, required: false }
-
-          # --- 5b. お問い合わせフォーム設定 --------------------------------
-          # 送信先（Web3Forms）と通知メールの件名・送信者名。トップページの
-          # #contact セクションと /contact ページの両フォームがこの値を参照する。
-          - label: "お問い合わせフォーム設定"
-            name: "contactForm"
-            widget: object
-            hint: "お問い合わせフォームの送信先（Web3Forms）と、届く通知メールの件名・送信者名を設定します。"
-            fields:
-              - name: "web3forms_access_key"
-                label: "Web3Forms アクセスキー"
-                widget: "string"
-                required: false
-                hint: "Web3Formsで取得した36桁のアクセスキー（e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）を入力してください"
-              - { label: "通知メールの件名", name: "contact_email_subject", widget: string, required: false }
-              - { label: "通知メールの送信者名", name: "contact_email_from_name", widget: string, required: false }
+          # ※ お問い合わせフォームの送信設定は、この siteInfo.yml ではなく
+          #   独立したファイル項目「お問い合わせフォーム設定」
+          #   （src/data/contact-form.json）で管理する（下記 settings コレクション参照）。
 
           # --- 6. その他既存セクション ---------------------------------------
           - label: "セクション表示順序"
@@ -402,9 +389,22 @@ collections:
               - { label: "パープル", value: "purple" }
               - { label: "オレンジ", value: "orange" }
 
-      # ※ お問い合わせフォームの送信設定（Web3Formsキー・メール件名・送信者名）は
-      #   「サイト全体設定（siteInfo.yml）」内の「お問い合わせフォーム設定」
-      #   グループに統合済み（旧・独立タブ「Web3Formsアクセスキー設定」は廃止）。
+      # ----------------------------------------------------------------------
+      # 3つ目のファイル項目。「サイト全体設定」「デザインテーマ設定」と並ぶ。
+      # お問い合わせフォーム（Contact.astro / contact.astro）の送信先と、
+      # Web3Forms 通知メールの件名・送信者名。src/lib/contactFormSettings.ts が参照。
+      # ----------------------------------------------------------------------
+      - name: "contactFormSettings"
+        label: "お問い合わせフォーム設定（contact-form.json）"
+        file: "src/data/contact-form.json"
+        fields:
+          - name: "web3forms_access_key"
+            label: "Web3Forms アクセスキー"
+            widget: "string"
+            required: false
+            hint: "Web3Formsで取得した36桁のアクセスキー（e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）を入力してください"
+          - { label: "通知メールの件名", name: "contact_email_subject", widget: string, required: false }
+          - { label: "通知メールの送信者名", name: "contact_email_from_name", widget: string, required: false }
 
   # ==========================================================================
   # ② フォルダコレクション：型化ページ（products）を追加・編集・削除

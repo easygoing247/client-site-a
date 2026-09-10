@@ -46,31 +46,75 @@
       .then(function (html) {
         var themeMatch = html.match(/<html[^>]*\sdata-theme="([^"]+)"/i);
         if (themeMatch) currentTheme = themeMatch[1];
-        // Astroの本番ビルドは <link rel="stylesheet" href="/_astro/xxxx.css">
-        // を出力する（開発サーバーではCSSがJS経由で注入されるためこの
-        // <link>タグ自体が存在せず、その場合はスタイル無しでプレビュー
-        // される＝`npm run build && npm run preview` での確認を推奨）。
-        var cssMatches = html.match(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"[^>]*>/gi) || [];
-        cssMatches.forEach(function (tag) {
+
+        var parsed = null;
+        try {
+          parsed = new DOMParser().parseFromString(html, 'text/html');
+        } catch (e) {
+          parsed = null;
+        }
+
+        // --- 本番サイトのCSSをプレビューiframeへ流し込む ---------------------
+        // 本番ビルドの構成により、CSSは次の2形態で出力される：
+        //  (A) 外部ファイル … <link rel="stylesheet" href="/_astro/xxxx.css">
+        //  (B) インライン   … <style>...compiled Tailwind...</style>
+        //      （astro.config.mjs の build.inlineStylesheets: 'always' により
+        //        本テンプレートは基本的にこの (B) になる）
+        // (A) は URL 指定、(B) は raw 文字列指定で registerPreviewStyle する。
+        // どちらも拾うことで、インライン化設定を変えても崩れないようにする。
+        // （開発サーバー `astro dev` では CSS が JS 経由で注入されるため
+        //   どちらの形でも初期HTMLに含まれず、スタイル無しでプレビューされる。
+        //   確認は `npm run build && npm run preview` で行うこと。）
+        var linkTags = html.match(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"[^>]*>/gi) || [];
+        linkTags.forEach(function (tag) {
           var hrefMatch = tag.match(/href="([^"]+)"/i);
           if (hrefMatch && hrefMatch[1]) {
-            window.CMS.registerPreviewStyle(hrefMatch[1]);
+            try {
+              window.CMS.registerPreviewStyle(hrefMatch[1]);
+            } catch (e) {
+              /* noop */
+            }
           }
         });
-        // 商品詳細ページのプレビュー用に、実際に公開済みのヘッダー・
-        // フッター（ロゴ・ナビ・SNS等）をそのまま抜き出しておく。
-        // DOMParserで安全に部分木として取り出す（innerHTML挿入時、
-        // 内部の<script>タグは実行されないため、ハンバーガーメニューの
-        // 開閉等の動的挙動はプレビュー上では動かないが、見た目の再現には
-        // 影響しない）。
+
+        var styleEls = parsed ? parsed.querySelectorAll('style') : [];
+        for (var i = 0; i < styleEls.length; i++) {
+          var css = styleEls[i].textContent || '';
+          if (css.trim()) {
+            try {
+              window.CMS.registerPreviewStyle(css, { raw: true });
+            } catch (e) {
+              /* raw 未対応の古い Decap の場合は諦める */
+            }
+          }
+        }
+        // DOMParser が使えない環境向けの正規表現フォールバック
+        if (!parsed) {
+          var styleMatches = html.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
+          styleMatches.forEach(function (block) {
+            var inner = block.replace(/^<style[^>]*>/i, '').replace(/<\/style>\s*$/i, '');
+            if (inner.trim()) {
+              try {
+                window.CMS.registerPreviewStyle(inner, { raw: true });
+              } catch (e) {
+                /* noop */
+              }
+            }
+          });
+        }
+
+        // --- 商品／下層ページのプレビュー用に、公開済みのヘッダー・フッターを抜き出す ---
+        // （innerHTML 挿入時に内部 <script> は実行されないため、ハンバーガー
+        //   メニュー等の動的挙動はプレビュー上では動かないが見た目には影響しない）
         try {
-          var parsed = new DOMParser().parseFromString(html, 'text/html');
-          var headerEl = parsed.querySelector('header');
-          var footerEl = parsed.querySelector('footer');
-          if (headerEl) publishedHeaderHtml = headerEl.outerHTML;
-          if (footerEl) publishedFooterHtml = footerEl.outerHTML;
+          if (parsed) {
+            var headerEl = parsed.querySelector('header');
+            var footerEl = parsed.querySelector('footer');
+            if (headerEl) publishedHeaderHtml = headerEl.outerHTML;
+            if (footerEl) publishedFooterHtml = footerEl.outerHTML;
+          }
         } catch (e) {
-          /* DOMParser非対応環境等では諦め、見出し無しのプレビューにフォールバックする */
+          /* DOMParser非対応環境等では諦め、ヘッダー無しのプレビューにフォールバックする */
         }
       })
       .catch(function () {
