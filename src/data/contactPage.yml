@@ -36,15 +36,15 @@ custom_fields:
   - type: text
     enabled: true
     required: false
-    label: テスト
-    name: test
-    placeholder: テスト欄
-  - type: text
-    enabled: true
-    required: false
     label: テスト２
     name: test2
     placeholder: テスト２欄
+  - type: text
+    enabled: true
+    required: false
+    label: テスト
+    name: test
+    placeholder: テスト欄
 privacyPolicy:
   heading: プライバシーポリシー
   body: |-
