@@ -50,9 +50,6 @@ services:
     - title: 運用・保守サポート
       text: 更新作業やセキュリティ対策など、安心して運用できる体制を提供します。
       image: ../assets/service-support.jpg
-    - title: サービス
-      text: コーポレートサイトやサービスサイトなど、目的に合わせたWebサイトを制作します。
-      image: /src/assets/ceo-image.png
 flow:
   eyebrow: FLOW
   heading: ご相談から納品までの流れ
