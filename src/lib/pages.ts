@@ -54,7 +54,6 @@ export interface ContactPage {
   heading?: string;
   intro?: string;
   notes?: string[];
-  afterSubmit?: string;
   privacyPolicy?: {
     heading?: string;
     body?: string;

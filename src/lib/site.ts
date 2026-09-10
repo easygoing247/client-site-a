@@ -131,6 +131,12 @@ export interface SiteInfo {
       emailPlaceholder: string;
       messagePlaceholder: string;
       submitLabel: string;
+      /** 送信中の送信ボタン文言 */
+      sendingLabel: string;
+      /** 送信成功時に表示するメッセージ */
+      successMessage: string;
+      /** 送信失敗時に表示するメッセージ */
+      errorMessage: string;
     };
   };
   productsSection: {
@@ -151,6 +157,8 @@ export interface SiteInfo {
   footerNav: { label: string; href: string }[];
   icons: { check: string };
   copyright: string;
+  /** Web3Forms のアクセスキー（お問い合わせフォームの送信先） */
+  web3forms_access_key: string;
 }
 
 export const site = yaml.load(raw) as SiteInfo;

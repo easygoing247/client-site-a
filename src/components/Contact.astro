@@ -43,7 +43,16 @@ const { muted = false } = Astro.props;
           </ul>
         )}
       </div>
-      <form id="contact-form" novalidate class="flex flex-col gap-3">
+      <form
+        id="contact-form"
+        novalidate
+        class="flex flex-col gap-3"
+        data-access-key={site.web3forms_access_key}
+        data-submit-label={site.contactSection.form.submitLabel}
+        data-sending-label={site.contactSection.form.sendingLabel}
+      >
+        {/* スパム対策のハニーポット（人間には非表示。ボットが入力すると送信を弾く） */}
+        <input type="checkbox" name="botcheck" class="hidden" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             type="text"
@@ -79,9 +88,9 @@ const { muted = false } = Astro.props;
         ></textarea>
         <button
           type="submit"
-          class="mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full cursor-pointer hover:opacity-90 transition-opacity bg-gradient-to-br from-primary to-primary-dark"
+          class="mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-progress bg-gradient-to-br from-primary to-primary-dark"
         >
-          {site.contactSection.form.submitLabel} <span aria-hidden="true">›</span>
+          <span class="contact-submit-label">{site.contactSection.form.submitLabel}</span> <span aria-hidden="true">›</span>
         </button>
         {site.ui.privacyPolicyLabel && (
           <p class="text-[12px] text-ink-faint text-center m-0">
@@ -89,15 +98,31 @@ const { muted = false } = Astro.props;
           </p>
         )}
       </form>
+      {site.contactSection.form.successMessage && (
+        <p
+          id="contact-success"
+          hidden
+          role="status"
+          class="text-[14px] leading-[1.9] text-secondary-light text-center bg-primary-light rounded-2xl px-6 py-6"
+        >
+          {site.contactSection.form.successMessage}
+        </p>
+      )}
+      {site.contactSection.form.errorMessage && (
+        <p
+          id="contact-error"
+          hidden
+          role="alert"
+          class="mt-3 text-[13px] leading-[1.8] text-center text-[#b3261e] bg-[#fce8e6] rounded-lg px-5 py-3"
+        >
+          {site.contactSection.form.errorMessage}
+        </p>
+      )}
     </div>
   </div>
 </section>
 )}
 
 <script>
-  const form = document.getElementById('contact-form') as HTMLFormElement | null;
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    // TODO: フォーム送信処理（API連携）を実装
-  });
+  import '../scripts/contactForm.ts';
 </script>

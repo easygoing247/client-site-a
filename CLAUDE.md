@@ -311,6 +311,29 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   `#works` と `/#works` の両形式を登録）と `preview.js`（`NAV_HREF_TO_FLAG`、同様に両形式）
   の2箇所で管理。新規セクション／ナビ項目を追加する場合は両方に同じキーを追加すること。
 
+### 9.6 お問い合わせフォーム（Web3Forms）
+
+- 送信処理は **`src/scripts/contactForm.ts`** に集約（2フォーム共通）。
+  `#contact-form` を持つ `Contact.astro`（`#contact` セクション）と
+  `src/pages/contact.astro` が `<script>import '../scripts/contactForm.ts'</script>`
+  で読み込む。フォームのマークアップも2箇所でほぼ同一に保つこと。
+- Fetch API で `https://api.web3forms.com/submit` に `FormData`（各入力欄＋
+  `access_key`）を POST。送信中は送信ボタンを `disabled` にし
+  `.contact-submit-label` を「送信中…」に差し替え、成功で `<form hidden>`＋
+  `#contact-success` 表示、失敗で `#contact-error` 表示＋ボタン復帰。
+- **アクセスキー**は `siteInfo.yml` のトップレベル `web3forms_access_key`
+  （初期値 `YOUR_ACCESS_KEY_HERE`。`https://web3forms.com/` で取得して差し替える）。
+  各フォームは `site.web3forms_access_key` を `<form data-access-key>` に埋め込み、
+  スクリプトは `form.dataset` からのみ値を読む（サーバー変数を直接参照しない）。
+- ボタン文言・「送信中」文言・成功／失敗メッセージはすべて
+  `siteInfo.yml` の `contactSection.form.*`（`submitLabel` / `sendingLabel` /
+  `successMessage` / `errorMessage`）。コンポーネントへの直書き禁止（絶対ルール①）。
+- `botcheck` の隠しチェックボックス（ハニーポット）を各フォームに配置済み。
+- フォームのマークアップ（ボタン内の `.contact-submit-label` 追加、
+  `#contact-success` / `#contact-error` 追加）を変更した場合は `preview.js` の
+  `renderContact` / `ContactPagePreview` も確認すること（メッセージ類は既定 hidden の
+  ためプレビューには描画しない方針）。
+
 ### 9.6 パフォーマンス方針（PageSpeed Insights Mobile 90+ の維持）
 
 複数ページ化後も、以下の前提により全ページで軽量な構成を保っている。

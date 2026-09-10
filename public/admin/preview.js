@@ -1457,15 +1457,10 @@
               h('span', { className: 'text-primary underline' }, f.privacyPolicyLabel),
               f.privacyConsentSuffix
             )
-          ),
-          // 実サイトでは送信完了後にのみ表示される（hidden）が、編集内容が
-          // 確認できるようプレビューでは常時表示する。
-          data.afterSubmit &&
-            h(
-              'p',
-              { className: 'mt-6 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line text-center bg-primary-light rounded-2xl px-6 py-5' },
-              data.afterSubmit
-            )
+          )
+          // 実サイトの送信成功／失敗メッセージ（#contact-success / #contact-error）は
+          // 既定で hidden のため、プレビューでは描画しない（siteInfo.yml 側の
+          // contactSection.form.successMessage / errorMessage で管理）。
         )
       ),
       (privacy.heading || privacyBlocks.length > 0) &&

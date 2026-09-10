@@ -159,6 +159,9 @@ contactSection:
     emailPlaceholder: メールアドレス
     messagePlaceholder: お問い合わせ内容
     submitLabel: 送信する
+    sendingLabel: 送信中...
+    successMessage: お問い合わせを受け付けました。担当者よりご連絡いたします。
+    errorMessage: 送信に失敗しました。時間をおいて再度お試しください。
 company:
   name: LOGO
   logo: ../assets/logo.svg
@@ -188,6 +191,10 @@ contact:
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
+# お問い合わせフォームの送信先（Web3Forms）のアクセスキー。
+# https://web3forms.com/ でメールアドレスを登録して取得し、この値を差し替える。
+# （公開ページのHTMLに埋め込まれる前提の公開キー。秘匿情報ではない）
+web3forms_access_key: "YOUR_ACCESS_KEY_HERE"
 sectionOrder:
   - id: features
   - id: services

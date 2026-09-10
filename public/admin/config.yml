@@ -231,6 +231,9 @@ collections:
                   - { label: "「メールアドレス」入力欄の文言", name: "emailPlaceholder", widget: string, required: false }
                   - { label: "「お問い合わせ内容」入力欄の文言", name: "messagePlaceholder", widget: string, required: false }
                   - { label: "送信ボタン文言", name: "submitLabel", widget: string, required: false }
+                  - { label: "送信中のボタン文言", name: "sendingLabel", widget: string, required: false }
+                  - { label: "送信成功時のメッセージ", name: "successMessage", widget: text, required: false }
+                  - { label: "送信失敗時のメッセージ", name: "errorMessage", widget: text, required: false }
 
           # --- 3. 会社・サイト基本情報 --------------------------------------
           - label: "会社・サイト基本情報"
@@ -285,6 +288,13 @@ collections:
             fields:
               - { label: "「プライバシーポリシー」リンク文言", name: "privacyPolicyLabel", widget: string, required: false }
               - { label: "お問い合わせフォーム同意文（末尾）", name: "privacyConsentSuffix", widget: string, required: false }
+
+          # --- 5b. お問い合わせフォーム送信設定 -----------------------------
+          - label: "お問い合わせフォーム送信先（Web3Forms）のアクセスキー"
+            name: "web3forms_access_key"
+            widget: string
+            required: false
+            hint: "https://web3forms.com/ でメールアドレスを登録して取得したキーを入力してください。未設定だと送信は失敗します（このキーは公開ページのHTMLに埋め込まれる公開キーです）。"
 
           # --- 6. その他既存セクション ---------------------------------------
           - label: "セクション表示順序"
@@ -496,7 +506,6 @@ collections:
             widget: list
             required: false
             field: { label: "注意事項", name: "note", widget: string, required: false }
-          - { label: "送信後の案内文", name: "afterSubmit", widget: text, required: false }
           - label: "プライバシーポリシー"
             name: "privacyPolicy"
             widget: object
