@@ -12,10 +12,11 @@ items:
       - 要件ヒアリング・構成設計
       - デザイン制作（PC/スマホ）
       - コーディング・CMS実装
+    reverseLayout: false
   - title: LP制作
     description: 商品・サービスの魅力を伝え、成果につながるランディングページを制作します。
     image: ../assets/service-lp.jpg
-    reverseLayout: true
+    reverseLayout: false
     features:
       - 訴求設計・ワイヤーフレーム
       - デザイン・コーディング
@@ -27,11 +28,13 @@ items:
       - 内部SEO設計
       - コンテンツ企画
       - 効果測定・改善提案
+    reverseLayout: false
   - title: SEO・集客支援
     description: 検索エンジンに強い構造設計とコンテンツで、集客・成果をサポートします。
     image: /src/assets/ceo-image.png
     features:
       - ｄふぁｄｓｆ
+    reverseLayout: false
 priceTable:
   - name: Webサイト制作（5ページ程度）
     price: 300000
@@ -58,6 +61,11 @@ priceTable:
   - name: スタンダードプラン
     price: 300000
     note: 一般的なコーポレートサイトに最適です。
+    features:
+      - トップページ＋下層8ページ
+      - スマホ対応
+      - CMS導入
+      - 基本SEO対策
 priceNote: |-
   記載の金額は税抜きの目安です。
   ご要望の内容に応じて個別にお見積りいたします。
