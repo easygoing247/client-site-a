@@ -5,6 +5,7 @@
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
+import Button from './Button.astro';
 
 interface Props {
   muted?: boolean;
@@ -12,6 +13,7 @@ interface Props {
 
 const { muted = false } = Astro.props;
 const checkIcon = resolveImageOrNull(site.icons.check);
+const planButton = site.plans.buttonLabel && site.plans.buttonHref;
 ---
 
 {
@@ -30,11 +32,11 @@ const checkIcon = resolveImageOrNull(site.icons.check);
             </h2>
           )}
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {site.plans.items.map((plan) => (
             <div
               class:list={[
-                'relative rounded-2xl p-7 bg-white flex flex-col items-center text-center',
+                'relative rounded-2xl p-7 bg-white flex flex-col items-center text-center h-full',
                 plan.popular ? 'border-2 border-primary' : 'border border-surface-border',
               ]}
               style={plan.popular ? 'box-shadow:0 16px 32px -12px rgba(var(--color-primary-rgb),0.28);' : undefined}
@@ -63,6 +65,20 @@ const checkIcon = resolveImageOrNull(site.icons.check);
                       </li>
                     ))}
                 </ul>
+              )}
+              {planButton && (
+                <div class="mt-auto pt-7 w-full">
+                  <Button
+                    href={site.plans.buttonHref}
+                    label={site.plans.buttonLabel}
+                    variant={plan.popular ? 'solid' : 'outline'}
+                    class={
+                      plan.popular
+                        ? 'w-full shadow-[0_14px_30px_-8px_rgba(var(--color-primary-rgb),0.55)]'
+                        : 'w-full'
+                    }
+                  />
+                </div>
               )}
             </div>
           ))}

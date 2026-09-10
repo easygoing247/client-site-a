@@ -1,0 +1,76 @@
+---
+// ============================================================================
+// News.astro — トップページの「お知らせ」セクション
+// ヒーローセクションと「選ばれる3つの理由」の間に固定配置される
+// （sectionOrder では並び替え不可）。features.enableNews で表示制御。
+// 最新記事を newsSection.count 件、コンパクトなリスト形式で表示する。
+// ============================================================================
+import { site } from '../lib/site';
+import { getPublishedNews, newsCategoryLabel, formatNewsDate } from '../lib/news';
+import Button from './Button.astro';
+
+interface Props {
+  muted?: boolean;
+}
+
+const { muted = false } = Astro.props;
+
+const section = site.newsSection ?? {};
+const count = Number(section.count) > 0 ? Math.floor(Number(section.count)) : 3;
+const posts = (await getPublishedNews()).slice(0, count);
+---
+
+{
+  site.features.enableNews && posts.length > 0 && (
+    <section id="news" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="news-heading">
+      <div class="max-w-[820px] mx-auto">
+        <div class="text-center mb-8">
+          {section.eyebrow && (
+            <div class="text-[12px] tracking-[0.2em] text-primary font-bold mb-2" aria-hidden="true">{section.eyebrow}</div>
+          )}
+          {section.heading && (
+            <h2 id="news-heading" class="font-bold m-0" style="font-size:clamp(24px,3.4vw,32px);">{section.heading}</h2>
+          )}
+        </div>
+
+        <ul class="list-none m-0 p-0 border-t border-surface-border">
+          {posts.map((post) => {
+            const category = newsCategoryLabel(post.data.category);
+            return (
+              <li class="border-b border-surface-border">
+                <a
+                  href={`/news/${post.slug}`}
+                  class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 py-4 group"
+                >
+                  <div class="flex items-center gap-3 flex-none">
+                    {post.data.publishedAt && (
+                      <time datetime={post.data.publishedAt.toISOString()} class="text-[12px] text-ink-faint w-[92px]">
+                        {formatNewsDate(post.data.publishedAt)}
+                      </time>
+                    )}
+                    {category && (
+                      <span class="text-[11px] font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full whitespace-nowrap">
+                        {category}
+                      </span>
+                    )}
+                  </div>
+                  {post.data.title && (
+                    <span class="text-[14px] font-bold text-secondary leading-[1.6] group-hover:text-primary transition-colors">
+                      {post.data.title}
+                    </span>
+                  )}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+
+        {section.linkLabel && section.linkHref && (
+          <div class="text-center mt-8">
+            <Button href={section.linkHref} label={section.linkLabel} variant="outline" />
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}

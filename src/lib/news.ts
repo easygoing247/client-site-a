@@ -32,3 +32,20 @@ export async function getPublishedNews(): Promise<NewsEntry[]> {
     (a, b) => (b.data.publishedAt?.getTime() ?? 0) - (a.data.publishedAt?.getTime() ?? 0),
   );
 }
+
+/**
+ * 記事一覧に実際に使われているカテゴリを、既定の並び順（お知らせ→ブログ→
+ * イベント→実績紹介）で返す（一覧ページのカテゴリフィルター用）。
+ */
+export function collectNewsCategories(posts: NewsEntry[]): { value: string; label: string }[] {
+  const present = new Set<string>();
+  for (const p of posts) {
+    if (p.data.category) present.add(p.data.category);
+  }
+  const ordered = Object.keys(NEWS_CATEGORY_LABELS).filter((v) => present.has(v));
+  // 既定リストに無いカテゴリ（将来追加分）も後ろに拾う
+  for (const v of present) {
+    if (!ordered.includes(v)) ordered.push(v);
+  }
+  return ordered.map((value) => ({ value, label: NEWS_CATEGORY_LABELS[value] ?? value }));
+}

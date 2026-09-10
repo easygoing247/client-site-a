@@ -381,7 +381,59 @@
               )
             );
           })
-        )
+        ),
+        section.linkLabel &&
+          section.linkHref &&
+          h(
+            'div',
+            { className: 'text-center mt-10' },
+            h(
+              'a',
+              {
+                href: section.linkHref,
+                className:
+                  'inline-flex items-center justify-center gap-2 font-bold text-[15px] px-8 py-4 rounded-full text-primary bg-white border border-primary',
+              },
+              section.linkLabel + ' ›'
+            )
+          )
+      )
+    );
+  }
+
+  // ==========================================================================
+  // お知らせセクション（トップページ／ヒーロー直下）
+  // 実際の記事はビルド時取得のため、プレビューでは案内のみ表示する。
+  // ==========================================================================
+  function renderNewsSectionPreview(h, data) {
+    var section = data.newsSection || {};
+    var count = Number(section.count) > 0 ? Math.floor(Number(section.count)) : 3;
+    return h(
+      'section',
+      { id: 'news', className: 'py-16 px-5' },
+      h(
+        'div',
+        { className: 'max-w-[820px] mx-auto' },
+        renderSectionHeading(h, section.eyebrow, section.heading),
+        h(
+          'p',
+          { className: 'text-center text-[13px] text-ink-faint' },
+          '（トップページには最新のお知らせ ' + count + ' 件がリスト表示されます。実際の記事はビルド時に取得されるため、このプレビューでは省略しています）'
+        ),
+        section.linkLabel &&
+          h(
+            'div',
+            { className: 'text-center mt-8' },
+            h(
+              'a',
+              {
+                href: section.linkHref || '/news',
+                className:
+                  'inline-flex items-center justify-center gap-2 font-bold text-[15px] px-8 py-4 rounded-full text-primary bg-white border border-primary',
+              },
+              section.linkLabel + ' ›'
+            )
+          )
       )
     );
   }
@@ -515,14 +567,14 @@
         renderSectionHeading(h, section.eyebrow, section.heading),
         h(
           'div',
-          { className: 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-start' },
+          { className: 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch' },
           items.map(function (plan, i) {
             return h(
               'div',
               {
                 key: i,
                 className: cx(
-                  'relative rounded-2xl p-7 bg-white flex flex-col items-center text-center',
+                  'relative rounded-2xl p-7 bg-white flex flex-col items-center text-center h-full',
                   plan.popular ? 'border-2 border-primary' : 'border border-surface-border'
                 ),
                 style: plan.popular ? styleObj('box-shadow:0 16px 32px -12px rgba(var(--color-primary-rgb),0.28);') : undefined,
@@ -556,6 +608,23 @@
                       feature
                     );
                   })
+                ),
+              section.buttonLabel &&
+                section.buttonHref &&
+                h(
+                  'div',
+                  { className: 'mt-auto pt-7 w-full' },
+                  h(
+                    'a',
+                    {
+                      href: section.buttonHref,
+                      className: plan.popular
+                        ? 'inline-flex items-center justify-center gap-2 w-full font-bold text-[15px] px-8 py-4 rounded-full text-white bg-gradient-to-br from-primary to-primary-dark'
+                        : 'inline-flex items-center justify-center gap-2 w-full font-bold text-[15px] px-8 py-4 rounded-full text-primary bg-white border border-primary',
+                      style: plan.popular ? styleObj('box-shadow:0 14px 30px -8px rgba(var(--color-primary-rgb),0.55);') : undefined,
+                    },
+                    section.buttonLabel + ' ›'
+                  )
                 )
             );
           })
@@ -1074,9 +1143,15 @@
         'div',
         { 'data-theme': currentTheme, className: 'font-sans bg-surface text-ink' },
         renderHeader(h, data, getAsset),
-        h('main', {}, renderHero(h, data, getAsset), visibleSections.map(function (s) {
-          return h('div', { key: s.id }, renderSection(h, s.id, data, getAsset, s.muted));
-        })),
+        h(
+          'main',
+          {},
+          renderHero(h, data, getAsset),
+          data.features && data.features.enableNews && renderNewsSectionPreview(h, data),
+          visibleSections.map(function (s) {
+            return h('div', { key: s.id }, renderSection(h, s.id, data, getAsset, s.muted));
+          })
+        ),
         renderFooter(h, data, getAsset)
       );
     },
@@ -1446,14 +1521,18 @@
   // 店舗概要・アクセス（src/pages/about.astro）
   // ==========================================================================
   var AboutPagePreview = makePagePreview(function (h, data, getAsset) {
-    var heading = data.heading || '店舗概要・アクセス';
+    var heading = data.heading || '会社概要';
+    var sections = data.sections || {};
     var greeting = data.greeting || {};
     var greetingImg = assetUrl(getAsset, greeting.image);
     var profile = (data.profile || []).filter(function (row) {
       return row.label && row.value;
     });
     var access = data.access || {};
-    var hasAccess = access.address || access.directions || access.parking || access.mapEmbedUrl;
+    var showGreeting = sections.greeting !== false && (greeting.heading || greeting.body || greeting.name);
+    var showCompanyOverview = sections.companyOverview !== false && profile.length > 0;
+    var hasAccess =
+      sections.access !== false && (access.address || access.directions || access.parking || access.mapEmbedUrl);
     return [
       renderPagePreviewHeading(h, {
         key: 'head',
@@ -1462,7 +1541,7 @@
         lead: data.lead,
         crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
       }),
-      (greeting.heading || greeting.body || greeting.name) &&
+      showGreeting &&
         h(
           'section',
           { key: 'greeting', className: 'py-14 px-5' },
@@ -1491,7 +1570,7 @@
             )
           )
         ),
-      profile.length > 0 &&
+      showCompanyOverview &&
         h(
           'section',
           { key: 'profile', className: 'py-14 px-5 bg-surface-muted' },

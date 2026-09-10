@@ -5,6 +5,7 @@
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
+import Button from './Button.astro';
 
 interface Props {
   muted?: boolean;
@@ -67,6 +68,11 @@ const { muted = false } = Astro.props;
             );
           })}
         </div>
+        {site.services.linkLabel && site.services.linkHref && (
+          <div class="text-center mt-10">
+            <Button href={site.services.linkHref} label={site.services.linkLabel} variant="outline" />
+          </div>
+        )}
       </div>
     </section>
   )

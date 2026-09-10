@@ -32,6 +32,12 @@ export interface ServicesPage {
 export interface AboutPage {
   heading?: string;
   lead?: string;
+  /** 各セクションの表示・非表示（false で非表示。未設定は表示） */
+  sections?: {
+    greeting?: boolean;
+    companyOverview?: boolean;
+    access?: boolean;
+  };
   greeting?: {
     heading?: string;
     body?: string;

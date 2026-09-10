@@ -144,9 +144,10 @@ public/
   **同じマークアップ・Tailwindクラス**をJS（`h()` = React.createElement呼び出し）で
   再現する二重管理構成。そのため、コンポーネント／ページ側の
   マークアップ・クラス・条件分岐を変更した場合は、`preview.js` 内の対応する関数
-  （トップページ：`renderHeader` / `renderHero` / `renderFeatures` / `renderServices` /
-  `renderFlow` / `renderWorks` / `renderPlans` / `renderAccess` / `renderFaq` /
-  `renderContact` / `renderFooter`。お問い合わせフォームの入力欄は
+  （トップページ：`renderHeader` / `renderHero` / `renderNewsSectionPreview`（お知らせ
+  セクション。ヒーロー直下に固定）/ `renderFeatures` / `renderServices`（下層リンク付き）/
+  `renderFlow` / `renderWorks` / `renderPlans`（各カードにボタン。人気プランは強調）/
+  `renderAccess` / `renderFaq` / `renderContact` / `renderFooter`。お問い合わせフォームの入力欄は
   `renderContactFields` / `renderContactFieldPreview` / `resolveContactFieldsForPreview`
   （＝`ContactFields.astro` / `ContactField.astro` / `src/lib/pages.ts` の
   `resolveContactFormFields`）。下層ページ：`renderPagePreviewHeading`
@@ -311,6 +312,22 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - 共通パーツ：`Header` / `Footer` / `StickyContactBar` / `BackToTop` に加え、
   下層ページ共通の見出し＋パンくずは **`src/components/PageHeader.astro`**、
   CTAボタンは **`src/components/Button.astro`** を再利用する。
+- **`/about`（会社概要）** の3セクション（代表挨拶／会社概要（表形式）／アクセス）は
+  `about.yml` の `sections.{greeting,companyOverview,access}`（CMS「セクションの
+  表示・非表示」）で個別に enabled 制御。`AboutPage` 型・`about.astro`・`preview.js`
+  の `AboutPagePreview` の3箇所を一致させること。
+- **`/news`（一覧）** はカテゴリフィルター＋カード／リスト表示切替をクライアントJSで実装
+  （`src/pages/news/index.astro` の `<script>`）。カテゴリ一覧は
+  `src/lib/news.ts` の `collectNewsCategories()`（記事に実在するカテゴリのみ）。
+- **トップページ「お知らせ」セクション**（`src/components/News.astro`）は
+  ヒーローと「選ばれる3つの理由」の間に**固定配置**（`sectionOrder` 対象外）。
+  `features.enableNews` と `newsSection`（`count` / 見出し / 一覧リンク）で制御。
+  `index.astro` で `<Hero />` の直後に `<News />` を置く。
+- **「サービス・事業内容」** セクションの下層リンクは `services.linkLabel` /
+  `services.linkHref`、**「料金プラン」** カードのボタンは `plans.buttonLabel` /
+  `plans.buttonHref`。人気プラン（`popular: true`）のボタンは
+  `Button.astro` の `variant="solid"` ＋ `shadow-[...var(--color-primary-rgb)...]` で
+  強調（色はテーマ設定の CSS変数に連動）。
 - ヘッダー／フッターのナビ（`siteInfo.yml` の `nav` / `footerNav` / `navCta`）は、
   下層ページへは絶対パス（`/services` 等）、トップページのセクションへは
   **ルート付きハッシュ（`/#works` 等）** でリンクする。`SmoothScroll.astro` は

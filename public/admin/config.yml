@@ -69,6 +69,18 @@ collections:
                 required: false
                 field: { label: "バッジ文言", name: "badge", widget: string, required: false }
 
+          # --- 1b. お知らせセクション（ヒーローと「選ばれる理由」の間に固定表示） ---
+          - label: "お知らせセクション（トップページ）"
+            name: "newsSection"
+            widget: object
+            hint: "トップページのヒーローと「選ばれる3つの理由」の間に表示されるお知らせ一覧。表示のON/OFFは下部の「セクションの表示・非表示」で切り替えます。"
+            fields:
+              - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "トップページに表示する件数", name: "count", widget: number, value_type: int, default: 3, min: 1, max: 10 }
+              - { label: "一覧ページへのリンク文言（例：お知らせ一覧へ）", name: "linkLabel", widget: string, required: false }
+              - { label: "リンク先", name: "linkHref", widget: string, required: false, default: "/news" }
+
           # --- 2. 「セクション表示順序」に含まれる各セクション -------------
           - label: "選ばれる理由"
             name: "features_section"
@@ -92,6 +104,8 @@ collections:
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "下層ページへのリンク文言（例：サービス内容を見る）", name: "linkLabel", widget: string, required: false, hint: "未入力の場合、セクション内のリンクボタンは表示されません。" }
+              - { label: "リンク先", name: "linkHref", widget: string, required: false, default: "/services" }
               - label: "サービス項目"
                 name: "items"
                 widget: list
@@ -147,6 +161,8 @@ collections:
               - { label: "見出し", name: "heading", widget: string, required: false }
               - { label: "注記文", name: "note", widget: string, required: false }
               - { label: "人気プランバッジ文言", name: "popularBadgeLabel", widget: string, required: false }
+              - { label: "各プランカードのボタン文言（例：詳しく見る）", name: "buttonLabel", widget: string, required: false, hint: "未入力の場合、カード内のボタンは表示されません。人気プランバッジONのプランはボタンが強調表示されます。" }
+              - { label: "ボタンのリンク先", name: "buttonHref", widget: string, required: false, default: "/services" }
               - label: "プラン"
                 name: "items"
                 widget: list
@@ -360,6 +376,7 @@ collections:
               - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true }
               - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
               - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
+              - { label: "「お知らせ」セクションを表示する（トップページ／ヒーロー直下）", name: "enableNews", widget: boolean, default: true }
 
           # --- 9. 商品・施工事例ページ（共通文言）（一番最下部） -------------
           - label: "商品・施工事例ページ（共通文言）"
@@ -407,7 +424,7 @@ collections:
   # ② フォルダコレクション：型化ページ（products）を追加・編集・削除
   # ==========================================================================
   - name: "products"
-    label: "商品・施工事例（型化ページ）"
+    label: "商品一覧（型化ページ）"
     folder: "src/content/products"
     create: true
     delete: true
@@ -475,13 +492,21 @@ collections:
               - { label: "備考", name: "note", widget: string, required: false }
           - { label: "料金に関する注記文", name: "priceNote", widget: text, required: false }
 
-      # --- 店舗概要・アクセス -----------------------------------------------
+      # --- 会社概要・アクセス -----------------------------------------------
       - name: "about"
-        label: "店舗概要・アクセス（about）"
+        label: "会社概要（about）"
         file: "src/data/about.yml"
         fields:
           - { label: "ページ見出し", name: "heading", widget: string, required: false }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - label: "セクションの表示・非表示"
+            name: "sections"
+            widget: object
+            hint: "この会社概要ページ内の各セクションを、それぞれ個別に表示・非表示できます。"
+            fields:
+              - { label: "「代表挨拶」を表示する", name: "greeting", widget: boolean, default: true }
+              - { label: "「会社概要（表形式）」を表示する", name: "companyOverview", widget: boolean, default: true }
+              - { label: "「アクセス」を表示する", name: "access", widget: boolean, default: true }
           - label: "代表挨拶"
             name: "greeting"
             widget: object

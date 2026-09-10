@@ -10,6 +10,12 @@ hero:
     - 相談無料
     - 最短1週間で対応
     - 安心のサポート体制
+newsSection:
+  eyebrow: NEWS
+  heading: お知らせ
+  count: 3
+  linkLabel: お知らせ一覧へ
+  linkHref: /news
 features_section:
   eyebrow: FEATURES
   heading: 選ばれる3つの理由
@@ -29,6 +35,8 @@ features_section:
 services:
   eyebrow: SERVICE
   heading: サービス・事業内容
+  linkLabel: サービス内容を見る
+  linkHref: /services
   items:
     - title: Webサイト制作
       text: コーポレートサイトやサービスサイトなど、目的に合わせたWebサイトを制作します。
@@ -85,6 +93,8 @@ plans:
   heading: 料金プラン
   note: ※料金はすべて税抜価格です。内容はご要望に応じてお見積りいたします。
   popularBadgeLabel: 人気No.1
+  buttonLabel: 詳しく見る
+  buttonHref: /services
   items:
     - name: ライトプラン
       description: 小規模サイトに最適
@@ -241,6 +251,7 @@ features:
   enableFaq: true
   enableContact: true
   enableWorks: true
+  enableNews: true
 productPage:
   breadcrumbHome: トップ
   specsHeading: 仕様・含まれる内容

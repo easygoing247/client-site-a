@@ -71,6 +71,17 @@ export interface SiteInfo {
     enableFaq: boolean;
     enableAccess: boolean;
     enableContact: boolean;
+    /** トップページの「お知らせ」セクション（ヒーローと選ばれる理由の間） */
+    enableNews: boolean;
+  };
+  /** トップページの「お知らせ」セクション設定 */
+  newsSection: {
+    eyebrow: string;
+    heading: string;
+    /** トップページに表示するお知らせの件数 */
+    count: number;
+    linkLabel: string;
+    linkHref: string;
   };
   sectionOrder: { id: string }[];
   hero: {
@@ -90,6 +101,9 @@ export interface SiteInfo {
   services: {
     eyebrow: string;
     heading: string;
+    /** セクション内に置く下層ページへのリンク文言（未入力なら非表示） */
+    linkLabel: string;
+    linkHref: string;
     items: { title: string; text: string; image: string }[];
   };
   flow: {
@@ -107,6 +121,9 @@ export interface SiteInfo {
     heading: string;
     note: string;
     popularBadgeLabel: string;
+    /** 各プランカードのボタン文言・リンク先 */
+    buttonLabel: string;
+    buttonHref: string;
     items: {
       name: string;
       description: string;

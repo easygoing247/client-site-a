@@ -15,11 +15,17 @@ import { site } from '../lib/site';
 import { aboutPage } from '../lib/pages';
 import { resolveImageOrNull } from '../lib/images';
 
-const heading = aboutPage.heading || '店舗概要・アクセス';
+const heading = aboutPage.heading || '会社概要';
+const sections = aboutPage.sections ?? {};
 const greeting = aboutPage.greeting ?? {};
 const greetingImage = resolveImageOrNull(greeting.image);
 const profile = (aboutPage.profile ?? []).filter((row) => row.label && row.value);
 const access = aboutPage.access ?? {};
+
+const showGreeting = sections.greeting !== false && !!(greeting.heading || greeting.body || greeting.name);
+const showCompanyOverview = sections.companyOverview !== false && profile.length > 0;
+const showAccess =
+  sections.access !== false && !!(access.address || access.directions || access.parking || access.mapEmbedUrl);
 ---
 
 <Layout
@@ -35,7 +41,7 @@ const access = aboutPage.access ?? {};
       crumbs={[{ label: site.productPage.breadcrumbHome || 'トップ', href: '/' }, { label: heading }]}
     />
 
-    {(greeting.heading || greeting.body || greeting.name) && (
+    {showGreeting && (
       <section class="py-14 px-5">
         <div class="max-w-[900px] mx-auto grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8 items-start">
           {greetingImage && (
@@ -65,7 +71,7 @@ const access = aboutPage.access ?? {};
       </section>
     )}
 
-    {profile.length > 0 && (
+    {showCompanyOverview && (
       <section class="py-14 px-5 bg-surface-muted">
         <div class="max-w-[760px] mx-auto">
           <h2 class="text-center font-bold mb-8" style="font-size:clamp(20px,3vw,26px);">会社概要</h2>
@@ -81,7 +87,7 @@ const access = aboutPage.access ?? {};
       </section>
     )}
 
-    {(access.address || access.directions || access.parking || access.mapEmbedUrl) && (
+    {showAccess && (
       <section class="py-14 px-5">
         <div class="max-w-[900px] mx-auto">
           <h2 class="text-center font-bold mb-8" style="font-size:clamp(20px,3vw,26px);">アクセス</h2>
