@@ -5,10 +5,8 @@
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
-import { objectPosition } from '../lib/objectPosition';
 
 const heroImage = resolveImageOrNull(site.hero.image);
-const heroImagePosition = objectPosition(site.hero.imagePosition);
 ---
 
 <section
@@ -21,7 +19,6 @@ const heroImagePosition = objectPosition(site.hero.imagePosition);
       src={heroImage}
       alt={site.hero.imageAlt}
       class="absolute inset-0 w-full h-full object-cover"
-      style={heroImagePosition && `object-position:${heroImagePosition};`}
       width={1920}
       height={1278}
       widths={[640, 960, 1280, 1920]}

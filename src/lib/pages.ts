@@ -43,8 +43,6 @@ export interface AboutPage {
     body?: string;
     name?: string;
     image?: string;
-    /** 代表者写真の表示位置（object-position） */
-    imagePosition?: string;
   };
   profile?: {
     label?: string;

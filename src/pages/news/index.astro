@@ -19,7 +19,6 @@ import {
   formatNewsDate,
   collectNewsCategories,
 } from '../../lib/news';
-import { objectPosition } from '../../lib/objectPosition';
 
 const posts = await getPublishedNews();
 const categories = collectNewsCategories(posts);
@@ -89,7 +88,6 @@ const viewInactive = 'text-secondary';
                           src={post.data.eyecatch}
                           alt={post.data.eyecatchAlt || post.data.title || ''}
                           class="w-full h-[180px] object-cover block"
-                          style={objectPosition(post.data.eyecatchPosition) && `object-position:${objectPosition(post.data.eyecatchPosition)};`}
                           width={450}
                           height={253}
                           format="webp"

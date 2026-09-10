@@ -12,7 +12,6 @@ greeting:
     お客様一人ひとりの課題に寄り添った制作を心がけています。
   name: 山田 太郎
   image: /src/assets/ceo-image.png
-  imagePosition: center top
 # 会社概要（表形式）に「公式SNS」行を表示する際のラベル。
 # 表示するSNSアイコン・並び順は siteInfo.yml の「SNS設定」に完全連動。
 companySnsLabel: 公式SNS

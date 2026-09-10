@@ -44,13 +44,8 @@ public/
   frontmatterに相対パスで記述する（`mainImage: "../../assets/xxx.jpg"`）。
 - ヒーロー画像など LCP に影響する画像には `fetchpriority="high"` と `loading="eager"` を、
   それ以外の画像には `loading="lazy"` を必ず指定する。
-- `object-fit: cover` で固定高さ／`aspect-ratio` 枠に切り抜き表示する画像は、
-  CMS の「画像の表示位置」設定を `src/lib/objectPosition.ts` の `objectPosition()`
-  （許可リスト方式）で解決し、`style={pos && \`object-position:${pos};\`}` として
-  `<Image />` に渡す。対応フィールド：ヒーロー背景（`hero.imagePosition`）／店舗外観
-  （`access.store.imagePosition`）／代表者写真（about `greeting.imagePosition`）／
-  お知らせアイキャッチ（news `eyecatchPosition`）／商品メイン画像
-  （products `mainImagePosition`）。`preview.js` 側も `objectPositionStyle()` で追従する。
+- 切り抜き表示（`object-fit: cover`）の画像位置は CSS 既定（中央）に従う。
+  個別の `object-position` 指定や CMS からの表示位置調整は行わない。
 
 ## 2. 案件初期化用プロンプト例（新規案件へ着せ替える手順）
 
@@ -284,14 +279,18 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
-| 下層ページ ＞ サービス内容・料金（services） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
-| 下層ページ ＞ 店舗概要・アクセス（about） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
-| 下層ページ ＞ お問い合わせ・ご予約（contact） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
+| 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
+| 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
+| 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
 | お知らせ・ブログ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
 
 - 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
   パーサは **`src/lib/pages.ts`**（`servicesPage` / `aboutPage` / `contactPage`、
   `site.ts` と同じ `?raw` インポート方式）。コンポーネントへのテキスト直書きは禁止（絶対ルール①）。
+- `pages` コレクションの各 file エントリ（`services` / `about` / `contact`）は
+  `summary: "{{fields.heading}}"` を指定し、管理画面の一覧・エディタ上に各 `.yml` の
+  「ページ見出し（`heading`）」を表示する。3ファイルとも先頭フィールドは
+  `heading`（label「ページ見出し」）で統一すること。
 - `news` コレクションのスキーマは `src/content/config.ts` の `news` で定義。取得は
   **`src/lib/news.ts`** の `getPublishedNews()`（`draft: true` を除外し公開日降順）を経由する。
   カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で

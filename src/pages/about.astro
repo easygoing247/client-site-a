@@ -14,7 +14,6 @@ import BackToTop from '../components/BackToTop.astro';
 import { site } from '../lib/site';
 import { aboutPage, resolveAboutAccessItems } from '../lib/pages';
 import { resolveImageOrNull } from '../lib/images';
-import { objectPosition } from '../lib/objectPosition';
 import { orderedSnsLinks } from '../lib/sns';
 import SnsIcons from '../components/SnsIcons.astro';
 
@@ -22,7 +21,6 @@ const heading = aboutPage.heading || '会社概要';
 const sections = aboutPage.sections ?? {};
 const greeting = aboutPage.greeting ?? {};
 const greetingImage = resolveImageOrNull(greeting.image);
-const greetingImagePosition = objectPosition(greeting.imagePosition);
 const profile = (aboutPage.profile ?? []).filter((row) => row.label && row.value);
 const access = aboutPage.access ?? {};
 const accessItems = resolveAboutAccessItems(access);
@@ -71,7 +69,6 @@ aboutSectionOrder
                 src={greetingImage}
                 alt={greeting.name ? `${greeting.name}の写真` : ''}
                 class="w-full h-[240px] md:h-[260px] object-cover block"
-                style={greetingImagePosition && `object-position:${greetingImagePosition};`}
                 width={440}
                 height={520}
                 format="webp"

@@ -6,7 +6,6 @@ hero:
   ctaHref: https://master-template-multi.easygoing247.workers.dev/contact/
   image: /src/assets/hero.jpg
   imageAlt: Web制作の作業風景（ノートパソコンでコーディングする様子）
-  imagePosition: center
   badges:
     - 相談無料
     - 最短1週間で対応

@@ -180,28 +180,6 @@
     return { dangerouslySetInnerHTML: { __html: str || '' } };
   }
 
-  // src/lib/objectPosition.ts の objectPosition() と同じ許可リスト判定。
-  // object-fit:cover 画像の切り抜き位置。未指定・中央相当なら undefined。
-  var OBJECT_POSITION_ALLOWED = {
-    top: 1, bottom: 1, left: 1, right: 1,
-    'left top': 1, 'top left': 1, 'right top': 1, 'top right': 1,
-    'left bottom': 1, 'bottom left': 1, 'right bottom': 1, 'bottom right': 1,
-    'center top': 1, 'center bottom': 1, 'left center': 1, 'right center': 1,
-    'center 25%': 1, 'center 75%': 1,
-  };
-  function objectPositionForPreview(value) {
-    if (!value) return undefined;
-    var v = String(value).trim().toLowerCase().replace(/\s+/g, ' ');
-    if (!v || v === 'center' || v === 'center center' || v === '50% 50%') return undefined;
-    if (OBJECT_POSITION_ALLOWED[v]) return v;
-    if (/^\d{1,3}%\s+\d{1,3}%$/.test(v)) return v;
-    return undefined;
-  }
-  function objectPositionStyle(value) {
-    var p = objectPositionForPreview(value);
-    return p ? { objectPosition: p } : undefined;
-  }
-
   // ==========================================================================
   // ヘッダー（簡易版：ロゴ＋PCナビのみ。ハンバーガーメニューの開閉は
   // プレビューの目的上不要なため省略）
@@ -255,13 +233,7 @@
         className: cx('relative w-full overflow-hidden', !imageUrl && 'bg-secondary-dark'),
         style: styleObj('height:clamp(440px,72vw,640px);'),
       },
-      imageUrl &&
-        h('img', {
-          src: imageUrl,
-          alt: hero.imageAlt || '',
-          className: 'absolute inset-0 w-full h-full object-cover',
-          style: objectPositionStyle(hero.imagePosition),
-        }),
+      imageUrl && h('img', { src: imageUrl, alt: hero.imageAlt || '', className: 'absolute inset-0 w-full h-full object-cover' }),
       imageUrl &&
         h('div', {
           className: 'absolute inset-0',
@@ -728,12 +700,7 @@
             h(
               'div',
               { className: 'rounded-2xl overflow-hidden border border-surface-border' },
-              h('img', {
-                src: imageUrl,
-                alt: store.imageAlt || '',
-                className: 'w-full h-[260px] sm:h-[320px] object-cover block',
-                style: objectPositionStyle(store.imagePosition),
-              })
+              h('img', { src: imageUrl, alt: store.imageAlt || '', className: 'w-full h-[260px] sm:h-[320px] object-cover block' })
             ),
           h(
             'div',
@@ -1596,7 +1563,6 @@
                 src: greetingImg,
                 alt: greeting.name ? greeting.name + 'の写真' : '',
                 className: 'w-full h-[240px] md:h-[260px] object-cover block',
-                style: objectPositionStyle(greeting.imagePosition),
               })
             ),
           h(

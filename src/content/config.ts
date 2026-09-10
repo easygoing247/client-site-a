@@ -16,8 +16,6 @@ const products = defineCollection({
       title: z.string().optional(),
       price: z.number().optional(),
       mainImage: image().optional(),
-      /** メイン画像の表示位置（object-position。object-fit:cover の切り抜き位置調整） */
-      mainImagePosition: z.string().optional(),
       summary: z.string().optional(),
       specs: z.array(z.string()).default([]),
       order: z.number().default(0),
@@ -36,8 +34,6 @@ const news = defineCollection({
       title: z.string().optional(),
       eyecatch: image().optional(),
       eyecatchAlt: z.string().optional(),
-      /** アイキャッチ画像の表示位置（object-position） */
-      eyecatchPosition: z.string().optional(),
       publishedAt: z.coerce.date().optional(),
       category: z.enum(['info', 'blog', 'event', 'works']).optional(),
       summary: z.string().optional(),

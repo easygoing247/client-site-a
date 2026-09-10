@@ -46,8 +46,6 @@ export interface SiteInfo {
       mapEmbedUrl: string;
       image: string;
       imageAlt: string;
-      /** 店舗外観画像の表示位置（object-position） */
-      imagePosition?: string;
     };
     labels: {
       postalCode: string;
@@ -90,8 +88,6 @@ export interface SiteInfo {
     ctaHref: string;
     image: string;
     imageAlt: string;
-    /** 背景画像の表示位置（object-position。object-fit:cover の切り抜き位置調整） */
-    imagePosition?: string;
     badges: string[];
   };
   features_section: {
