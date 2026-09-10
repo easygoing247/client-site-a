@@ -6,6 +6,35 @@ notes:
   - 内容によってはご返信までお時間をいただく場合があります。
   - いただいた個人情報はお問い合わせ対応の目的以外には使用しません。
   - 営業目的のご連絡はお断りしております。
+# フォーム入力項目の設定。表示順は お名前 → 会社名 → メールアドレス →
+# 電話番号 → お問い合わせ内容 で固定。enabled: false の項目はフォームに
+# 表示されず、送信データにも含まれない。
+formFields:
+  name:
+    enabled: true
+    label: お名前
+    placeholder: 山田 太郎
+    required: true
+  company:
+    enabled: true
+    label: 会社名
+    placeholder: 株式会社サンプル
+    required: false
+  email:
+    enabled: true
+    label: メールアドレス
+    placeholder: example@example.com
+    required: true
+  phone:
+    enabled: true
+    label: 電話番号
+    placeholder: 090-1234-5678
+    required: false
+  message:
+    enabled: true
+    label: お問い合わせ内容
+    placeholder: お問い合わせ内容をご記入ください
+    required: true
 privacyPolicy:
   heading: プライバシーポリシー
   body: |-

@@ -146,7 +146,10 @@ public/
   マークアップ・クラス・条件分岐を変更した場合は、`preview.js` 内の対応する関数
   （トップページ：`renderHeader` / `renderHero` / `renderFeatures` / `renderServices` /
   `renderFlow` / `renderWorks` / `renderPlans` / `renderAccess` / `renderFaq` /
-  `renderContact` / `renderFooter`。下層ページ：`renderPagePreviewHeading`
+  `renderContact` / `renderFooter`。お問い合わせフォームの入力欄は
+  `renderContactFields` / `renderContactFieldPreview` / `resolveContactFieldsForPreview`
+  （＝`ContactFields.astro` / `ContactField.astro` / `src/lib/pages.ts` の
+  `resolveContactFormFields`）。下層ページ：`renderPagePreviewHeading`
   （＝`PageHeader.astro`）/ `renderPreviewButton`（＝`Button.astro`）/
   `parseTextBlocksForPreview`（＝`src/lib/pages.ts` の `parseTextBlocks`）/
   `ServicesPagePreview` / `AboutPagePreview` / `ContactPagePreview` / `NewsPreview`）も
@@ -297,7 +300,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 |---|---|---|
 | `/services` | `src/pages/services.astro` | `src/lib/pages.ts` `servicesPage` |
 | `/about` | `src/pages/about.astro` | `src/lib/pages.ts` `aboutPage` |
-| `/contact` | `src/pages/contact.astro` | `src/lib/pages.ts` `contactPage` ＋ `siteInfo.yml` の `contactSection.form` |
+| `/contact` | `src/pages/contact.astro` | `contactPage`（`formFields` 含む）＋ `contactFormSettings` ＋ `siteInfo.yml` の `contactSection.form`（送信ボタン・結果メッセージ） |
 | `/news` | `src/pages/news/index.astro` | `news` コレクション（一覧） |
 | `/news/<slug>` | `src/pages/news/[slug].astro` | `news` コレクション（詳細・静的生成） |
 
@@ -344,6 +347,16 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - ボタン文言・「送信中」文言・成功／失敗メッセージは `siteInfo.yml` の
   `contactSection.form.*`（`submitLabel` / `sendingLabel` / `successMessage` /
   `errorMessage`）。コンポーネントへの直書き禁止（絶対ルール①）。
+- **入力欄（お名前 / 会社名 / メールアドレス / 電話番号 / お問い合わせ内容）**は
+  `src/data/contactPage.yml` の `formFields.<key>` で「表示（enabled）／ラベル（label）
+  ／プレースホルダー（placeholder）／必須（required）」を CMS 編集できる。
+  解決は `src/lib/pages.ts` の **`resolveContactFormFields()`**（既定値とマージし、
+  `enabled` の項目だけを固定順 name→company→email→phone→message で返す）。
+  レンダリングは共通コンポーネント **`ContactFields.astro` / `ContactField.astro`**
+  （`Contact.astro` と `contact.astro` の両 `<form>` 内で使用）。ラベル横に
+  `required` に応じて「必須」（赤 `#c62828`）／「任意」（グレー）バッジを出し分ける。
+  送信は `new FormData(form)` が表示中の入力欄を自動収集するため
+  `contactForm.ts` 側の変更は不要（非表示項目は DOM に無い＝送信されない）。
 - `#contact-success` / `#contact-error` のフェードインは `src/styles/global.css` の
   `.is-visible` クラス＋`contactForm.ts` の `reveal()`（hidden 解除 → 1回だけ
   `offsetWidth` でリフローを確定 → クラス付与）。`prefers-reduced-motion` 尊重。

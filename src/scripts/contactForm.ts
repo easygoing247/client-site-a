@@ -53,6 +53,10 @@ function initContactForm(): void {
     if (labelEl && sendingLabel) labelEl.textContent = sendingLabel;
 
     try {
+      // new FormData(form) は <form> 内の name 付きコントロールを全て収集する。
+      // ContactFields.astro は「表示する項目」だけを描画するため、非表示の項目は
+      // そもそも DOM に無く送信されない。追加された電話番号（name="phone"）も
+      // 表示されていれば自動的に含まれる。
       const formData = new FormData(form);
       formData.append('access_key', accessKey);
 

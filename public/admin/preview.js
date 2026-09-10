@@ -733,6 +733,88 @@
   }
 
   // ==========================================================================
+  // お問い合わせフォームの入力欄（src/components/ContactFields.astro / ContactField.astro）
+  // 表示/非表示・ラベル・プレースホルダー・必須は contactPage.yml の formFields。
+  // renderContact（siteInfo プレビュー）は別エントリの contactPage を参照できない
+  // ため既定値のみ、ContactPagePreview は data.formFields を反映する。
+  // 定義は src/lib/pages.ts の resolveContactFormFields と一致させること。
+  // ==========================================================================
+  var CONTACT_FIELD_PREVIEW_DEFAULTS = {
+    name: { label: 'お名前', placeholder: '山田 太郎', required: true, type: 'text' },
+    company: { label: '会社名', placeholder: '株式会社サンプル', required: false, type: 'text' },
+    email: { label: 'メールアドレス', placeholder: 'example@example.com', required: true, type: 'email' },
+    phone: { label: '電話番号', placeholder: '090-1234-5678', required: false, type: 'tel' },
+    message: { label: 'お問い合わせ内容', placeholder: 'お問い合わせ内容をご記入ください', required: true, type: 'textarea' },
+  };
+  var CONTACT_FIELD_PREVIEW_ORDER = ['name', 'company', 'email', 'phone', 'message'];
+
+  function resolveContactFieldsForPreview(config) {
+    config = config || {};
+    return CONTACT_FIELD_PREVIEW_ORDER.map(function (key) {
+      var d = CONTACT_FIELD_PREVIEW_DEFAULTS[key];
+      var c = config[key] || {};
+      return {
+        key: key,
+        enabled: c.enabled !== false,
+        label: typeof c.label === 'string' && c.label.trim() ? c.label.trim() : d.label,
+        placeholder: typeof c.placeholder === 'string' ? c.placeholder : d.placeholder,
+        required: typeof c.required === 'boolean' ? c.required : d.required,
+        type: d.type,
+      };
+    }).filter(function (f) {
+      return f.enabled;
+    });
+  }
+
+  function renderContactFieldPreview(h, f) {
+    var inputClass = 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]';
+    return h(
+      'label',
+      { key: f.key, className: 'flex flex-col gap-1.5' },
+      h(
+        'span',
+        { className: 'text-[13px] font-bold text-secondary flex items-center gap-2' },
+        f.label,
+        f.required
+          ? h('span', { className: 'text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-[3px] leading-none' }, '必須')
+          : h('span', { className: 'text-[10px] font-bold text-ink-faint bg-surface-muted rounded px-1.5 py-[3px] leading-none' }, '任意')
+      ),
+      f.type === 'textarea'
+        ? h('textarea', { readOnly: true, rows: 5, placeholder: f.placeholder, className: inputClass + ' resize-y' })
+        : h('input', { type: f.type, readOnly: true, placeholder: f.placeholder, className: inputClass })
+    );
+  }
+
+  function renderContactFields(h, fields) {
+    var pair = fields.filter(function (f) {
+      return f.key === 'name' || f.key === 'company';
+    });
+    var rest = fields.filter(function (f) {
+      return f.key !== 'name' && f.key !== 'company';
+    });
+    var out = [];
+    if (pair.length === 2) {
+      out.push(
+        h(
+          'div',
+          { key: 'pair', className: 'grid grid-cols-1 sm:grid-cols-2 gap-3' },
+          pair.map(function (f) {
+            return renderContactFieldPreview(h, f);
+          })
+        )
+      );
+    } else {
+      pair.forEach(function (f) {
+        out.push(renderContactFieldPreview(h, f));
+      });
+    }
+    rest.forEach(function (f) {
+      out.push(renderContactFieldPreview(h, f));
+    });
+    return out;
+  }
+
+  // ==========================================================================
   // お問い合わせ
   // ==========================================================================
   function renderContact(h, data, muted) {
@@ -766,14 +848,7 @@
           h(
             'div',
             { className: 'flex flex-col gap-3' },
-            h(
-              'div',
-              { className: 'grid grid-cols-1 sm:grid-cols-2 gap-3' },
-              h('input', { type: 'text', readOnly: true, placeholder: form.namePlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
-              h('input', { type: 'text', readOnly: true, placeholder: form.companyPlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' })
-            ),
-            h('input', { type: 'email', readOnly: true, placeholder: form.emailPlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
-            h('textarea', { readOnly: true, placeholder: form.messagePlaceholder, rows: 4, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
+            renderContactFields(h, resolveContactFieldsForPreview()),
             h(
               'button',
               { type: 'button', className: 'mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full bg-gradient-to-br from-primary to-primary-dark' },
@@ -1438,14 +1513,11 @@
 
   // ==========================================================================
   // お問い合わせ・ご予約（src/pages/contact.astro）
-  // フォーム項目の文言は siteInfo.yml（contactSection.form）の値だが、
-  // 別エントリのため参照できない。現行のデフォルト文言を固定値で用意する。
+  // 送信ボタン文言・同意文は siteInfo.yml（別エントリ）の値だが参照できないため
+  // 現行のデフォルト文言を固定値で用意する。入力欄はこのエントリ自身の
+  // data.formFields を反映する（renderContactFields）。
   // ==========================================================================
   var CONTACT_FORM_DEFAULTS = {
-    namePlaceholder: 'お名前',
-    companyPlaceholder: '会社名（任意）',
-    emailPlaceholder: 'メールアドレス',
-    messagePlaceholder: 'お問い合わせ内容',
     submitLabel: '送信する',
     privacyPolicyLabel: 'プライバシーポリシー',
     privacyConsentSuffix: 'に同意の上、送信してください。',
@@ -1455,6 +1527,7 @@
     var heading = data.heading || 'お問い合わせ・ご予約';
     var notes = (data.notes || []).filter(Boolean);
     var f = CONTACT_FORM_DEFAULTS;
+    var contactFields = resolveContactFieldsForPreview(data.formFields);
     var privacy = data.privacyPolicy || {};
     var privacyBlocks = parseTextBlocksForPreview(privacy.body);
     return [
@@ -1482,14 +1555,7 @@
           h(
             'div',
             { className: 'flex flex-col gap-3' },
-            h(
-              'div',
-              { className: 'grid grid-cols-1 sm:grid-cols-2 gap-3' },
-              h('input', { type: 'text', readOnly: true, placeholder: f.namePlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
-              h('input', { type: 'text', readOnly: true, placeholder: f.companyPlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' })
-            ),
-            h('input', { type: 'email', readOnly: true, placeholder: f.emailPlaceholder, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
-            h('textarea', { readOnly: true, placeholder: f.messagePlaceholder, rows: 5, className: 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]' }),
+            renderContactFields(h, contactFields),
             h(
               'button',
               { type: 'button', className: 'mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full bg-gradient-to-br from-primary to-primary-dark' },

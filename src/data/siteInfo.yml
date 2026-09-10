@@ -154,10 +154,6 @@ contactSection:
     - オンライン打ち合わせ可能
     - 無理な営業は一切しません
   form:
-    namePlaceholder: お名前
-    companyPlaceholder: 会社名（任意）
-    emailPlaceholder: メールアドレス
-    messagePlaceholder: お問い合わせ内容
     submitLabel: 送信する
     sendingLabel: 送信中...
     successMessage: お問い合わせを受け付けました。担当者よりご連絡いたします。

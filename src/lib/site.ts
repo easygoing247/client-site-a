@@ -126,10 +126,9 @@ export interface SiteInfo {
     body: string;
     points: string[];
     form: {
-      namePlaceholder: string;
-      companyPlaceholder: string;
-      emailPlaceholder: string;
-      messagePlaceholder: string;
+      // 各入力欄のラベル・プレースホルダー・必須・表示は
+      // contactPage.yml の formFields（src/lib/pages.ts）で管理する。
+      // ここは送信ボタン・送信結果メッセージのみ。
       submitLabel: string;
       /** 送信中の送信ボタン文言 */
       sendingLabel: string;

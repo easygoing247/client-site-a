@@ -222,20 +222,17 @@ collections:
                 widget: list
                 required: false
                 field: { label: "ポイント", name: "point", widget: string, required: false }
-              - label: "フォーム項目"
+              - label: "送信ボタン・送信結果メッセージ"
                 name: "form"
                 widget: object
+                hint: "各入力欄のラベル・プレースホルダー・必須／表示切替は「下層ページ ＞ お問い合わせ・ご予約」の「フォーム入力項目の設定」で編集します。"
                 fields:
-                  - { label: "「お名前」入力欄の文言", name: "namePlaceholder", widget: string, required: false }
-                  - { label: "「会社名」入力欄の文言", name: "companyPlaceholder", widget: string, required: false }
-                  - { label: "「メールアドレス」入力欄の文言", name: "emailPlaceholder", widget: string, required: false }
-                  - { label: "「お問い合わせ内容」入力欄の文言", name: "messagePlaceholder", widget: string, required: false }
                   - { label: "送信ボタン文言", name: "submitLabel", widget: string, required: false }
                   - { label: "送信中のボタン文言", name: "sendingLabel", widget: string, required: false }
                   - { label: "送信成功時のメッセージ", name: "successMessage", widget: text, required: false }
                   - { label: "送信失敗時のメッセージ", name: "errorMessage", widget: text, required: false }
               # ※ 送信先（Web3Formsキー）・通知メールの件名／送信者名は
-              #   この下の「お問い合わせフォーム設定」グループにまとめている。
+              #   独立ファイル項目「お問い合わせフォーム設定」（contact-form.json）。
 
           # --- 3. 会社・サイト基本情報 --------------------------------------
           - label: "会社・サイト基本情報"
@@ -521,6 +518,54 @@ collections:
             widget: list
             required: false
             field: { label: "注意事項", name: "note", widget: string, required: false }
+
+          # --- フォーム入力項目の設定（表示順は お名前→会社名→メールアドレス→電話番号→お問い合わせ内容 で固定） ---
+          - label: "フォーム入力項目の設定"
+            name: "formFields"
+            widget: object
+            hint: "各入力欄の表示/非表示・ラベル・プレースホルダー・必須を設定します。表示順は固定（電話番号はメールアドレスとお問い合わせ内容の間）。トップページの「お問い合わせ」セクションと /contact ページの両方に反映されます。"
+            fields:
+              - label: "お名前"
+                name: "name"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true }
+              - label: "会社名"
+                name: "company"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: false }
+              - label: "メールアドレス"
+                name: "email"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true }
+              - label: "連絡先・電話番号"
+                name: "phone"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: false }
+              - label: "お問い合わせ内容"
+                name: "message"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true }
+
           - label: "プライバシーポリシー"
             name: "privacyPolicy"
             widget: object

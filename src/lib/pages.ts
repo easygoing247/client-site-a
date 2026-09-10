@@ -50,10 +50,22 @@ export interface AboutPage {
   };
 }
 
+/** CMS で個別設定できるフォーム入力項目のキー（表示順もこの順で固定） */
+export type ContactFieldKey = 'name' | 'company' | 'email' | 'phone' | 'message';
+
+/** contactPage.yml の formFields.<key> に入る CMS 側の生データ */
+export interface ContactFieldConfig {
+  enabled?: boolean;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+}
+
 export interface ContactPage {
   heading?: string;
   intro?: string;
   notes?: string[];
+  formFields?: Partial<Record<ContactFieldKey, ContactFieldConfig>>;
   privacyPolicy?: {
     heading?: string;
     body?: string;
@@ -74,6 +86,57 @@ export const contactPage = (yaml.load(contactPageRaw) ?? {}) as ContactPage;
 export type TextBlock =
   | { type: 'heading'; text: string }
   | { type: 'paragraph'; text: string };
+
+// ============================================================================
+// お問い合わせフォームの入力項目を、CMS設定（contactPage.formFields）＋既定値で
+// 解決し、「表示する項目だけ」を表示順に並べて返す。
+// Contact.astro（トップページ #contact）と contact.astro（/contact）の両方、
+// および preview.js（renderContactFields）が同じ定義を使う。
+// ============================================================================
+export type ContactFieldType = 'text' | 'email' | 'tel' | 'textarea';
+
+export interface ContactFormField {
+  key: ContactFieldKey;
+  label: string;
+  placeholder: string;
+  required: boolean;
+  type: ContactFieldType;
+  autocomplete: string;
+}
+
+const CONTACT_FIELD_DEFAULTS: Record<
+  ContactFieldKey,
+  { label: string; placeholder: string; required: boolean; type: ContactFieldType; autocomplete: string }
+> = {
+  name: { label: 'お名前', placeholder: '山田 太郎', required: true, type: 'text', autocomplete: 'name' },
+  company: { label: '会社名', placeholder: '株式会社サンプル', required: false, type: 'text', autocomplete: 'organization' },
+  email: { label: 'メールアドレス', placeholder: 'example@example.com', required: true, type: 'email', autocomplete: 'email' },
+  phone: { label: '電話番号', placeholder: '090-1234-5678', required: false, type: 'tel', autocomplete: 'tel' },
+  message: { label: 'お問い合わせ内容', placeholder: 'お問い合わせ内容をご記入ください', required: true, type: 'textarea', autocomplete: 'off' },
+};
+
+/** 表示順（この順で固定。電話番号は必ずメールアドレスとお問い合わせ内容の間） */
+export const CONTACT_FIELD_ORDER: ContactFieldKey[] = ['name', 'company', 'email', 'phone', 'message'];
+
+export function resolveContactFormFields(
+  config?: Partial<Record<ContactFieldKey, ContactFieldConfig>>,
+): ContactFormField[] {
+  return CONTACT_FIELD_ORDER.map((key) => {
+    const d = CONTACT_FIELD_DEFAULTS[key];
+    const c = config?.[key] ?? {};
+    return {
+      key,
+      enabled: c.enabled !== false, // 未設定なら表示
+      label: (c.label ?? '').trim() || d.label,
+      placeholder: c.placeholder ?? d.placeholder,
+      required: typeof c.required === 'boolean' ? c.required : d.required,
+      type: d.type,
+      autocomplete: d.autocomplete,
+    };
+  })
+    .filter((f) => f.enabled)
+    .map(({ enabled, ...rest }) => rest);
+}
 
 export function parseTextBlocks(source: string | undefined | null): TextBlock[] {
   if (!source) return [];

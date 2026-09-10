@@ -1,0 +1,27 @@
+---
+// ============================================================================
+// ContactFields.astro — お問い合わせフォームの入力欄ブロック（共通）
+// トップページ #contact（Contact.astro）と /contact ページ（contact.astro）の
+// 両方の <form> 内で使う。表示/非表示・ラベル・プレースホルダー・必須は
+// src/data/contactPage.yml の formFields（CMS 編集可）で決まる。
+// ・enabled: false の項目は描画しない（＝送信データにも含まれない）
+// ・required の項目は <input required> ＋ ラベル横に「必須」バッジ
+// ・電話番号（phone）はメールアドレスとお問い合わせ内容の間に入る
+// ============================================================================
+import { contactPage, resolveContactFormFields } from '../lib/pages';
+import ContactField from './ContactField.astro';
+
+const fields = resolveContactFormFields(contactPage.formFields);
+// お名前・会社名は横並び（両方表示のときのみ2カラム）、それ以外は全幅
+const pair = fields.filter((f) => f.key === 'name' || f.key === 'company');
+const rest = fields.filter((f) => f.key !== 'name' && f.key !== 'company');
+---
+
+{pair.length === 2 ? (
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    {pair.map((f) => <ContactField field={f} />)}
+  </div>
+) : (
+  pair.map((f) => <ContactField field={f} />)
+)}
+{rest.map((f) => <ContactField field={f} />)}

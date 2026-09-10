@@ -6,6 +6,7 @@
 // ============================================================================
 import { site } from '../lib/site';
 import { contactFormSettings } from '../lib/contactFormSettings';
+import ContactFields from './ContactFields.astro';
 
 interface Props {
   muted?: boolean;
@@ -59,39 +60,7 @@ const cf = contactFormSettings;
         {/* Web3Forms 通知メールの件名・差出人名（siteInfo.yml の contactForm を参照） */}
         {cf.contact_email_subject && <input type="hidden" name="subject" value={cf.contact_email_subject} />}
         {cf.contact_email_from_name && <input type="hidden" name="from_name" value={cf.contact_email_from_name} />}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input
-            type="text"
-            name="name"
-            placeholder={site.contactSection.form.namePlaceholder}
-            required
-            class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]"
-            aria-label={site.contactSection.form.namePlaceholder}
-          />
-          <input
-            type="text"
-            name="company"
-            placeholder={site.contactSection.form.companyPlaceholder}
-            class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]"
-            aria-label={site.contactSection.form.companyPlaceholder}
-          />
-        </div>
-        <input
-          type="email"
-          name="email"
-          placeholder={site.contactSection.form.emailPlaceholder}
-          required
-          class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]"
-          aria-label={site.contactSection.form.emailPlaceholder}
-        />
-        <textarea
-          name="message"
-          placeholder={site.contactSection.form.messagePlaceholder}
-          rows="4"
-          required
-          class="px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px] resize-y"
-          aria-label={site.contactSection.form.messagePlaceholder}
-        ></textarea>
+        <ContactFields />
         <button
           type="submit"
           class="mt-1.5 text-white font-bold text-[15px] py-[15px] border-none rounded-full cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-progress bg-gradient-to-br from-primary to-primary-dark"
