@@ -20,11 +20,15 @@ export interface ServicesPage {
     description?: string;
     image?: string;
     features?: string[];
+    /** true で「画像：右／テキスト：左」に左右反転（既定は画像：左） */
+    reverseLayout?: boolean;
   }[];
   priceTable?: {
     name?: string;
     price?: number;
     note?: string;
+    /** 「含まれる内容／特徴」チェックリスト（料金プランの features と同仕様） */
+    features?: string[];
   }[];
   priceNote?: string;
 }

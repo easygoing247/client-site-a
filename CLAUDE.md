@@ -324,6 +324,14 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - 共通パーツ：`Header` / `Footer` / `StickyContactBar` / `BackToTop` に加え、
   下層ページ共通の見出し＋パンくずは **`src/components/PageHeader.astro`**、
   CTAボタンは **`src/components/Button.astro`** を再利用する。
+- **`/services`（サービス内容・料金）**：
+  - 「サービス詳細」各項目の `reverseLayout`（boolean）が true のとき、`md:` 以上で
+    画像カードに `md:order-2` を付与し「画像：右／テキスト：左」に反転（既定は画像：左。
+    スマホ1カラムでは常に画像→テキスト順）。自動交互配置はしない。
+  - 「料金表」各行は `note` の下に `features`（`string[]`／`priceTable[].features`）を
+    チェックマーク付き箇条書きで表示（サービス詳細・料金プランの features と同じ体裁）。
+  - ページ最下部の問い合わせ CTA セクションは廃止（ヘッダーCTA・`StickyContactBar` で導線は担保）。
+  - 上記はいずれも `preview.js` の `ServicesPagePreview` を一致させること。
 - **`/about`（会社概要）** の3セクション（代表挨拶／会社概要（表形式）／アクセス）は
   `about.yml` の `sections.{greeting,companyOverview,access}`（CMS「セクションの
   表示・非表示」）で個別に enabled 制御。`AboutPage` 型・`about.astro`・`preview.js`

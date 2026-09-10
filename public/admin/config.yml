@@ -481,6 +481,7 @@ collections:
               - { label: "サービス名", name: "title", widget: string, required: false }
               - { label: "説明（Enterキーで改行可）", name: "description", widget: text, required: false }
               - { label: "画像", name: "image", widget: image, required: false }
+              - { label: "画像とテキストの配置を左右反転する", name: "reverseLayout", widget: boolean, default: false, hint: "OFF：画像が左・テキストが右（既定）／ON：画像が右・テキストが左。スマホ表示（1カラム）では常に画像→テキストの順です。" }
               - label: "含まれる内容"
                 name: "features"
                 widget: list
@@ -494,6 +495,12 @@ collections:
               - { label: "項目名", name: "name", widget: string, required: false }
               - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
               - { label: "備考", name: "note", widget: string, required: false }
+              - label: "含まれる内容／特徴"
+                name: "features"
+                widget: list
+                required: false
+                hint: "各項目の文頭にチェックマークを付けて、備考の下に箇条書き表示します（料金プランの「含まれる内容」と同仕様）。"
+                field: { label: "項目", name: "feature", widget: string, required: false }
           - { label: "料金に関する注記文", name: "priceNote", widget: text, required: false }
 
       # --- 会社概要・アクセス -----------------------------------------------

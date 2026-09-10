@@ -1438,7 +1438,7 @@
                 imageUrl &&
                   h(
                     'div',
-                    { className: cx('rounded-2xl overflow-hidden border border-surface-border', i % 2 === 1 && 'md:order-2') },
+                    { className: cx('rounded-2xl overflow-hidden border border-surface-border', item.reverseLayout && 'md:order-2') },
                     h('img', {
                       src: imageUrl,
                       alt: item.title ? item.title + 'のイメージ' : '',
@@ -1481,27 +1481,39 @@
               'div',
               { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white' },
               priceTable.map(function (row, i) {
+                var rowFeatures = (row.features || []).filter(Boolean);
                 return h(
                   'div',
-                  {
-                    key: i,
-                    className: cx(
-                      'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4',
-                      i > 0 && 'border-t border-surface-border'
-                    ),
-                  },
-                  h('div', { className: 'text-[14px] font-bold text-secondary' }, row.name),
+                  { key: i, className: cx('px-5 py-4', i > 0 && 'border-t border-surface-border') },
                   h(
                     'div',
-                    { className: 'text-[15px] font-bold text-primary' },
-                    typeof row.price === 'number'
-                      ? [
-                          '￥' + Number(row.price).toLocaleString('ja-JP'),
-                          h('span', { key: 's', className: 'text-[12px] font-normal text-ink-soft' }, '〜'),
-                        ]
-                      : null
+                    { className: 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1' },
+                    h('div', { className: 'text-[14px] font-bold text-secondary' }, row.name),
+                    h(
+                      'div',
+                      { className: 'text-[15px] font-bold text-primary' },
+                      typeof row.price === 'number'
+                        ? [
+                            '￥' + Number(row.price).toLocaleString('ja-JP'),
+                            h('span', { key: 's', className: 'text-[12px] font-normal text-ink-soft' }, '〜'),
+                          ]
+                        : null
+                    ),
+                    row.note && h('div', { className: 'w-full text-[12px] text-ink-faint' }, row.note)
                   ),
-                  row.note && h('div', { className: 'w-full text-[12px] text-ink-faint' }, row.note)
+                  rowFeatures.length > 0 &&
+                    h(
+                      'ul',
+                      { className: 'list-none m-0 p-0 mt-3 flex flex-col gap-2' },
+                      rowFeatures.map(function (feature, fi) {
+                        return h(
+                          'li',
+                          { key: fi, className: 'flex gap-2 items-start text-[13px] text-secondary-light' },
+                          h('span', { className: 'text-primary flex-none' }, '✓'),
+                          feature
+                        );
+                      })
+                    )
                 );
               })
             ),
@@ -1509,11 +1521,6 @@
               h('p', { className: 'mt-5 text-[12px] leading-[1.8] text-ink-faint whitespace-pre-line' }, data.priceNote)
           )
         ),
-      h(
-        'section',
-        { key: 'cta', className: 'py-14 px-5 text-center' },
-        renderPreviewButton(h, 'お問い合わせ')
-      ),
     ];
   });
 
