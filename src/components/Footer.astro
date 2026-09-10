@@ -13,8 +13,8 @@ const footerNav = visibleNavItems(site.footerNav);
 // （非表示セクションが増えても不自然な空白行ができないようにするため）
 const footerNavRows = Math.max(1, Math.ceil(footerNav.length / 2));
 
-// 表示順序・非表示条件は管理画面（siteInfo.yml の contact.snsOrder）と
-// 「店舗概要・アクセス」セクションに完全連動する（src/lib/sns.ts 参照）。
+// 表示順序・非表示条件は管理画面（siteInfo.yml トップレベルの sns リスト＝
+// 「SNS設定」）と「店舗概要・アクセス」セクションに完全連動する（src/lib/sns.ts 参照）。
 const snsLinks = orderedSnsLinks();
 ---
 

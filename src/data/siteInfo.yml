@@ -6,6 +6,7 @@ hero:
   ctaHref: https://master-template-multi.easygoing247.workers.dev/contact/
   image: /src/assets/hero.jpg
   imageAlt: Web制作の作業風景（ノートパソコンでコーディングする様子）
+  imagePosition: center
   badges:
     - 相談無料
     - 最短1週間で対応
@@ -136,6 +137,7 @@ access:
     postalCode: 〒060-0001
     parking: 3台（近隣コインパーキングもご利用いただけます）
     image: /src/assets/access-store.jpg
+    imagePosition: center
   labels:
     postalCode: 郵便番号
     address: 住所
@@ -182,18 +184,28 @@ contact:
   showPhoneButton: true
   showLineButton: true
   phoneLabel: お電話
-  facebookUrl: "#"
   phone: 000-000-0000
-  snsOrder:
-    - id: line
-    - id: instagram
-    - id: x
-    - id: facebook
-  xUrl: "#"
   phoneHref: tel:0000000000
-  lineUrl: "#"
   email: info@example.com
-  instagramUrl: "#"
+# 公式SNS設定（サイト全体で一括管理）。ドラッグで並び替え、enabled で表示/非表示。
+# URL 未入力または enabled: false のものはアイコンが表示されない。
+# スマホ下部バーの「LINEで相談」ボタンも、この line の URL / enabled を参照する。
+sns:
+  - id: line
+    url: "#"
+    enabled: true
+  - id: instagram
+    url: "#"
+    enabled: true
+  - id: x
+    url: "#"
+    enabled: true
+  - id: facebook
+    url: "#"
+    enabled: true
+  - id: youtube
+    url: ""
+    enabled: false
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。

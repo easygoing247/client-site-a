@@ -180,6 +180,28 @@
     return { dangerouslySetInnerHTML: { __html: str || '' } };
   }
 
+  // src/lib/objectPosition.ts の objectPosition() と同じ許可リスト判定。
+  // object-fit:cover 画像の切り抜き位置。未指定・中央相当なら undefined。
+  var OBJECT_POSITION_ALLOWED = {
+    top: 1, bottom: 1, left: 1, right: 1,
+    'left top': 1, 'top left': 1, 'right top': 1, 'top right': 1,
+    'left bottom': 1, 'bottom left': 1, 'right bottom': 1, 'bottom right': 1,
+    'center top': 1, 'center bottom': 1, 'left center': 1, 'right center': 1,
+    'center 25%': 1, 'center 75%': 1,
+  };
+  function objectPositionForPreview(value) {
+    if (!value) return undefined;
+    var v = String(value).trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!v || v === 'center' || v === 'center center' || v === '50% 50%') return undefined;
+    if (OBJECT_POSITION_ALLOWED[v]) return v;
+    if (/^\d{1,3}%\s+\d{1,3}%$/.test(v)) return v;
+    return undefined;
+  }
+  function objectPositionStyle(value) {
+    var p = objectPositionForPreview(value);
+    return p ? { objectPosition: p } : undefined;
+  }
+
   // ==========================================================================
   // ヘッダー（簡易版：ロゴ＋PCナビのみ。ハンバーガーメニューの開閉は
   // プレビューの目的上不要なため省略）
@@ -233,7 +255,13 @@
         className: cx('relative w-full overflow-hidden', !imageUrl && 'bg-secondary-dark'),
         style: styleObj('height:clamp(440px,72vw,640px);'),
       },
-      imageUrl && h('img', { src: imageUrl, alt: hero.imageAlt || '', className: 'absolute inset-0 w-full h-full object-cover' }),
+      imageUrl &&
+        h('img', {
+          src: imageUrl,
+          alt: hero.imageAlt || '',
+          className: 'absolute inset-0 w-full h-full object-cover',
+          style: objectPositionStyle(hero.imagePosition),
+        }),
       imageUrl &&
         h('div', {
           className: 'absolute inset-0',
@@ -637,29 +665,31 @@
   // ==========================================================================
   // 店舗概要・アクセス
   // ==========================================================================
-  var SNS_ORDER_DEFAULT = ['line', 'instagram', 'x', 'facebook'];
-  var SNS_URL_FIELD = { line: 'lineUrl', instagram: 'instagramUrl', x: 'xUrl', facebook: 'facebookUrl' };
+  // SNS のアイコン配色。src/components/SnsIcons.astro の SNS_STYLE と一致させること。
+  var SNS_KNOWN_IDS = ['line', 'instagram', 'x', 'facebook', 'youtube'];
   var SNS_STYLE = {
     line: { className: 'bg-accent' },
     instagram: { style: styleObj('background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);') },
     x: { className: 'bg-secondary' },
     facebook: { className: 'bg-[#1877f2]' },
+    youtube: { className: 'bg-[#ff0000]' },
   };
 
+  // siteInfo.yml トップレベルの `sns` リスト（{id,url,enabled}）を、
+  // 並び順どおりに enabled かつ URL 入力済みのものだけ返す。
+  // src/lib/sns.ts の orderedSnsLinks() と判定を一致させること。
   function orderedSnsForPreview(data) {
-    var contact = data.contact || {};
-    var configured = (contact.snsOrder || []).map(function (o) {
-      return o.id;
-    });
-    var ids = configured.concat(SNS_ORDER_DEFAULT).filter(function (id, i, arr) {
-      return SNS_ORDER_DEFAULT.indexOf(id) !== -1 && arr.indexOf(id) === i;
-    });
-    return ids
-      .map(function (id) {
-        return { id: id, href: contact[SNS_URL_FIELD[id]] };
+    return (data.sns || [])
+      .filter(function (s) {
+        return (
+          s &&
+          SNS_KNOWN_IDS.indexOf(s.id) !== -1 &&
+          s.enabled !== false &&
+          !!(s.url && String(s.url).trim())
+        );
       })
-      .filter(function (sns) {
-        return sns.href;
+      .map(function (s) {
+        return { id: s.id, href: String(s.url).trim() };
       });
   }
 
@@ -698,7 +728,12 @@
             h(
               'div',
               { className: 'rounded-2xl overflow-hidden border border-surface-border' },
-              h('img', { src: imageUrl, alt: store.imageAlt || '', className: 'w-full h-[260px] sm:h-[320px] object-cover block' })
+              h('img', {
+                src: imageUrl,
+                alt: store.imageAlt || '',
+                className: 'w-full h-[260px] sm:h-[320px] object-cover block',
+                style: objectPositionStyle(store.imagePosition),
+              })
             ),
           h(
             'div',
@@ -1529,10 +1564,14 @@
       return row.label && row.value;
     });
     var access = data.access || {};
+    var accessItems = (access.items || []).filter(function (row) {
+      return row && row.enabled !== false && row.label && String(row.label).trim() && row.value && String(row.value).trim();
+    });
+    var companySnsLabel = (data.companySnsLabel && String(data.companySnsLabel).trim()) || '公式SNS';
+    var showCompanySnsRow = !!(data.companySnsLabel && String(data.companySnsLabel).trim());
     var showGreeting = sections.greeting !== false && (greeting.heading || greeting.body || greeting.name);
-    var showCompanyOverview = sections.companyOverview !== false && profile.length > 0;
-    var showAccess =
-      sections.access !== false && (access.address || access.directions || access.parking || access.mapEmbedUrl);
+    var showCompanyOverview = sections.companyOverview !== false && (profile.length > 0 || showCompanySnsRow);
+    var showAccess = sections.access !== false && (accessItems.length > 0 || access.mapEmbedUrl);
 
     // --- セクション動的背景色（ゼブラ） ---------------------------------------
     // 「セクション表示・非表示」トグルを切り替えると、data（フォームの入力値）が
@@ -1557,6 +1596,7 @@
                 src: greetingImg,
                 alt: greeting.name ? greeting.name + 'の写真' : '',
                 className: 'w-full h-[240px] md:h-[260px] object-cover block',
+                style: objectPositionStyle(greeting.imagePosition),
               })
             ),
           h(
@@ -1583,22 +1623,49 @@
           h(
             'dl',
             { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white m-0' },
-            profile.map(function (row, i) {
-              return h(
-                'div',
-                { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[150px_1fr]', i > 0 && 'border-t border-surface-border') },
-                h(
-                  'dt',
-                  { className: 'px-5 py-3 text-[13px] font-bold text-secondary bg-surface-band sm:bg-transparent sm:py-4' },
-                  row.label
-                ),
-                h(
-                  'dd',
-                  { className: 'px-5 pb-4 pt-3 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
-                  row.value
-                )
-              );
-            })
+            profile
+              .map(function (row, i) {
+                return h(
+                  'div',
+                  { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[150px_1fr]', i > 0 && 'border-t border-surface-border') },
+                  h(
+                    'dt',
+                    { className: 'px-5 py-3 text-[13px] font-bold text-secondary bg-surface-band sm:bg-transparent sm:py-4' },
+                    row.label
+                  ),
+                  h(
+                    'dd',
+                    { className: 'px-5 pb-4 pt-3 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
+                    row.value
+                  )
+                );
+              })
+              .concat(
+                showCompanySnsRow
+                  ? [
+                      h(
+                        'div',
+                        {
+                          key: 'sns',
+                          className: cx(
+                            'grid grid-cols-1 sm:grid-cols-[150px_1fr] sm:items-center',
+                            profile.length > 0 && 'border-t border-surface-border'
+                          ),
+                        },
+                        h(
+                          'dt',
+                          { className: 'px-5 py-3 text-[13px] font-bold text-secondary bg-surface-band sm:bg-transparent sm:py-4' },
+                          companySnsLabel
+                        ),
+                        h(
+                          'dd',
+                          { className: 'px-5 pb-4 pt-3 sm:pt-4 text-[12px] text-ink-faint m-0' },
+                          '（サイト設定の「SNS設定」で表示中のSNSアイコンがここに並びます）'
+                        )
+                      ),
+                    ]
+                  : []
+              )
           )
         )
       );
@@ -1611,24 +1678,16 @@
           'div',
           { className: 'max-w-[900px] mx-auto' },
           h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, 'アクセス'),
-          h(
-            'dl',
-            { className: 'grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light max-w-[600px] mx-auto m-0' },
-            [
-              access.address && [
-                h('dt', { key: 'dt1', className: 'font-bold text-secondary' }, '住所'),
-                h('dd', { key: 'dd1', className: 'm-0' }, access.address),
-              ],
-              access.directions && [
-                h('dt', { key: 'dt2', className: 'font-bold text-secondary' }, '交通'),
-                h('dd', { key: 'dd2', className: 'm-0 whitespace-pre-line' }, access.directions),
-              ],
-              access.parking && [
-                h('dt', { key: 'dt3', className: 'font-bold text-secondary' }, '駐車場'),
-                h('dd', { key: 'dd3', className: 'm-0' }, access.parking),
-              ],
-            ].filter(Boolean)
-          ),
+          accessItems.length > 0 &&
+            h(
+              'dl',
+              { className: 'grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light max-w-[600px] mx-auto m-0' },
+              accessItems.reduce(function (acc, row, i) {
+                acc.push(h('dt', { key: 'dt-' + i, className: 'font-bold text-secondary' }, String(row.label).trim()));
+                acc.push(h('dd', { key: 'dd-' + i, className: 'm-0 whitespace-pre-line' }, String(row.value).trim()));
+                return acc;
+              }, [])
+            ),
           access.mapEmbedUrl &&
             h(
               'div',

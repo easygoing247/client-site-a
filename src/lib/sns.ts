@@ -1,15 +1,15 @@
 // ============================================================================
 // src/lib/sns.ts
-// SNSリンクの一覧を、管理画面（siteInfo.yml の contact.snsOrder）で指定された
-// 順序どおりに、かつURL未入力のものを自動的に除外して返す。
-// Access.astro / Footer.astro など、SNSアイコンを掲載するすべての箇所は
-// 必ずこのモジュール経由でリンク一覧を取得し、表示順序・非表示条件が
-// サイト全体で常に一致するようにする（アイコンの見た目・色は各コンポーネント
-// 側で個別に決めてよい実装詳細のため、ここでは扱わない）。
+// 公式SNSリンクの一覧を、管理画面（siteInfo.yml のトップレベル `sns` リスト）で
+// 指定された順序どおりに、かつ enabled かつ URL 入力済みのものだけ返す。
+// Access.astro / Footer.astro / about.astro（会社概要の「公式SNS」行）など、
+// SNSアイコンを掲載するすべての箇所は必ずこのモジュール経由でリンク一覧を
+// 取得し、表示順序・非表示条件がサイト全体で常に一致するようにする
+// （アイコンの色は各コンポーネント側で決めてよい実装詳細のため扱わない）。
 // ============================================================================
 import { site } from './site';
 
-export type SnsId = 'line' | 'instagram' | 'x' | 'facebook';
+export type SnsId = 'line' | 'instagram' | 'x' | 'facebook' | 'youtube';
 
 export interface SnsLink {
   id: SnsId;
@@ -21,13 +21,6 @@ export interface SnsLink {
   /** Instagramのような複数図形の枠線アイコン用フラグ */
   isFrame?: boolean;
 }
-
-const SNS_URL_FIELD: Record<SnsId, 'lineUrl' | 'instagramUrl' | 'xUrl' | 'facebookUrl'> = {
-  line: 'lineUrl',
-  instagram: 'instagramUrl',
-  x: 'xUrl',
-  facebook: 'facebookUrl',
-};
 
 const SNS_DEFS: Record<SnsId, Omit<SnsLink, 'id' | 'href'>> = {
   line: {
@@ -46,25 +39,30 @@ const SNS_DEFS: Record<SnsId, Omit<SnsLink, 'id' | 'href'>> = {
     label: 'フェイスブック',
     icon: 'M15 8.5h2.2V5.6h-2.4c-2.4 0-3.8 1.5-3.8 3.9v1.8H8.6v3h2.4V21h3.1v-6.7h2.4l.4-3h-2.8v-1.5c0-.87.23-1.3 1.9-1.3Z',
   },
+  youtube: {
+    label: 'ユーチューブ',
+    icon: 'M21.6 7.2a2.5 2.5 0 0 0-1.76-1.76C18.25 5 12 5 12 5s-6.25 0-7.84.44A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.76 1.76C5.75 19 12 19 12 19s6.25 0 7.84-.44a2.5 2.5 0 0 0 1.76-1.76A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3-5.2 3Z',
+  },
 };
 
-const DEFAULT_ORDER: SnsId[] = ['line', 'instagram', 'x', 'facebook'];
+export const SNS_IDS = Object.keys(SNS_DEFS) as SnsId[];
 
-function isSnsId(value: string): value is SnsId {
-  return value in SNS_DEFS;
+function isSnsId(value: unknown): value is SnsId {
+  return typeof value === 'string' && value in SNS_DEFS;
 }
 
 /**
- * 管理画面で指定された表示順序（未指定・一部欠落があれば既定順序で補完）に沿って、
- * URLが設定されているSNSのみを返す。
+ * 管理画面の `sns` リストの順序どおりに、enabled かつ URL 入力済みの SNS のみ返す。
  */
 export function orderedSnsLinks(): SnsLink[] {
-  const configuredOrder = (site.contact.snsOrder ?? []).map((item) => item.id).filter(isSnsId);
-  // 管理画面側の並び替えリストに全SNSが揃っていない場合（未設定・追加直後等）に
-  // 備え、既定順序で補完してから重複を除去する。
-  const ids = [...configuredOrder, ...DEFAULT_ORDER].filter((id, index, arr) => arr.indexOf(id) === index);
+  return (site.sns ?? [])
+    .filter((s) => !!s && isSnsId(s.id) && s.enabled !== false && !!(s.url && String(s.url).trim()))
+    .map((s) => ({ id: s.id as SnsId, href: String(s.url).trim(), ...SNS_DEFS[s.id as SnsId] }));
+}
 
-  return ids
-    .map((id) => ({ id, href: site.contact[SNS_URL_FIELD[id]], ...SNS_DEFS[id] }))
-    .filter((sns): sns is SnsLink => !!sns.href);
+/** 指定 SNS の URL を返す（enabled: false または未入力なら空文字）。 */
+export function snsUrl(id: SnsId): string {
+  const item = (site.sns ?? []).find((s) => s && s.id === id);
+  if (!item || item.enabled === false) return '';
+  return (item.url ?? '').trim();
 }

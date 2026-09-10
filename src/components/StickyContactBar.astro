@@ -9,9 +9,11 @@
 //   ・両方非表示 → バー自体を描画しない
 // ============================================================================
 import { site } from '../lib/site';
+import { snsUrl } from '../lib/sns';
 
+const lineUrl = snsUrl('line');
 const showPhone = site.contact.showPhoneButton && !!site.contact.phone;
-const showLine = site.contact.showLineButton && !!site.contact.lineUrl;
+const showLine = site.contact.showLineButton && !!lineUrl;
 ---
 
 {(showPhone || showLine) && (
@@ -37,7 +39,7 @@ const showLine = site.contact.showLineButton && !!site.contact.lineUrl;
       )}
       {showLine && (
         <a
-          href={site.contact.lineUrl}
+          href={lineUrl}
           class="flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] tracking-wide py-4 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]"
         >
           <svg

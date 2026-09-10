@@ -68,8 +68,15 @@ GitHubの `main` に直接コミットされる（`Update サイト設定 "siteI
 - モバイル／タブレットのレイアウト調整（カード比率、SNSボタンサイズ統一など）。
 
 ### 1.5 コンテンツ・データモデルの改善
-- SNS表示順序・非表示条件を `contact.snsOrder` に一元化（`src/lib/sns.ts`）し、
-  Access・Footer間で完全連動。
+- SNS設定を「連絡先」から独立させ、siteInfo.yml トップレベルの `sns` リスト
+  （`{id, url, enabled}`／CMS「SNS設定」）に一元化（`src/lib/sns.ts`）。YouTube を追加。
+  表示順序・非表示条件を Access・Footer・会社概要ページ「公式SNS」行・スマホ下部
+  LINEボタンの全箇所で完全連動。
+- 画像フォーカルポイント（`object-position`）機能を追加（`src/lib/objectPosition.ts`）。
+  ヒーロー背景・店舗外観・代表者写真・お知らせアイキャッチ・商品メイン画像に
+  「画像の表示位置」select を追加し、`object-fit:cover` 画像の切り抜き位置を調整可能に。
+- /about のアクセス情報を固定3項目から可変リスト（`access.items[]`＝ラベル/内容/
+  表示可否、ドラッグ並び替え・追加削除可）へ変更。
 - 店舗情報を独立セクションから「店舗概要・アクセス」セクションへ統合。
 - 実績・活用事例「業種」フィールドを単一行（`widget: string`）から複数行対応
   （`widget: text`）に変更し、ラベルを「本文（Enterキーで改行可）」に変更。

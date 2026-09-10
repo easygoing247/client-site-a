@@ -7,7 +7,9 @@
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
-import { orderedSnsLinks, type SnsId } from '../lib/sns';
+import { orderedSnsLinks } from '../lib/sns';
+import { objectPosition } from '../lib/objectPosition';
+import SnsIcons from './SnsIcons.astro';
 
 interface Props {
   muted?: boolean;
@@ -16,6 +18,8 @@ interface Props {
 const { muted = false } = Astro.props;
 const store = site.access.store;
 const storeImage = resolveImageOrNull(store.image);
+const storeImagePosition = objectPosition(store.imagePosition);
+const hasSns = orderedSnsLinks().length > 0;
 
 // ラベル・値のどちらかが空欄の行はサイト上に表示しない
 const infoRows = [
@@ -32,15 +36,6 @@ const infoRows = [
   { label: site.access.labels.parking, value: store.parking },
 ].filter((row) => row.label && row.value);
 
-// アイコンの配色はこのセクション独自の見た目（実装詳細）のため、
-// 表示順序・非表示条件（orderedSnsLinks側で判定）とは切り離して管理する。
-const ACCESS_SNS_STYLE: Record<SnsId, { bg: string; style?: string }> = {
-  line: { bg: 'bg-accent' },
-  instagram: { bg: '', style: 'background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);' },
-  x: { bg: 'bg-secondary' },
-  facebook: { bg: 'bg-[#1877f2]' },
-};
-const snsLinks = orderedSnsLinks().map((sns) => ({ ...sns, ...ACCESS_SNS_STYLE[sns.id] }));
 ---
 
 {site.features.enableAccess && (
@@ -63,6 +58,7 @@ const snsLinks = orderedSnsLinks().map((sns) => ({ ...sns, ...ACCESS_SNS_STYLE[s
             src={storeImage}
             alt={store.imageAlt}
             class="w-full h-[260px] sm:h-[320px] object-cover block"
+            style={storeImagePosition && `object-position:${storeImagePosition};`}
             width={700}
             height={320}
             format="webp"
@@ -87,7 +83,7 @@ const snsLinks = orderedSnsLinks().map((sns) => ({ ...sns, ...ACCESS_SNS_STYLE[s
           </dl>
         )}
 
-        {snsLinks.length > 0 && (
+        {hasSns && (
           <!--
             上のdl（郵便番号・住所・...・駐車場）と同じ
             grid-cols-[100px_1fr] gap-x-4 を使うことで、「公式SNS」の
@@ -97,30 +93,7 @@ const snsLinks = orderedSnsLinks().map((sns) => ({ ...sns, ...ACCESS_SNS_STYLE[s
           -->
           <div class="grid grid-cols-[100px_1fr] gap-x-4 items-center mt-[14px]">
             <span class="text-[13px] font-bold text-secondary-light">{site.access.labels.sns}</span>
-            <div class="flex items-center gap-2">
-              {
-                snsLinks.map((sns) => (
-                  <a
-                    href={sns.href}
-                    aria-label={sns.label}
-                    class:list={['flex-none w-9 h-9 rounded-full flex items-center justify-center', sns.bg]}
-                    style={sns.style}
-                  >
-                    {sns.isFrame ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
-                        <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
-                        <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d={sns.icon} fill="#fff" />
-                      </svg>
-                    )}
-                  </a>
-                ))
-              }
-            </div>
+            <SnsIcons />
           </div>
         )}
       </div>

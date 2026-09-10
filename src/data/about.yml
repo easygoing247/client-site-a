@@ -12,6 +12,10 @@ greeting:
     お客様一人ひとりの課題に寄り添った制作を心がけています。
   name: 山田 太郎
   image: /src/assets/ceo-image.png
+  imagePosition: center top
+# 会社概要（表形式）に「公式SNS」行を表示する際のラベル。
+# 表示するSNSアイコン・並び順は siteInfo.yml の「SNS設定」に完全連動。
+companySnsLabel: 公式SNS
 profile:
   - label: 会社名
     value: LOGO
@@ -25,10 +29,22 @@ profile:
     value: |-
       Webサイト制作・LP制作
       SEO・集客支援／運用保守サポート
+# アクセス情報：表示順・ラベル文言・項目の追加/削除を CMS で自由に編集できる
+# 可変リスト。enabled: false またはラベル/内容が空欄の行はサイト上で非表示。
 access:
-  address: 〒060-0001 北海道札幌市中央区北一条西3丁目 LOGOビル5F
-  directions: |-
-    札幌市営地下鉄 大通駅 徒歩5分
-    JR札幌駅 徒歩10分
-  parking: 3台（近隣コインパーキングもご利用いただけます）
+  items:
+    - label: 郵便番号
+      value: 〒060-0001
+      enabled: true
+    - label: 住所
+      value: 北海道札幌市中央区北一条西3丁目 LOGOビル5F
+      enabled: true
+    - label: 最寄り駅
+      value: |-
+        札幌市営地下鉄 大通駅 徒歩5分
+        JR札幌駅 徒歩10分
+      enabled: true
+    - label: 駐車場
+      value: 3台（近隣コインパーキングもご利用いただけます）
+      enabled: true
   mapEmbedUrl: https://www.google.com/maps?q=43.0606,141.3568&z=16&output=embed

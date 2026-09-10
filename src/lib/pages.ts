@@ -43,17 +43,33 @@ export interface AboutPage {
     body?: string;
     name?: string;
     image?: string;
+    /** 代表者写真の表示位置（object-position） */
+    imagePosition?: string;
   };
   profile?: {
     label?: string;
     value?: string;
   }[];
+  /** 会社概要（表形式）に表示する「公式SNS」行のラベル */
+  companySnsLabel?: string;
   access?: {
-    address?: string;
-    directions?: string;
-    parking?: string;
+    /** 表示順・ラベル・内容・表示可否を CMS で自由に編集できる可変リスト */
+    items?: {
+      label?: string;
+      value?: string;
+      enabled?: boolean;
+    }[];
     mapEmbedUrl?: string;
   };
+}
+
+/** aboutPage.access.items を「表示する行だけ」表示順に整形して返す。 */
+export function resolveAboutAccessItems(
+  access?: AboutPage['access'],
+): { label: string; value: string }[] {
+  return (access?.items ?? [])
+    .filter((row) => row && row.enabled !== false && !!(row.label && row.label.trim()) && !!(row.value && String(row.value).trim()))
+    .map((row) => ({ label: String(row.label).trim(), value: String(row.value).trim() }));
 }
 
 /** CMS で個別設定できるフォーム入力項目のキー（表示順もこの順で固定） */

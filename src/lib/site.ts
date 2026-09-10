@@ -24,16 +24,13 @@ export interface SiteInfo {
     phone: string;
     phoneHref: string;
     email: string;
-    lineUrl: string;
-    instagramUrl: string;
-    xUrl: string;
-    facebookUrl: string;
     phoneLabel: string;
     lineLabel: string;
     showPhoneButton: boolean;
     showLineButton: boolean;
-    snsOrder: { id: string }[];
   };
+  /** 公式SNS設定（サイト全体で一括管理）。並び順＝表示順。 */
+  sns: { id: string; url: string; enabled: boolean }[];
   access: {
     eyebrow: string;
     heading: string;
@@ -49,6 +46,8 @@ export interface SiteInfo {
       mapEmbedUrl: string;
       image: string;
       imageAlt: string;
+      /** 店舗外観画像の表示位置（object-position） */
+      imagePosition?: string;
     };
     labels: {
       postalCode: string;
@@ -91,6 +90,8 @@ export interface SiteInfo {
     ctaHref: string;
     image: string;
     imageAlt: string;
+    /** 背景画像の表示位置（object-position。object-fit:cover の切り抜き位置調整） */
+    imagePosition?: string;
     badges: string[];
   };
   features_section: {

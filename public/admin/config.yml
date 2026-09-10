@@ -63,6 +63,19 @@ collections:
               - { label: "CTAボタン遷移先", name: "ctaHref", widget: string, required: false }
               - { label: "背景画像", name: "image", widget: image, required: false }
               - { label: "画像 代替テキスト", name: "imageAlt", widget: string, required: false }
+              - label: "背景画像の表示位置（枠に対して画像が大きい場合の切り抜き位置）"
+                name: "imagePosition"
+                widget: select
+                required: false
+                default: "center"
+                options:
+                  - { label: "中央（既定）", value: "center" }
+                  - { label: "上", value: "center top" }
+                  - { label: "やや上", value: "center 25%" }
+                  - { label: "やや下", value: "center 75%" }
+                  - { label: "下", value: "center bottom" }
+                  - { label: "左", value: "left center" }
+                  - { label: "右", value: "right center" }
               - label: "バッジ（3〜4個推奨）"
                 name: "badges"
                 widget: list
@@ -198,6 +211,19 @@ collections:
                   - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string, required: false }
                   - { label: "店舗外観画像", name: "image", widget: image, required: false }
                   - { label: "店舗外観 代替テキスト", name: "imageAlt", widget: string, required: false }
+                  - label: "店舗外観画像の表示位置（枠に対して画像が大きい場合の切り抜き位置）"
+                    name: "imagePosition"
+                    widget: select
+                    required: false
+                    default: "center"
+                    options:
+                      - { label: "中央（既定）", value: "center" }
+                      - { label: "上", value: "center top" }
+                      - { label: "やや上", value: "center 25%" }
+                      - { label: "やや下", value: "center 75%" }
+                      - { label: "下", value: "center bottom" }
+                      - { label: "左", value: "left center" }
+                      - { label: "右", value: "right center" }
               - label: "項目ラベル"
                 name: "labels"
                 widget: object
@@ -264,37 +290,39 @@ collections:
               - { label: "設立年", name: "establishedYear", widget: number, value_type: int, required: false }
               - { label: "OGP画像（SNSシェア時のサムネイル）", name: "ogImage", widget: image, required: false }
 
-          # --- 4. 連絡先・SNS -----------------------------------------------
-          - label: "連絡先・SNS"
+          # --- 4. 連絡先 ---------------------------------------------------
+          - label: "連絡先"
             name: "contact"
             widget: object
             fields:
               - { label: "電話番号（表示用）", name: "phone", widget: string, required: false }
               - { label: "電話番号（tel:リンク用）", name: "phoneHref", widget: string, required: false }
               - { label: "メールアドレス", name: "email", widget: string, required: false }
-              - { label: "LINE URL", name: "lineUrl", widget: string, required: false, hint: "未入力の場合、サイト上のLINEアイコン／ボタンは自動的に非表示になります。" }
-              - { label: "Instagram URL", name: "instagramUrl", widget: string, required: false, hint: "未入力の場合、サイト上のInstagramアイコンは自動的に非表示になります。" }
-              - { label: "X（旧Twitter）URL", name: "xUrl", widget: string, required: false, hint: "未入力の場合、サイト上のXアイコンは自動的に非表示になります。" }
-              - { label: "Facebook URL", name: "facebookUrl", widget: string, required: false, hint: "未入力の場合、サイト上のFacebookアイコンは自動的に非表示になります。" }
-              - label: "SNS表示順序"
-                name: "snsOrder"
-                widget: list
-                required: false
-                hint: "ドラッグ&ドロップで並び替えると、「店舗概要・アクセス」やフッターなど、SNSアイコンを掲載しているすべての箇所の表示順に反映されます。URLが未入力のSNSは、ここに残っていても表示されません。"
-                summary: "{{fields.id}}"
-                fields:
-                  - label: "SNS"
-                    name: "id"
-                    widget: select
-                    options:
-                      - { label: "LINE", value: "line" }
-                      - { label: "Instagram", value: "instagram" }
-                      - { label: "X（旧Twitter）", value: "x" }
-                      - { label: "Facebook", value: "facebook" }
               - { label: "「お電話」ボタン文言（スマホ下部固定バー）", name: "phoneLabel", widget: string, required: false }
               - { label: "「LINEで相談」ボタン文言（スマホ下部固定バー）", name: "lineLabel", widget: string, required: false }
-              - { label: "「お電話」ボタンを表示する（スマホ下部固定バー）", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
+              - { label: "「お電話」ボタンを表示する（スマホ下部固定バー）", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINEのURL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。LINEのURLは下の「SNS設定」で管理します。" }
               - { label: "「LINEで相談」ボタンを表示する（スマホ下部固定バー）", name: "showLineButton", widget: boolean, default: true }
+
+          # --- 4b. SNS設定（サイト全体で一括管理。連絡先から独立） -----------
+          - label: "SNS設定"
+            name: "sns"
+            widget: list
+            required: false
+            label_singular: "SNS"
+            summary: "{{fields.id}}（{{fields.url}}）"
+            hint: "各SNSの公式アカウントURLと表示ON/OFFをまとめて管理します。ドラッグ&ドロップの並び順が、トップページ「店舗概要・アクセス」・会社概要ページの「公式SNS」・フッターなど、SNSアイコンを掲載するすべての箇所の表示順になります。「表示する」をOFFにするか、URLが未入力のSNSはアイコンが表示されません。スマホ下部バーの「LINEで相談」ボタンも、この LINE のURL／表示ON/OFFを参照します。"
+            fields:
+              - label: "SNS"
+                name: "id"
+                widget: select
+                options:
+                  - { label: "LINE", value: "line" }
+                  - { label: "Instagram", value: "instagram" }
+                  - { label: "X（旧Twitter）", value: "x" }
+                  - { label: "Facebook", value: "facebook" }
+                  - { label: "YouTube", value: "youtube" }
+              - { label: "URL", name: "url", widget: string, required: false }
+              - { label: "このSNSを表示する", name: "enabled", widget: boolean, default: true }
 
           # --- 5. 共通UI文言 -------------------------------------------------
           - label: "共通UI文言"
@@ -443,6 +471,19 @@ collections:
       - { label: "タイトル", name: "title", widget: string, required: false }
       - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
       - { label: "メイン画像", name: "mainImage", widget: image, required: false }
+      - label: "メイン画像の表示位置（枠に対して画像が大きい場合の切り抜き位置）"
+        name: "mainImagePosition"
+        widget: select
+        required: false
+        default: "center"
+        options:
+          - { label: "中央（既定）", value: "center" }
+          - { label: "上", value: "center top" }
+          - { label: "やや上", value: "center 25%" }
+          - { label: "やや下", value: "center 75%" }
+          - { label: "下", value: "center bottom" }
+          - { label: "左", value: "left center" }
+          - { label: "右", value: "right center" }
       - { label: "概要（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
       - label: "仕様・含まれる内容"
         name: "specs"
@@ -515,6 +556,19 @@ collections:
               - { label: "本文（Enterキーで改行可）", name: "body", widget: text, required: false }
               - { label: "代表者名", name: "name", widget: string, required: false }
               - { label: "代表者写真", name: "image", widget: image, required: false }
+              - label: "代表者写真の表示位置（枠に対して画像が大きい場合の切り抜き位置）"
+                name: "imagePosition"
+                widget: select
+                required: false
+                default: "center"
+                options:
+                  - { label: "中央（既定）", value: "center" }
+                  - { label: "上", value: "center top" }
+                  - { label: "やや上", value: "center 25%" }
+                  - { label: "やや下", value: "center 75%" }
+                  - { label: "下", value: "center bottom" }
+                  - { label: "左", value: "left center" }
+                  - { label: "右", value: "right center" }
           - label: "会社概要（表形式）"
             name: "profile"
             widget: list
@@ -522,13 +576,22 @@ collections:
             fields:
               - { label: "項目名", name: "label", widget: string, required: false }
               - { label: "内容（Enterキーで改行可）", name: "value", widget: text, required: false }
+          - { label: "「公式SNS」行のラベル", name: "companySnsLabel", widget: string, required: false, hint: "会社概要（表形式）の末尾に、SNS設定で表示ONにしたSNSのアイコンを並べた行を追加します（表示するアイコン・並び順はサイト設定の「SNS設定」に連動）。この欄を空にすると既定の「公式SNS」を使用します。" }
           - label: "アクセス情報"
             name: "access"
             widget: object
+            hint: "表示順・ラベル・内容・表示可否を自由に編集できます。「+ アクセス項目」で行を追加、ゴミ箱アイコンで削除、ドラッグで並び替えできます。ラベルまたは内容が空欄の行、「この項目を表示する」がOFFの行はサイト上に表示されません。"
             fields:
-              - { label: "住所", name: "address", widget: string, required: false }
-              - { label: "最寄り駅・交通手段（Enterキーで改行可）", name: "directions", widget: text, required: false }
-              - { label: "駐車場", name: "parking", widget: string, required: false }
+              - label: "アクセス項目"
+                name: "items"
+                label_singular: "アクセス項目"
+                widget: list
+                required: false
+                summary: "{{fields.label}}：{{fields.value}}"
+                fields:
+                  - { label: "ラベル（例：郵便番号／住所／最寄り駅／駐車場）", name: "label", widget: string, required: false }
+                  - { label: "内容（Enterキーで改行可）", name: "value", widget: text, required: false }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
               - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string, required: false }
 
       # --- お問い合わせ・ご予約 ---------------------------------------------
@@ -652,6 +715,19 @@ collections:
       - { label: "記事タイトル", name: "title", widget: string, required: false }
       - { label: "アイキャッチ画像", name: "eyecatch", widget: image, required: false }
       - { label: "アイキャッチ 代替テキスト", name: "eyecatchAlt", widget: string, required: false }
+      - label: "アイキャッチの表示位置（一覧カードの切り抜き位置）"
+        name: "eyecatchPosition"
+        widget: select
+        required: false
+        default: "center"
+        options:
+          - { label: "中央（既定）", value: "center" }
+          - { label: "上", value: "center top" }
+          - { label: "やや上", value: "center 25%" }
+          - { label: "やや下", value: "center 75%" }
+          - { label: "下", value: "center bottom" }
+          - { label: "左", value: "left center" }
+          - { label: "右", value: "right center" }
       - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
       - label: "カテゴリ"
         name: "category"

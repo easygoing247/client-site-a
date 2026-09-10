@@ -1,0 +1,46 @@
+---
+// ============================================================================
+// SnsIcons.astro — 公式SNSアイコンの横並び（トップページ「店舗概要・アクセス」
+// セクションと /about ページの「公式SNS」行で共通利用）。
+// 表示順序・非表示条件は src/lib/sns.ts の orderedSnsLinks() に一元化。
+// アイコンの配色はこの見た目（実装詳細）としてここで持つ。
+// ============================================================================
+import { orderedSnsLinks, type SnsId } from '../lib/sns';
+
+const SNS_STYLE: Record<SnsId, { class: string; style?: string }> = {
+  line: { class: 'bg-accent' },
+  instagram: { class: '', style: 'background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);' },
+  x: { class: 'bg-secondary' },
+  facebook: { class: 'bg-[#1877f2]' },
+  youtube: { class: 'bg-[#ff0000]' },
+};
+
+const links = orderedSnsLinks().map((sns) => ({ ...sns, ...SNS_STYLE[sns.id] }));
+---
+
+{
+  links.length > 0 && (
+    <div class="flex items-center gap-2">
+      {links.map((sns) => (
+        <a
+          href={sns.href}
+          aria-label={sns.label}
+          class:list={['flex-none w-9 h-9 rounded-full flex items-center justify-center', sns.class]}
+          style={sns.style}
+        >
+          {sns.isFrame ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
+              <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
+              <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d={sns.icon} fill="#fff" />
+            </svg>
+          )}
+        </a>
+      ))}
+    </div>
+  )
+}

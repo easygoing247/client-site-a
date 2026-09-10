@@ -44,6 +44,13 @@ public/
   frontmatterに相対パスで記述する（`mainImage: "../../assets/xxx.jpg"`）。
 - ヒーロー画像など LCP に影響する画像には `fetchpriority="high"` と `loading="eager"` を、
   それ以外の画像には `loading="lazy"` を必ず指定する。
+- `object-fit: cover` で固定高さ／`aspect-ratio` 枠に切り抜き表示する画像は、
+  CMS の「画像の表示位置」設定を `src/lib/objectPosition.ts` の `objectPosition()`
+  （許可リスト方式）で解決し、`style={pos && \`object-position:${pos};\`}` として
+  `<Image />` に渡す。対応フィールド：ヒーロー背景（`hero.imagePosition`）／店舗外観
+  （`access.store.imagePosition`）／代表者写真（about `greeting.imagePosition`）／
+  お知らせアイキャッチ（news `eyecatchPosition`）／商品メイン画像
+  （products `mainImagePosition`）。`preview.js` 側も `objectPositionStyle()` で追従する。
 
 ## 2. 案件初期化用プロンプト例（新規案件へ着せ替える手順）
 
@@ -278,7 +285,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
 | 下層ページ ＞ サービス内容・料金（services） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
-| 下層ページ ＞ 店舗概要・アクセス（about） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報 |
+| 下層ページ ＞ 店舗概要・アクセス（about） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
 | 下層ページ ＞ お問い合わせ・ご予約（contact） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
 | お知らせ・ブログ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
 
@@ -290,6 +297,12 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で
   `../../assets/` からの相対パスで指定する（絶対ルール②）。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
+- **公式SNS**：siteInfo.yml トップレベルの `sns` リスト（CMS「SNS設定」、`{id, url, enabled}`、
+  id は `line`/`instagram`/`x`/`facebook`/`youtube`）に一元化。SNSアイコンを掲載する箇所
+  （`Access.astro` / `Footer.astro` / `about.astro` の「公式SNS」行 → 共有コンポーネント
+  `SnsIcons.astro`）は必ず `src/lib/sns.ts` の `orderedSnsLinks()` 経由でリンク一覧を取得する。
+  スマホ下部バーの LINE ボタンは `snsUrl('line')` を参照。`preview.js` は `orderedSnsForPreview()`
+  で `data.sns` を同じ判定で読む。
 - **画像パスの必須設定**：`products` / `news` の各 folder コレクションには
   `media_folder: "/src/assets"` ＋ `public_folder: "../../assets"` を個別指定している。
   グローバル設定（`public_folder: /src/assets`）のままだと、CMS が挿入する画像パスが
