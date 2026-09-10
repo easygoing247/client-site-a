@@ -38,6 +38,9 @@ export default {
           DEFAULT: '#ffffff',
           muted: '#f5f7fb',
           border: '#e7eaf2',
+          // 表組みの項目名（dt）帯など、白／muted 背景よりわずかに1トーンだけ
+          // 濃い落ち着いたニュートラルグレー。テーマカラー非連動。
+          band: '#e5e7eb',
         },
         ink: {
           DEFAULT: '#12203f',

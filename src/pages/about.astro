@@ -94,12 +94,12 @@ aboutSectionOrder
             {profile.map((row, i) => (
               <div class:list={['grid grid-cols-1 sm:grid-cols-[150px_1fr]', i > 0 && 'border-t border-surface-border']}>
                 {/*
-                  スマホ（sm未満）は dt が全幅の帯になる。セクション背景と
-                  同化しないよう、テーマカラーの薄い帯（bg-primary-light）＋
-                  左側のアクセントボーダーで区別する。sm以上は左カラムに戻し、
-                  白カード上に溶け込ませる（sm:bg-transparent / sm:border-0）。
+                  スマホ（sm未満）は dt が全幅の帯になる。セクション背景（白 /
+                  bg-surface-muted）と同化せず、かつテーマカラーを主張しない
+                  落ち着いたニュートラルグレーの帯（bg-surface-band = #e5e7eb）に
+                  する。sm以上は左カラムに戻し、白カード上に溶け込ませる。
                 */}
-                <dt class="px-5 py-3 text-[13px] font-bold text-secondary bg-primary-light border-l-4 border-primary sm:bg-transparent sm:border-l-0 sm:py-4">
+                <dt class="px-5 py-3 text-[13px] font-bold text-secondary bg-surface-band sm:bg-transparent sm:py-4">
                   {row.label}
                 </dt>
                 <dd class="px-5 pb-4 pt-3 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0">

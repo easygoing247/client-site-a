@@ -36,14 +36,24 @@ const showLine = site.contact.showLineButton && !!site.contact.lineUrl;
         </a>
       )}
       {showLine && (
-        <a href={site.contact.lineUrl} class="flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] py-4">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <a
+          href={site.contact.lineUrl}
+          class="flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] tracking-wide py-4 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            class="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
+          >
             <path
               d="M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z"
-              fill="#fff"
+              fill="#ffffff"
             />
           </svg>
-          <span>{site.contact.lineLabel}</span>
+          <span class="text-white">{site.contact.lineLabel}</span>
         </a>
       )}
     </div>

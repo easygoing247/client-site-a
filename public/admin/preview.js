@@ -1531,21 +1531,131 @@
     var access = data.access || {};
     var showGreeting = sections.greeting !== false && (greeting.heading || greeting.body || greeting.name);
     var showCompanyOverview = sections.companyOverview !== false && profile.length > 0;
-    var hasAccess =
+    var showAccess =
       sections.access !== false && (access.address || access.directions || access.parking || access.mapEmbedUrl);
-    // 表示中セクションだけを数えて白／グレーを交互に割り当てる（about.astro と同じ）
-    var mutedAbout = {};
-    [
-      { key: 'greeting', show: showGreeting },
-      { key: 'companyOverview', show: showCompanyOverview },
-      { key: 'access', show: hasAccess },
+
+    // --- セクション動的背景色（ゼブラ） ---------------------------------------
+    // 「セクション表示・非表示」トグルを切り替えると、data（フォームの入力値）が
+    // 変わるたびにこの関数全体が React により再実行される。そのたびに
+    //   1. show が true のセクションだけを配列に残し（filter）
+    //   2. 先頭から 0,1,2… と付け直したインデックスで白 / bg-surface-muted を
+    //      交互（index % 2）に割り当て直す（map）
+    // ことで、一部を非表示にしても常に「白→グレー→白…」の互い違いになり、
+    // 右側プレビューに即座に反映される。
+    var greetingSection = function (muted) {
+      return h(
+        'section',
+        { key: 'greeting', className: cx('py-14 px-5', muted && 'bg-surface-muted') },
+        h(
+          'div',
+          { className: 'max-w-[900px] mx-auto grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8 items-start' },
+          greetingImg &&
+            h(
+              'div',
+              { className: 'rounded-2xl overflow-hidden border border-surface-border' },
+              h('img', {
+                src: greetingImg,
+                alt: greeting.name ? greeting.name + 'の写真' : '',
+                className: 'w-full h-[240px] md:h-[260px] object-cover block',
+              })
+            ),
+          h(
+            'div',
+            {},
+            greeting.heading && h('h2', { className: 'text-[19px] font-bold mb-4' }, greeting.heading),
+            greeting.body &&
+              h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4' }, greeting.body),
+            // 実サイトでは「{会社名}　代表　{氏名}」だが、会社名は siteInfo.yml
+            // 側の別エントリのためプレビューでは氏名のみ表示する。
+            greeting.name && h('p', { className: 'text-[13px] text-secondary font-bold m-0' }, '代表　' + greeting.name)
+          )
+        )
+      );
+    };
+    var companyOverviewSection = function (muted) {
+      return h(
+        'section',
+        { key: 'profile', className: cx('py-14 px-5', muted && 'bg-surface-muted') },
+        h(
+          'div',
+          { className: 'max-w-[760px] mx-auto' },
+          h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, '会社概要'),
+          h(
+            'dl',
+            { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white m-0' },
+            profile.map(function (row, i) {
+              return h(
+                'div',
+                { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[150px_1fr]', i > 0 && 'border-t border-surface-border') },
+                h(
+                  'dt',
+                  { className: 'px-5 py-3 text-[13px] font-bold text-secondary bg-surface-band sm:bg-transparent sm:py-4' },
+                  row.label
+                ),
+                h(
+                  'dd',
+                  { className: 'px-5 pb-4 pt-3 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
+                  row.value
+                )
+              );
+            })
+          )
+        )
+      );
+    };
+    var accessSection = function (muted) {
+      return h(
+        'section',
+        { key: 'access', className: cx('py-14 px-5', muted && 'bg-surface-muted') },
+        h(
+          'div',
+          { className: 'max-w-[900px] mx-auto' },
+          h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, 'アクセス'),
+          h(
+            'dl',
+            { className: 'grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light max-w-[600px] mx-auto m-0' },
+            [
+              access.address && [
+                h('dt', { key: 'dt1', className: 'font-bold text-secondary' }, '住所'),
+                h('dd', { key: 'dd1', className: 'm-0' }, access.address),
+              ],
+              access.directions && [
+                h('dt', { key: 'dt2', className: 'font-bold text-secondary' }, '交通'),
+                h('dd', { key: 'dd2', className: 'm-0 whitespace-pre-line' }, access.directions),
+              ],
+              access.parking && [
+                h('dt', { key: 'dt3', className: 'font-bold text-secondary' }, '駐車場'),
+                h('dd', { key: 'dd3', className: 'm-0' }, access.parking),
+              ],
+            ].filter(Boolean)
+          ),
+          access.mapEmbedUrl &&
+            h(
+              'div',
+              { className: 'mt-8 rounded-2xl overflow-hidden border border-surface-border' },
+              h('iframe', {
+                title: 'Googleマップ',
+                src: access.mapEmbedUrl,
+                className: 'w-full h-[300px] sm:h-[360px] border-0 block',
+                loading: 'lazy',
+              })
+            )
+        )
+      );
+    };
+
+    var visibleAboutSections = [
+      { show: showGreeting, render: greetingSection },
+      { show: showCompanyOverview, render: companyOverviewSection },
+      { show: showAccess, render: accessSection },
     ]
       .filter(function (s) {
         return s.show;
       })
-      .forEach(function (s, i) {
-        mutedAbout[s.key] = i % 2 === 1;
+      .map(function (s, i) {
+        return s.render(i % 2 === 1);
       });
+
     return [
       renderPagePreviewHeading(h, {
         key: 'head',
@@ -1554,105 +1664,7 @@
         lead: data.lead,
         crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
       }),
-      showGreeting &&
-        h(
-          'section',
-          { key: 'greeting', className: cx('py-14 px-5', mutedAbout.greeting && 'bg-surface-muted') },
-          h(
-            'div',
-            { className: 'max-w-[900px] mx-auto grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8 items-start' },
-            greetingImg &&
-              h(
-                'div',
-                { className: 'rounded-2xl overflow-hidden border border-surface-border' },
-                h('img', {
-                  src: greetingImg,
-                  alt: greeting.name ? greeting.name + 'の写真' : '',
-                  className: 'w-full h-[240px] md:h-[260px] object-cover block',
-                })
-              ),
-            h(
-              'div',
-              {},
-              greeting.heading && h('h2', { className: 'text-[19px] font-bold mb-4' }, greeting.heading),
-              greeting.body &&
-                h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4' }, greeting.body),
-              // 実サイトでは「{会社名}　代表　{氏名}」だが、会社名は siteInfo.yml
-              // 側の別エントリのためプレビューでは氏名のみ表示する。
-              greeting.name && h('p', { className: 'text-[13px] text-secondary font-bold m-0' }, '代表　' + greeting.name)
-            )
-          )
-        ),
-      showCompanyOverview &&
-        h(
-          'section',
-          { key: 'profile', className: cx('py-14 px-5', mutedAbout.companyOverview && 'bg-surface-muted') },
-          h(
-            'div',
-            { className: 'max-w-[760px] mx-auto' },
-            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, '会社概要'),
-            h(
-              'dl',
-              { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white m-0' },
-              profile.map(function (row, i) {
-                return h(
-                  'div',
-                  { key: i, className: cx('grid grid-cols-1 sm:grid-cols-[150px_1fr]', i > 0 && 'border-t border-surface-border') },
-                  h(
-                    'dt',
-                    { className: 'px-5 py-3 text-[13px] font-bold text-secondary bg-primary-light border-l-4 border-primary sm:bg-transparent sm:border-l-0 sm:py-4' },
-                    row.label
-                  ),
-                  h(
-                    'dd',
-                    { className: 'px-5 pb-4 pt-3 sm:pt-4 text-[13px] leading-[1.9] text-secondary-light whitespace-pre-line m-0' },
-                    row.value
-                  )
-                );
-              })
-            )
-          )
-        ),
-      hasAccess &&
-        h(
-          'section',
-          { key: 'access', className: cx('py-14 px-5', mutedAbout.access && 'bg-surface-muted') },
-          h(
-            'div',
-            { className: 'max-w-[900px] mx-auto' },
-            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, 'アクセス'),
-            h(
-              'dl',
-              { className: 'grid grid-cols-[100px_1fr] gap-x-4 gap-y-[14px] text-[13px] text-secondary-light max-w-[600px] mx-auto m-0' },
-              [
-                access.address && [
-                  h('dt', { key: 'dt1', className: 'font-bold text-secondary' }, '住所'),
-                  h('dd', { key: 'dd1', className: 'm-0' }, access.address),
-                ],
-                access.directions && [
-                  h('dt', { key: 'dt2', className: 'font-bold text-secondary' }, '交通'),
-                  h('dd', { key: 'dd2', className: 'm-0 whitespace-pre-line' }, access.directions),
-                ],
-                access.parking && [
-                  h('dt', { key: 'dt3', className: 'font-bold text-secondary' }, '駐車場'),
-                  h('dd', { key: 'dd3', className: 'm-0' }, access.parking),
-                ],
-              ].filter(Boolean)
-            ),
-            access.mapEmbedUrl &&
-              h(
-                'div',
-                { className: 'mt-8 rounded-2xl overflow-hidden border border-surface-border' },
-                h('iframe', {
-                  title: 'Googleマップ',
-                  src: access.mapEmbedUrl,
-                  className: 'w-full h-[300px] sm:h-[360px] border-0 block',
-                  loading: 'lazy',
-                })
-              )
-          )
-        ),
-    ];
+    ].concat(visibleAboutSections);
   });
 
   window.CMS.registerPreviewTemplate('about', AboutPagePreview);
