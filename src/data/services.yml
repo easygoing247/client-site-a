@@ -56,6 +56,7 @@ priceTable:
       - 訴求設計・ワイヤーフレーム
       - デザイン・コーディング
       - フォーム設置・表示速度最適化
+    highlight: false
   - name: 月額運用サポート
     price: 20000
     note: 更新代行・保守・改善提案を含む
@@ -65,6 +66,7 @@ priceTable:
       - コンテンツ更新代行（月2回まで）
       - サーバー・ドメイン保守
       - アクセス解析レポート
+    highlight: false
   - name: スタンダードプラン
     price: 300000
     note: 一般的なコーポレートサイトに最適です。
@@ -75,6 +77,7 @@ priceTable:
       - スマホ対応
       - CMS導入
       - 基本SEO対策
+    highlight: true
 priceNote: |-
   記載の金額は税抜きの目安です。
   ご要望の内容に応じて個別にお見積りいたします。
