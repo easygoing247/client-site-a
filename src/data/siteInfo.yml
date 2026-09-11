@@ -192,6 +192,9 @@ sns:
   - id: instagram
     url: "#"
     enabled: true
+  - id: tiktok
+    url: "#"
+    enabled: true
   - id: x
     url: "#"
     enabled: true
@@ -201,9 +204,6 @@ sns:
   - id: youtube
     url: "#"
     enabled: true
-  - id: tiktok
-    url: ""
-    enabled: false
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。
