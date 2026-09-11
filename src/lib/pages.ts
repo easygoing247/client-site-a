@@ -15,6 +15,10 @@ import contactPageRaw from '../data/contactPage.yml?raw';
 export interface ServicesPage {
   heading?: string;
   lead?: string;
+  /** サービス詳細セクションの見出し（既定：「サービス内容」） */
+  itemsHeading?: string;
+  /** 料金表セクションの見出し（既定：「料金表」） */
+  priceHeading?: string;
   items?: {
     title?: string;
     description?: string;

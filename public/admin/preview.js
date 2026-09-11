@@ -638,13 +638,14 @@
   // 店舗概要・アクセス
   // ==========================================================================
   // SNS のアイコン配色。src/components/SnsIcons.astro の SNS_STYLE と一致させること。
-  var SNS_KNOWN_IDS = ['line', 'instagram', 'x', 'facebook', 'youtube'];
+  var SNS_KNOWN_IDS = ['line', 'instagram', 'x', 'facebook', 'youtube', 'tiktok'];
   var SNS_STYLE = {
     line: { className: 'bg-accent' },
     instagram: { style: styleObj('background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);') },
     x: { className: 'bg-secondary' },
     facebook: { className: 'bg-[#1877f2]' },
     youtube: { className: 'bg-[#ff0000]' },
+    tiktok: { className: 'bg-[#010101]' },
   };
 
   // siteInfo.yml トップレベルの `sns` リスト（{id,url,enabled}）を、
@@ -1412,6 +1413,8 @@
   // ==========================================================================
   var ServicesPagePreview = makePagePreview(function (h, data, getAsset) {
     var heading = data.heading || 'サービス内容・料金';
+    var itemsHeading = data.itemsHeading || 'サービス内容';
+    var priceHeading = data.priceHeading || '料金表';
     var items = data.items || [];
     var priceTable = data.priceTable || [];
     return [
@@ -1428,7 +1431,16 @@
           { key: 'items', className: 'py-14 px-5' },
           h(
             'div',
-            { className: 'max-w-[900px] mx-auto flex flex-col gap-12' },
+            { className: 'max-w-[900px] mx-auto' },
+            itemsHeading &&
+              h(
+                'h2',
+                { className: 'text-center font-bold mb-10', style: styleObj('font-size:clamp(20px,3vw,26px);') },
+                itemsHeading
+              ),
+            h(
+            'div',
+            { className: 'flex flex-col gap-12' },
             items.map(function (item, i) {
               var imageUrl = assetUrl(getAsset, item.image);
               var features = (item.features || []).filter(Boolean);
@@ -1448,7 +1460,7 @@
                 h(
                   'div',
                   {},
-                  item.title && h('h2', { className: 'text-[19px] font-bold mb-3' }, item.title),
+                  item.title && h('h3', { className: 'text-[19px] font-bold mb-3' }, item.title),
                   item.description &&
                     h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4' }, item.description),
                   features.length > 0 &&
@@ -1467,6 +1479,7 @@
                 )
               );
             })
+            )
           )
         ),
       priceTable.length > 0 &&
@@ -1476,7 +1489,7 @@
           h(
             'div',
             { className: 'max-w-[760px] mx-auto' },
-            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, '料金表'),
+            h('h2', { className: 'text-center font-bold mb-8', style: styleObj('font-size:clamp(20px,3vw,26px);') }, priceHeading),
             h(
               'div',
               { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white' },

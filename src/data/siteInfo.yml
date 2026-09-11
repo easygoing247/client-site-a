@@ -201,6 +201,9 @@ sns:
   - id: youtube
     url: "#"
     enabled: true
+  - id: tiktok
+    url: ""
+    enabled: false
 ui:
   privacyPolicyLabel: プライバシーポリシー
   privacyConsentSuffix: に同意の上、送信してください。

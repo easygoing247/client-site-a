@@ -13,6 +13,7 @@ const SNS_STYLE: Record<SnsId, { class: string; style?: string }> = {
   x: { class: 'bg-secondary' },
   facebook: { class: 'bg-[#1877f2]' },
   youtube: { class: 'bg-[#ff0000]' },
+  tiktok: { class: 'bg-[#010101]' },
 };
 
 const links = orderedSnsLinks().map((sns) => ({ ...sns, ...SNS_STYLE[sns.id] }));

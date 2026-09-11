@@ -306,7 +306,10 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   `../../assets/` からの相対パスで指定する（絶対ルール②）。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
 - **公式SNS**：siteInfo.yml トップレベルの `sns` リスト（CMS「SNS設定」、`{id, url, enabled}`、
-  id は `line`/`instagram`/`x`/`facebook`/`youtube`）に一元化。SNSアイコンを掲載する箇所
+  id は `line`/`instagram`/`x`/`facebook`/`youtube`/`tiktok`）に一元化。アイコン定義（SVG パス・
+  aria-label）は `src/lib/sns.ts` の `SNS_DEFS`、配色は `SnsIcons.astro` の `SNS_STYLE`
+  ＋ `preview.js` の `SNS_STYLE`／`SNS_KNOWN_IDS`。新しい SNS を足すときはこの4箇所と
+  `config.yml` の select options に同じ id を追加する。SNSアイコンを掲載する箇所
   （`Access.astro` / `Footer.astro` / `about.astro` の「公式SNS」行 → 共有コンポーネント
   `SnsIcons.astro`）は必ず `src/lib/sns.ts` の `orderedSnsLinks()` 経由でリンク一覧を取得する。
   スマホ下部バーの LINE ボタンは `snsUrl('line')` を参照。`preview.js` は `orderedSnsForPreview()`
@@ -343,6 +346,9 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   （`<main>` を別 div で包まない）。`position:fixed` の `StickyContactBar` /
   `BackToTop` はフロー外なので影響しない。
 - **`/services`（サービス内容・料金）**：
+  - セクション見出しは CMS 編集可：`servicesPage.itemsHeading`（サービス詳細一覧の上。
+    既定「サービス内容」）／`servicesPage.priceHeading`（料金表の上。既定「料金表」）。
+    サービス詳細の各項目タイトルは `<h3>`（セクション `<h2>` の下位）。
   - 「サービス詳細」各項目の `reverseLayout`（boolean）が true のとき、`md:` 以上で
     画像カードに `md:order-2` を付与し「画像：右／テキスト：左」に反転（既定は画像：左。
     スマホ1カラムでは常に画像→テキスト順）。自動交互配置はしない。
