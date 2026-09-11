@@ -98,8 +98,8 @@ public/
 
 - 1実績 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
   URLスラッグになる（例: `sample.md` → `/works/sample/`）。CMS 上のコレクション名は
-  「実績・活用事例一覧（型化ページ）」（旧「商品一覧（型化ページ）」／さらに旧
-  「商品・施工事例」）。旧 `src/content/products/` → `src/content/works/`、
+  「実績作成（型化ページ）」（旧「実績・活用事例一覧（型化ページ）」／さらに旧
+  「商品一覧（型化ページ）」／さらに旧「商品・施工事例」）。旧 `src/content/products/` → `src/content/works/`、
   旧 `src/pages/products/[slug].astro` → `src/pages/works/[slug].astro` に
   改名済み（trailing slug のみ変更、frontmatterスキーマ自体は不変）。
 - frontmatterのスキーマは `src/content/config.ts` の `works` で定義されている。
@@ -121,7 +121,7 @@ public/
 
 ### 商品カタログ（`src/data/products.yml`）＝「商品一覧」
 
-- CMS 上のコレクション名は「商品作成（型化ページ）」（`files` コレクション、
+- CMS 上のコレクション名は「商品作成」（`files` コレクション、
   ファイル1件のみ）。実体は型化ページではなく `src/data/products.yml` 内の
   可変リスト `items[]`。パーサ・型は `src/lib/pages.ts` の `productsPage` /
   `ProductItemConfig`。js-yaml でパースするのみで Zod 検証は行わないため、
@@ -337,12 +337,12 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 
 `public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」を
 保持したまま、以下を追加している。コレクションの並び順（＝CMSサイドバーの表示順）は
-サイト設定 → **商品作成** → **実績・活用事例一覧（型化ページ）** → 下層ページ → お知らせ。
+サイト設定 → **商品作成** → **実績作成（型化ページ）** → 下層ページ → お知らせ。
 
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
-| 商品作成（型化ページ）（`name: productsCatalog`、file名 `products`） | files（単一ファイル） | `src/data/products.yml` | 商品カタログの可変リスト（§4参照） |
-| 実績・活用事例一覧（型化ページ）（`name: works`） | folder（型化ページ） | `src/content/works/*.md` | タイトル・価格・メイン画像・概要・仕様・本文（§4参照） |
+| 商品作成（`name: productsCatalog`、file名 `products`） | files（単一ファイル） | `src/data/products.yml` | 商品カタログの可変リスト（§4参照） |
+| 実績作成（型化ページ）（`name: works`） | folder（型化ページ） | `src/content/works/*.md` | タイトル・価格・メイン画像・概要・仕様・本文（§4参照） |
 | 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
 | 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
 | 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |

@@ -138,7 +138,7 @@ collections:
           - label: "実績"
             name: "works"
             widget: object
-            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績・活用事例一覧（型化ページ）」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数・並び順・列数のみを設定します。"
+            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績作成（型化ページ）」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数・並び順・列数のみを設定します。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
@@ -441,7 +441,7 @@ collections:
   #    このデータを参照する（src/lib/pages.ts の productsPage / resolveProductItems）。
   # ==========================================================================
   - name: "productsCatalog"
-    label: "商品作成（型化ページ）"
+    label: "商品作成"
     files:
       - name: "products"
         label: "商品一覧設定"
@@ -481,7 +481,7 @@ collections:
   # ②b フォルダコレクション：型化ページ（works）＝実績・活用事例を追加・編集・削除
   # ==========================================================================
   - name: "works"
-    label: "実績・活用事例一覧（型化ページ）"
+    label: "実績作成（型化ページ）"
     folder: "src/content/works"
     create: true
     delete: true
