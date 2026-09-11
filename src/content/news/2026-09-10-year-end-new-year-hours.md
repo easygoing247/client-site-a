@@ -1,6 +1,7 @@
 ---
 title: 年末年始の営業について
 urlSlug: year-end-new-year-hours
+eyecatch: ../../assets/newyear-japan.png
 eyecatchAlt: お休み
 publishedAt: 2026-09-10T20:59:00.000+09:00
 category: event
