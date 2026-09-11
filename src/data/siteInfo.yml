@@ -66,9 +66,13 @@ productsSection:
 works:
   eyebrow: WORKS
   heading: 実績・活用事例
-  count: 3
+  count: 5
   columns: 3
-  order: []
+  order:
+    - sample
+    - "-2"
+    - lp-package
+    - テスト２テスト２テスト２テスト２
 plans:
   eyebrow: PLAN
   heading: 料金プラン
@@ -150,16 +154,16 @@ contactSection:
     successMessage: お問い合わせを受け付けました。担当者よりご連絡いたします。
     errorMessage: 送信に失敗しました。時間をおいて再度お試しください。
 company:
-  name: LOGO
+  ogImage: ../assets/hero.jpg
   logo: ../assets/logo.svg
-  textLogo: LOGO
-  useTextLogo: false
-  siteName: LOGO | Web制作・LP制作
+  name: LOGO
   tagline: 想いをカタチに、成果につながるWebを。
+  siteName: LOGO | Web制作・LP制作
+  establishedYear: 2018
+  textLogo: LOGO
   description: シンプルで伝わるデザインと、使いやすいWebサイトでビジネスの成長をサポートします。相談無料・最短1週間対応。
   representative: 山田 太郎
-  establishedYear: 2018
-  ogImage: ../assets/hero.jpg
+  useTextLogo: false
 contact:
   lineLabel: LINEで相談
   showPhoneButton: true
