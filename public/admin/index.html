@@ -466,15 +466,31 @@
           return document.querySelector('[class*="ControlPaneContainer"]');
         }
 
-        // Decapのエディター画面は独自のスクロール実装（[class*="EditorContainer"]を
-        // overflow:hiddenにし、scrollTopをJSから直接操作する方式）になっており、
-        // ネイティブの scrollIntoView() ではスクロールしない。実際にスクロールする
-        // コンテナを探して、その scrollTop を書き換える。
-        // クラス名の一致だけでなく「実際にスクロール可能（scrollHeightが
-        // clientHeightより大きい）」ことも確認し、Decap本体側の細かなバージョン
-        // 差異があっても正しいコンテナを取り違えないようにする。
+        // Decapのエディター画面は、画面幅によって実際にスクロールしている
+        // コンテナが異なる。
+        // ・PC幅（800px以上）：[class*="ControlPaneContainer"]（フォーム側の
+        //   ペイン自体）が overflow-y:auto でネイティブにスクロールする
+        //   （プレビュー追従スクロール（syncPreviewScroll）が同要素の
+        //   scrollイベントを見ているのと同じコンテナ）。
+        // ・スマホ幅（799px以下）：ドロップダウンの選択肢がクリップされない
+        //   よう [class*="ControlPaneContainer"] 自体は overflow:visible!important
+        //   に上書きしているため、代わりに [class*="EditorContainer"] を
+        //   overflow:hiddenのまま自前でscrollTop操作する独自スクロール実装
+        //   になっている。
+        // ネイティブの scrollIntoView() ではどちらの実装でもスクロールしない
+        // ため、実際にスクロールするコンテナを探して scrollTop を書き換える。
+        // 単に「scrollHeightがclientHeightより大きい」だけで判定すると、
+        // PC幅でも [class*="EditorContainer"] 側にわずかな内部差分（数十px、
+        // ツールバー領域の丸め誤差等）があり誤検出してしまう
+        // （overflow-y:hiddenのまま実際には自前スクロールに使われていない
+        // ダミーの余白のため、scrollTopを書き換えても画面上は一切動かない）。
+        // overflow-y が visible な要素は scrollTop を書き換えても効果が無い
+        // （スクロール可能領域を持たない）ため候補から除外し、それ以外で
+        // 実際にオーバーフローしている最初の候補を採用することで、PC幅・
+        // スマホ幅のどちらでも正しいコンテナを取り違えないようにする。
         function findScrollContainer() {
           var candidates = [
+            document.querySelector('[class*="ControlPaneContainer"]'),
             document.querySelector('[class*="EditorContainer"]'),
             document.querySelector('.Pane1'),
             document.scrollingElement,
@@ -482,7 +498,9 @@
           ];
           for (var i = 0; i < candidates.length; i++) {
             var el = candidates[i];
-            if (el && el.scrollHeight - el.clientHeight > 4) return el;
+            if (!el) continue;
+            if (getComputedStyle(el).overflowY === 'visible') continue;
+            if (el.scrollHeight - el.clientHeight > 4) return el;
           }
           return null;
         }

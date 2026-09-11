@@ -727,3 +727,35 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   `showBadge`＋`badgeText`（2フィールド）とは異なる、より単純な1フィールド
   方式であることに注意（用途に応じてどちらのパターンでも良いが、混在させる
   場合はこの差異を意識すること）。
+
+### 9.10 管理画面クイックナビ（左下メニューアイコン）のスクロール修正（2026-09）
+
+- **不具合**：「サイト全体設定」等で左下のクイックナビ（`#cms-quick-nav-btn` /
+  `#cms-quick-nav-menu`）から項目をクリックしても、PC幅（800px以上）では
+  該当セクションへスクロールしなかった。
+- **原因**：クリック時の実スクロール処理 `scrollToElement()` が呼ぶ
+  `findScrollContainer()` の候補判定が「`scrollHeight - clientHeight > 4`
+  （＝多少でもオーバーフローしていればスクロール可能とみなす）」だけだった
+  ため、PC幅で実際にスクロールしているのは `[class*="ControlPaneContainer"]`
+  （`overflow-y: auto`）なのに、候補の先頭にあった
+  `[class*="EditorContainer"]`（PC幅では常に `overflow-y: hidden` かつ
+  ツールバー領域の丸め誤差等で数十px程度の見せかけのオーバーフローを持つ）
+  が先にマッチしてしまい、そちらの `scrollTop` を書き換えていた
+  （`overflow-y: hidden` 自体はスマホ幅の自前スクロール実装
+  （9.7 参照）の要となる正しい仕様のため、要素自体は変更していない）。
+  スマホ幅（799px以下）では逆に `[class*="ControlPaneContainer"]` 側が
+  ドロップダウン用に `overflow: visible !important`（7章・9.4 参照）で
+  上書きされているため、`EditorContainer` を対象にするのが正しい。
+- **修正**：`findScrollContainer()`（`public/admin/index.html`）の候補に
+  `[class*="ControlPaneContainer"]` を `EditorContainer` より先に追加し、
+  各候補について `getComputedStyle(el).overflowY === 'visible'` の場合は
+  スキップするチェックを追加した（`overflow-y: visible` の要素は
+  `scrollTop` を書き換えても視覚的に一切動かないため）。これにより
+  PC幅では `ControlPaneContainer`（唯一 `overflow-y: auto` で条件を満たす）、
+  スマホ幅では `EditorContainer`（`ControlPaneContainer` は
+  `overflow-y: visible` でスキップされる）が、それぞれ正しく選ばれる。
+  スクロール自体のアニメーション（`animateScrollTop()`、`setInterval` による
+  自前イージング）や `scrollToElement()` の呼び出し側は変更していない。
+  ローカル環境（`npm run dev` + `npm run cms:proxy`）でPC幅・スマホ幅の
+  両方について、クリック後に対象コンテナの `scrollTop` が実際に変化し、
+  該当セクションが画面上部に表示されることを確認済み。
