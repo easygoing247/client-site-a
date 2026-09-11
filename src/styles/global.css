@@ -181,6 +181,55 @@
   }
 
   /*
+    トップページ「サービス内容」「商品一覧」のスマホ用スライダー
+    （Service.astro / Products.astro、実装ロジックは共通の
+    src/scripts/cardSlider.ts）。
+    「実績・活用事例」の .works-track と異なり、こちらはPC・タブレット幅
+    （sm以上＝640px〜）では従来のCSS Grid（Tailwindの
+    `sm:grid-cols-2 lg:grid-cols-4`）による通常のグリッド並びをそのまま
+    維持し、スマホ幅（640px未満）のときだけ横スクロール＋スナップの
+    1枚送りスライダーに切り替える。
+    グリッドの `grid-auto-flow` を `column` にして `grid-auto-columns: 100%`
+    を指定することで、暗黙トラックとして全カードが同じ100%幅で横に並ぶ
+    （＝スマホでは実質1枚ずつの横スクロール）。sm以上では
+    `grid-auto-flow: row` に戻すことで、Tailwindの `sm:grid-cols-2
+    lg:grid-cols-4` がそのまま効く通常のグリッドに戻る。
+    ⚠️ マークアップ側に `grid-cols-1` を付けてはいけない：明示的な
+    `1fr` トラック（Tailwindの `grid-cols-1`）と暗黙トラックの
+    `grid-auto-columns: 100%` が同じ行に混在すると、Grid のトラック
+    サイジング計算上、暗黙トラック側が先に「コンテナ幅の100%」を
+    要求してしまい、`1fr` の明示トラック（＝先頭カード）が残り0に
+    近い幅まで潰れてしまう不具合を実機検証で確認した（2枚目以降は
+    正常表示、1枚目だけ極端に細くなる）。スマホ幅では
+    `grid-template-columns` を指定せず（＝初期値 `none`）、
+    `grid-auto-columns: 100%` だけで全カードのサイズを揃えること。
+  */
+  .card-slider-mobile {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+  }
+  .card-slider-mobile::-webkit-scrollbar {
+    display: none;
+  }
+  .card-slider-mobile > * {
+    scroll-snap-align: start;
+    min-width: 0;
+  }
+  @media (min-width: 640px) {
+    .card-slider-mobile {
+      overflow: visible;
+      scroll-snap-type: none;
+      grid-auto-flow: row;
+      grid-auto-columns: auto;
+    }
+  }
+
+  /*
     /products ページのカード画像クリックで開く拡大表示（ライトボックス）。
     個別詳細ページへは遷移させず、画像だけを拡大表示する用途のため、
     ネイティブ <dialog> ＋ showModal() を使う（外部ライブラリ不使用）。

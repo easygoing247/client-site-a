@@ -759,3 +759,77 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   ローカル環境（`npm run dev` + `npm run cms:proxy`）でPC幅・スマホ幅の
   両方について、クリック後に対象コンテナの `scrollTop` が実際に変化し、
   該当セクションが画面上部に表示されることを確認済み。
+
+### 9.11 トップページ「サービス内容」「商品一覧」のスマホ用スライダー化（2026-09）
+
+- **要件**：スマホ幅（640px未満）に限り、「実績・活用事例」（Works.astro）と
+  同様に1枚ずつのカード表示＋矢印クリック／スワイプで切り替えるスライダーに
+  する。sm以上（PC・タブレット）では従来の `sm:grid-cols-2 lg:grid-cols-4`
+  グリッドをそのまま維持する（Worksと異なり、PC側はスライダー化しない）。
+- **実装**：`Service.astro` / `Products.astro` 共通で、カードのラッパーに
+  `global.css` の component クラス `.card-slider-mobile` を付与し、
+  矢印クリック・スクロール位置に応じた有効/無効切り替えは共通スクリプト
+  `src/scripts/cardSlider.ts`（`data-slider-track` を持つ要素を
+  `document.querySelectorAll` で一括初期化）に集約した。マークアップは
+  `<div data-slider-root>` の中に `<div data-slider-track class="card-slider-mobile grid sm:grid-cols-2 lg:grid-cols-4 gap-5">…カード…</div>`
+  ＋矢印ボタン（`data-slider-prev` / `data-slider-next`、`sm:hidden` で
+  PC・タブレットでは非表示）を並べる構成。
+  - `.card-slider-mobile` は `grid-auto-flow: column` ＋
+    `grid-auto-columns: 100%` でスマホ幅を横スクロール＋スナップの
+    1枚送りにし、sm以上では `grid-auto-flow: row` に戻すことで
+    Tailwindの `sm:grid-cols-2 lg:grid-cols-4` がそのまま効く通常の
+    グリッドに戻す（詳細・落とし穴は `global.css` の該当コメント参照）。
+  - ⚠️ **マークアップに `grid-cols-1` を付けてはいけない**：明示的な
+    `1fr` トラック（Tailwindの `grid-cols-1`）と暗黙トラックの
+    `grid-auto-columns: 100%` が同じ行に混在すると、Grid のトラック
+    サイジング計算上、暗黙トラック側が先にコンテナ幅の100%を要求して
+    しまい、`1fr` の明示トラック（＝先頭カード）だけが幅ほぼ0まで
+    潰れる不具合を実機検証で確認した（2枚目以降は正常、1枚目だけ
+    極端に細くなる）。スマホ幅では `grid-template-columns` を
+    指定せず、`grid-auto-columns: 100%` だけでサイズを揃えること。
+  - `cardSlider.ts` は「実績・活用事例」（Works.astro）のスライダー
+    ロジックと同じ考え方（矢印クリックで `scrollBy({behavior:'smooth'})`、
+    `scroll` イベントで `scrollWidth > clientWidth` を実測して矢印の
+    表示/無効を切り替え）だが、複数セクションで共有するため
+    `[data-slider-track]` を持つ要素を汎用的に初期化する実装にしている。
+    新しいセクションでも同じスライダーにしたい場合は、同じ
+    `data-slider-root` / `data-slider-track` / `data-slider-prev` /
+    `data-slider-next` の構成にすれば `cardSlider.ts` の読み込み
+    （`<script>import '../scripts/cardSlider.ts'</script>`）だけで動く。
+  - `preview.js` 側（`renderServices` / `renderProductsPlaceholder`）は
+    どちらも「別CMSエントリのデータのため実データを描画できない」
+    プレースホルダー表示に留まっており、実際のカードグリッドを
+    再現していないため、この変更に伴う追従修正は不要（9.4参照）。
+
+### 9.12 「サイト全体設定 ＞ 連絡先」データの参照箇所（2026-09 調査）
+
+`siteInfo.yml` の `contact:`（CMS「サイト全体設定 ＞ 連絡先」、`phone` /
+`phoneHref` / `email` / `phoneLabel` / `lineLabel` / `showPhoneButton` /
+`showLineButton` の7フィールド）を実際に参照している箇所は以下の4ファイルの
+みで全数（`grep -rn "site\.contact\."` で確認済み）。**住所・郵便番号・
+最寄り駅・営業時間・定休日・駐車場は「連絡先」ではなく別オブジェクトの
+`site.access.store`（CMS「アクセス」）が持つ**ため混同しないこと
+（"連絡先"の管轄は電話・メール・LINE導線のみ）。
+
+| ファイル | 参照フィールド | 用途 |
+|---|---|---|
+| `src/components/StickyContactBar.astro` | `phone` / `phoneHref` / `phoneLabel` / `lineLabel` / `showPhoneButton` / `showLineButton` | 全ページ共通・スマホ専用の画面下部固定バー（`md:hidden`）。「お電話」「LINEで相談」の2ボタン。LINEのURL自体は`site.contact`ではなく`orderedSnsLinks`/`snsUrl('line')`（SNS設定）から取得 |
+| `src/components/Access.astro` | `phone` / `phoneHref` | トップページ「アクセス」セクションの情報一覧（`dl`）に「電話番号」の行として、`site.access.labels.phone`ラベルと組み合わせて表示（住所等の他の行はすべて`site.access.store`由来） |
+| `src/pages/privacy.astro` | `phone` / `phoneHref` / `email` | プライバシーポリシー「第1条（事業者情報）」の「連絡先」行（電話番号・メールアドレスの両方またはどちらか一方があれば表示、`mailto:`リンク付き） |
+| `src/pages/llms.txt.ts` | `phone` / `email` | ビルド時生成される`/llms.txt`（[llmstxt.org](https://llmstxt.org/)準拠、LLMクローラー向け）の「会社情報」欄に「電話番号」「メールアドレス」の行として出力 |
+
+補足：
+- `public/admin/preview.js` は `renderAccess`（`data.contact.phone` /
+  `data.contact.phoneHref`）のみが対応箇所で、`Access.astro`の実装と一致
+  させている（他の3ファイルはCMSライブプレビュー対象外のページ・
+  生成物のため、preview.js側の対応箇所自体が存在しない）。
+- `Header.astro` / `Footer.astro` / `Contact.astro`（トップページ`#contact`
+  セクション）/ `src/pages/contact.astro` は `site.contact` を一切参照
+  しない（`contact.astro`は`StickyContactBar`を経由して間接的に表示
+  されるのみで、フォーム自体は`contactPage.yml`・`contactFormSettings`
+  が情報源）。
+- `src/pages/llms.txt.ts` はCLAUDE.mdに記載がなかった既存ファイル
+  （今回の調査で判明）。`/llms.txt`をビルド時に動的生成する独立した
+  APIルートで、`site.contact.phone` / `site.contact.email` を含む
+  会社情報を素の値のまま出力する（未入力時は`undefined`文字列が
+  出力される点に注意。将来手を入れる際は空値ガードの追加を検討）。
