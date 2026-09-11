@@ -1000,7 +1000,7 @@
 
     return h(
       'footer',
-      { className: 'bg-secondary-dark text-[#c7cede] pt-12 px-5 pb-10 text-[12px]' },
+      { className: 'bg-primary-dark text-white pt-12 px-5 pb-10 text-[12px]' },
       h(
         'div',
         { className: 'max-w-[900px] mx-auto flex flex-col md:flex-row md:justify-between gap-9 mb-9' },
@@ -1015,7 +1015,7 @@
               'div',
               { className: 'flex items-center justify-center md:justify-start gap-3' },
               snsLinks.map(function (sns, i) {
-                return h('span', { key: i, className: 'w-9 h-9 rounded-full bg-white/10 flex items-center justify-center' });
+                return h('span', { key: i, className: 'w-9 h-9 rounded-full bg-white/20 flex items-center justify-center' });
               })
             )
         ),
@@ -1023,12 +1023,12 @@
           'nav',
           { className: 'grid grid-cols-2 gap-x-12 gap-y-3 text-center md:text-left justify-center md:justify-start' },
           footerNav.map(function (item, i) {
-            return h('a', { key: i, href: item.href, className: 'text-[#c7cede]' }, item.label);
+            return h('a', { key: i, href: item.href, className: 'text-white' }, item.label);
           })
         )
       ),
       data.copyright &&
-        h('div', { className: 'text-center border-t border-white/10 pt-6' }, h('div', { className: 'mt-2' }, data.copyright))
+        h('div', { className: 'text-center border-t border-white/20 pt-6' }, h('div', { className: 'mt-2 text-white' }, data.copyright))
     );
   }
 

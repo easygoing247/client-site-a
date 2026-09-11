@@ -475,7 +475,6 @@ collections:
           - { label: "ページ見出し", name: "heading", widget: string, required: false }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "「サービス詳細」セクションの見出し", name: "itemsHeading", widget: string, required: false, default: "サービス内容", hint: "サービス詳細（画像＋説明）の一覧の上に表示される見出し。空欄にすると「サービス内容」を表示します。" }
-          - { label: "「料金表」セクションの見出し", name: "priceHeading", widget: string, required: false, default: "料金表", hint: "料金表の上に表示される見出し。空欄にすると「料金表」を表示します。" }
           - label: "サービス詳細"
             name: "items"
             widget: list
@@ -490,6 +489,7 @@ collections:
                 widget: list
                 required: false
                 field: { label: "項目", name: "feature", widget: string, required: false }
+          - { label: "「料金表」セクションの見出し", name: "priceHeading", widget: string, required: false, default: "料金表", hint: "料金表の上に表示される見出し。空欄にすると「料金表」を表示します。" }
           - label: "料金表"
             name: "priceTable"
             widget: list

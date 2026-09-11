@@ -484,6 +484,17 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
     `drop-shadow-[…]` を付与している（背景色は変えない）。
   案件ごとの着せ替え（セクション2）で色を差し替える際も、白文字ボタン・
   補足テキストのコントラスト比 4.5:1 以上を必ず確認すること（`accent` の LINE 緑は除く）。
+  - **フッター（`Footer.astro`）はテーマカラー連動**：背景 `bg-primary-dark`
+    （`--color-primary-dark`）に対し、本文・ナビリンク・著作権表記・SNSアイコンは
+    すべて `text-white` の**単色**で統一する。5プリセットの `primary-dark` は
+    いずれも white とのコントラストが 5:1 以上になるよう選定済み（最も明るい
+    green の `#15803d` でも約5.0:1）。**透過白（`text-white/80` 等）や中間トーンの
+    グレーは使わない**——green/orange のような明るめの `primary-dark` では
+    90%不透明度でも 4.5:1 を割り込むため。リンクの押下可能性は色ではなく
+    `hover:underline`（フッターナビ）／常時 `underline`（プライバシーリンク）で示す。
+    新しいテーマカラーを追加する場合も、`--color-primary-dark` と white の
+    コントラストが 4.5:1 以上になる値を選ぶこと。`preview.js` の `renderFooter`
+    も同じ配色にすること。
 - **画像**：必ず `astro:assets` の `<Image />`（`<img>` 直書き禁止＝絶対ルール②）。
   各ページで**ファーストビューに入る先頭画像1枚だけ** `fetchpriority="high"` +
   `loading="eager"`、それ以外は `loading="lazy"`。`width` / `height` を必ず指定して

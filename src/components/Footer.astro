@@ -1,6 +1,12 @@
 ---
 // ============================================================================
 // Footer.astro — 共通フッター（ロゴ＋SNS／ヘッダーと同じメニュー2列／プライバシー導線）
+// 背景色は固定のネイビーではなく、デザインテーマ設定のメインカラー
+// （`--color-primary-dark` ＝ tailwind.config.mjs の bg-primary-dark）に連動する。
+// 5プリセットいずれの primary-dark も white と 5:1 以上のコントラストになるよう
+// 選定済みのため、本文・リンク・SNSアイコン・著作権表記はすべて白（text-white）で
+// 統一し、どのテーマ色でも WCAG AA（4.5:1）を安定して満たす（透過白などの中間トーンは
+// 明るいテーマ色＝緑・オレンジで基準未達になりうるため使わない）。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site, visibleNavItems } from '../lib/site';
@@ -18,7 +24,7 @@ const footerNavRows = Math.max(1, Math.ceil(footerNav.length / 2));
 const snsLinks = orderedSnsLinks();
 ---
 
-<footer class="bg-secondary-dark text-[#c7cede] pt-12 px-5 pb-24 md:pb-10 text-[12px]">
+<footer class="bg-primary-dark text-white pt-12 px-5 pb-24 md:pb-10 text-[12px]">
   <div class="max-w-[900px] mx-auto flex flex-col md:flex-row md:justify-between gap-9 mb-9">
     <!-- 左：ロゴ＋SNS -->
     <div class="text-center md:text-left">
@@ -37,7 +43,7 @@ const snsLinks = orderedSnsLinks();
             <a
               href={sns.href}
               aria-label={sns.label}
-              class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+              class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
             >
               {sns.isFrame ? (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -64,7 +70,7 @@ const snsLinks = orderedSnsLinks();
     >
       {
         footerNav.map((item) => (
-          <a href={item.href} class="text-[#c7cede] hover:text-white transition-colors">
+          <a href={item.href} class="text-white hover:underline underline-offset-2">
             {item.label}
           </a>
         ))
@@ -73,11 +79,11 @@ const snsLinks = orderedSnsLinks();
   </div>
 
   {(site.ui.privacyPolicyLabel || site.copyright) && (
-    <div class="text-center border-t border-white/10 pt-6">
+    <div class="text-center border-t border-white/20 pt-6">
       {site.ui.privacyPolicyLabel && (
-        <a href="/privacy" class="text-[#c7cede] underline hover:text-white transition-colors">{site.ui.privacyPolicyLabel}</a>
+        <a href="/privacy" class="text-white underline hover:no-underline">{site.ui.privacyPolicyLabel}</a>
       )}
-      {site.copyright && <div class="mt-2">{site.copyright}</div>}
+      {site.copyright && <div class="mt-2 text-white">{site.copyright}</div>}
     </div>
   )}
 </footer>
