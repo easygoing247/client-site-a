@@ -6,6 +6,36 @@
 // ============================================================================
 import { defineCollection, z } from 'astro:content';
 
+// ============================================================================
+// CMS 起因の型ゆれを吸収する共通ヘルパー（再発防止）
+// Decap CMS は number ウィジェットの値を空欄にすると frontmatter に
+// `price: ""`（空文字）として書き出す。素の z.number() だと
+// 「Expected number, received string」でビルドが落ちるため、
+// 「空文字・null → 未入力扱い」「"1,000" のようなカンマ入り文字列 → 数値」
+// へ正規化してから検証する。
+// ============================================================================
+const toNumberOrUndefined = (v: unknown): unknown => {
+  if (v === '' || v === null || v === undefined) return undefined;
+  if (typeof v === 'string') {
+    const n = Number(v.replace(/,/g, '').trim());
+    return Number.isNaN(n) ? undefined : n;
+  }
+  return v;
+};
+
+/** 任意の数値項目（未入力なら undefined）。 */
+const cmsNumberOptional = z.preprocess(toNumberOrUndefined, z.number().optional());
+
+/** 既定値つきの数値項目（未入力・変換不可なら fallback）。 */
+const cmsNumberWithDefault = (fallback: number) =>
+  z.preprocess((v) => toNumberOrUndefined(v) ?? fallback, z.number());
+
+/** 任意の日付項目（空文字・null は未入力扱い）。 */
+const cmsDateOptional = z.preprocess(
+  (v) => (v === '' || v === null ? undefined : v),
+  z.coerce.date().optional(),
+);
+
 const products = defineCollection({
   type: 'content',
   schema: ({ image }) =>
@@ -14,12 +44,12 @@ const products = defineCollection({
       // 未入力を許容する。表示側（Products.astro / products/[slug].astro）
       // で値が無い項目は非表示にする。
       title: z.string().optional(),
-      price: z.number().optional(),
+      price: cmsNumberOptional,
       mainImage: image().optional(),
       summary: z.string().optional(),
       specs: z.array(z.string()).default([]),
-      order: z.number().default(0),
-      publishedAt: z.coerce.date().optional(),
+      order: cmsNumberWithDefault(0),
+      publishedAt: cmsDateOptional,
     }),
 });
 
@@ -34,7 +64,7 @@ const news = defineCollection({
       title: z.string().optional(),
       eyecatch: image().optional(),
       eyecatchAlt: z.string().optional(),
-      publishedAt: z.coerce.date().optional(),
+      publishedAt: cmsDateOptional,
       category: z.enum(['info', 'blog', 'event', 'works']).optional(),
       summary: z.string().optional(),
       draft: z.boolean().default(false),

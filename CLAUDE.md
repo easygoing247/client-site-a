@@ -92,6 +92,13 @@ public/
   （旧「お知らせ・ブログ」）と合わせて表記を統一済み。
 - frontmatterのスキーマは `src/content/config.ts` で定義されている。
   必須フィールド：`title`, `price`, `mainImage`, `summary`, `specs`, `order`。
+- **CMS 起因の型ゆれ対策**：Decap の number ウィジェットは値を空欄にすると
+  frontmatter に `price: ""`（空文字）を書き出す。素の `z.number()` だと
+  `InvalidContentEntryFrontmatterError`（Expected number, received string）で
+  ビルドが落ちるため、`config.ts` の共通ヘルパー `cmsNumberOptional` /
+  `cmsNumberWithDefault(fallback)` /  `cmsDateOptional`（`z.preprocess` で
+  空文字・null を未入力扱いにし、`"1,000"` のようなカンマ入り文字列も数値化）
+  を通して定義すること。新しい数値・日付フィールドを追加する際も同ヘルパーを使う。
 - 型化ページのファイル自体は、機能フラグの状態に関わらず `npm run build` 時に
   常に静的ページとして生成される（直接URLでのアクセス・先行公開プレビュー用）。
   トップページからの導線表示のみが機能フラグで制御される。

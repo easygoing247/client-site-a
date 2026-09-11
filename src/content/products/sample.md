@@ -1,6 +1,6 @@
 ---
 title: コーポレートサイト制作パック
-price: ""
+price: 300000
 mainImage: ../../assets/works-corporate.jpg
 summary: 企業の信頼感を高める、情報設計から丁寧に組み立てるコーポレートサイト制作プランです。
 specs:

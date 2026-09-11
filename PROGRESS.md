@@ -172,6 +172,8 @@ LP版から複製後に実施した、複数ページ構成・下層ページ・
 - [x] `/services` ページの機能拡張（左右反転、料金表チェックリスト、項目名強調バッジ、最下部ボタン削除）
 - [x] Decap CMS「下層ページ」でのページ見出し動的反映（`summary: "{{fields.heading}}"`）
 - [x] 料金表バッジの Decap CMS 保存バリデーションエラー修正（`required: false` / `default: false` の明示）
+- [x] Content Collection の型エラー修正（`products/sample.md` の `price: ""` を数値化）＋再発防止（`src/content/config.ts` に空文字・カンマ入り文字列を吸収する `z.preprocess` ヘルパーを導入し、`products` / `news` の数値・日付フィールドへ適用）
+- [x] 全ページ Sticky Footer 化（`/news` 絞り込み時のフッター下の白い余白を解消）
 - [x] 画像フォーカルポイント（`object-position`）機能：一度実装後、方針変更により全面削除し CSS 既定（中央切り抜き）へ復帰
 
 ## 2b. 現在のステータス
