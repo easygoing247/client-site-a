@@ -40,7 +40,19 @@ const isSlider = (site.plans.items?.length ?? 0) > 1;
           )}
         </div>
         <div class="relative" data-slider-root>
-          <div data-slider-track class="card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch">
+          <!--
+            人気プランの「人気No.1」バッジは absolute -top-[14px] でカード
+            自身の上端よりさらに上へはみ出す配置になっている。
+            .card-slider-mobile はスマホ幅で overflow-x:auto を指定しており、
+            CSS仕様上 overflow-x が visible 以外だと overflow-y も自動的に
+            auto 扱いになる（= overflow-x:auto と overflow-y:visible を
+            共存させることはできない）ため、何も対策しないとこのバッジの
+            上半分がスクロールコンテナの上端でクリップされて見切れてしまう。
+            スクロールコンテナ自身（このtrack）に pt-6（sm以上は従来どおり
+            pt-0 に戻す）を足し、バッジのはみ出し分をコンテナの
+            パディング領域内に収めることでクリップを回避する。
+          -->
+          <div data-slider-track class="card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch pt-6 sm:pt-0">
             {site.plans.items.map((plan) => (
               <div
                 class:list={[
@@ -98,7 +110,7 @@ const isSlider = (site.plans.items?.length ?? 0) > 1;
                 type="button"
                 data-slider-prev
                 aria-label="前のプランを表示"
-                class="sm:hidden absolute top-1/2 -translate-y-1/2 left-0 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
+                class="sm:hidden absolute top-[calc(50%+12px)] -translate-y-1/2 left-0 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6" stroke="currentColor" class="text-secondary" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
@@ -108,7 +120,7 @@ const isSlider = (site.plans.items?.length ?? 0) > 1;
                 type="button"
                 data-slider-next
                 aria-label="次のプランを表示"
-                class="sm:hidden absolute top-1/2 -translate-y-1/2 right-0 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
+                class="sm:hidden absolute top-[calc(50%+12px)] -translate-y-1/2 right-0 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M9 6l6 6-6 6" stroke="currentColor" class="text-secondary" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />

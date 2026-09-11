@@ -101,38 +101,52 @@ const priceTable = servicesPage.priceTable ?? [];
             <h2 class="text-center font-bold mb-8" style="font-size:clamp(20px,3vw,26px);">{priceHeading}</h2>
           )}
           <div class="rounded-2xl overflow-hidden border border-surface-border bg-white">
-            {priceTable.map((row, i) => (
-              <div class:list={['px-5 py-4', i > 0 && 'border-t border-surface-border']}>
-                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <div class="inline-flex items-center flex-wrap gap-x-2 gap-y-1">
-                    {row.showBadge && row.badgeText && (
-                      <span class="inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 whitespace-nowrap">
-                        {row.badgeText}
-                      </span>
-                    )}
-                    <span class="text-[14px] font-bold text-secondary">{row.name}</span>
+            {priceTable.map((row, i) => {
+              // ハイライト行は自前の青枠（4辺）で囲むため、直上・直下の
+              // 通常の区切り線（border-t）と二重線にならないよう、
+              // 自分自身または直前の行がハイライトのときは区切り線を出さない。
+              const prevHighlighted = i > 0 && !!priceTable[i - 1]?.highlight;
+              const showDivider = i > 0 && !row.highlight && !prevHighlighted;
+              return (
+                <div
+                  class:list={[
+                    'px-5 py-4',
+                    showDivider && 'border-t border-surface-border',
+                    row.highlight &&
+                      'relative z-10 my-2 rounded-xl border-2 border-primary bg-white shadow-[0_10px_24px_-10px_rgba(var(--color-primary-rgb),0.35)]',
+                  ]}
+                >
+                  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <div class="inline-flex items-center flex-wrap gap-x-2 gap-y-1">
+                      {row.showBadge && row.badgeText && (
+                        <span class="inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 whitespace-nowrap">
+                          {row.badgeText}
+                        </span>
+                      )}
+                      <span class="text-[14px] font-bold text-secondary">{row.name}</span>
+                    </div>
+                    <div class="text-[15px] font-bold text-primary">
+                      {typeof row.price === 'number' ? (
+                        <>¥{row.price.toLocaleString('ja-JP')}<span class="text-[12px] font-normal text-ink-soft">〜</span></>
+                      ) : null}
+                    </div>
+                    {row.note && <div class="w-full text-[12px] text-ink-faint">{row.note}</div>}
                   </div>
-                  <div class="text-[15px] font-bold text-primary">
-                    {typeof row.price === 'number' ? (
-                      <>¥{row.price.toLocaleString('ja-JP')}<span class="text-[12px] font-normal text-ink-soft">〜</span></>
-                    ) : null}
-                  </div>
-                  {row.note && <div class="w-full text-[12px] text-ink-faint">{row.note}</div>}
+                  {row.features && row.features.filter(Boolean).length > 0 && (
+                    <ul class="list-none m-0 p-0 mt-3 flex flex-col gap-2">
+                      {row.features.filter(Boolean).map((feature) => (
+                        <li class="flex gap-2 items-start text-[13px] text-secondary-light">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none mt-0.5">
+                            <path d="M4 12.5l5 5L20 6" style="stroke: var(--color-primary);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                {row.features && row.features.filter(Boolean).length > 0 && (
-                  <ul class="list-none m-0 p-0 mt-3 flex flex-col gap-2">
-                    {row.features.filter(Boolean).map((feature) => (
-                      <li class="flex gap-2 items-start text-[13px] text-secondary-light">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none mt-0.5">
-                          <path d="M4 12.5l5 5L20 6" style="stroke: var(--color-primary);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
           {servicesPage.priceNote && (
             <p class="mt-5 text-[12px] leading-[1.8] text-ink-faint whitespace-pre-line">{servicesPage.priceNote}</p>

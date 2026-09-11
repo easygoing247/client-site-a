@@ -276,6 +276,7 @@ collections:
           - label: "連絡先"
             name: "contact"
             widget: object
+            hint: "※ここに入力した情報は、トップページ「アクセス」セクション、プライバシーポリシー「事業者情報」、およびAI参照用データ（/llms.txt）に自動反映されます。（スマホ下部固定バーの設定は別セクション「画面下部固定バー」で行えます）"
             fields:
               - { label: "電話番号（表示用）", name: "phone", widget: string, required: false }
               - { label: "電話番号（tel:リンク用）", name: "phoneHref", widget: string, required: false }
@@ -568,6 +569,7 @@ collections:
               - { label: "備考", name: "note", widget: string, required: false }
               - { label: "項目名の左に強調バッジを表示する", name: "showBadge", widget: boolean, default: false, required: false, hint: "ONにして下の「バッジ文言」を入力すると、項目名の左隣にテーマカラーのバッジが表示されます。" }
               - { label: "バッジ文言（例：人気／おすすめ／限定）", name: "badgeText", widget: string, default: "", required: false }
+              - { label: "強調表示（ハイライト）", name: "highlight", widget: boolean, default: false, required: false, hint: "ONにすると、トップページ「料金プラン」の人気プランと同様の青枠で、この項目だけ枠線とかげを付けて強調表示します（上の「強調バッジ」とは独立して併用できます）。" }
               - label: "含まれる内容／特徴"
                 name: "features"
                 widget: list

@@ -122,12 +122,21 @@ const regularItems = await Promise.all(
             {regularItems.map((item) => {
               const Tag = item.lightboxSrc ? 'button' : 'div';
               return (
+                <!--
+                  Works.astro / Service.astro 等の「aspect-square で正方形の
+                  シルエットに揃える」パターンとは異なり、このカードはあえて
+                  aspect-square を付けない：スマホ幅は1列表示（同じ行に他の
+                  カードと高さを揃える必要がない）ため、価格の説明文が短い
+                  項目でカード内に不自然な余白（価格〜カード底辺間）が
+                  空いてしまう不具合があった。高さをコンテンツに応じた
+                  自然な値に任せることで解消している。
+                -->
                 <Tag
                   type={item.lightboxSrc ? 'button' : undefined}
                   data-lightbox-src={item.lightboxSrc}
                   data-lightbox-alt={item.name}
                   class:list={[
-                    'relative w-full text-left flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border appearance-none',
+                    'relative w-full text-left flex flex-col bg-white rounded-card overflow-hidden border border-surface-border appearance-none',
                     item.lightboxSrc && 'cursor-zoom-in hover:border-primary transition-colors',
                   ]}
                 >
@@ -147,7 +156,7 @@ const regularItems = await Promise.all(
                       loading="lazy"
                     />
                   )}
-                  <div class="flex-1 px-4 py-4 md:py-5">
+                  <div class="px-4 py-4 md:py-5">
                     <h3 class="font-bold text-[15px] mb-1">{item.name}</h3>
                     {item.description && (
                       <p class="text-[12px] leading-[1.7] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line">{item.description}</p>

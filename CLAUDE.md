@@ -457,6 +457,13 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   - 「料金表」各行の `showBadge`（boolean）が true かつ `badgeText` が非空のとき、
     項目名の左隣に強調バッジ（`bg-primary text-white` の pill。テーマカラー連動）を
     `inline-flex`＋`gap` で表示。PC・スマホとも折り返し対応。
+  - 「料金表」各行の `highlight`（boolean）が true のとき、トップページ「料金プラン」の
+    人気プランと同様の青枠＋かげ（`border-2 border-primary` ＋ box-shadow）でその行
+    だけを強調表示する（`showBadge`＋`badgeText`の「項目名左のバッジ」とは独立した、
+    別の強調手段。併用可）。通常時は行同士を `border-t` の区切り線で仕切る単一の
+    リスト表示だが、ハイライト行は4辺を自前の枠線で囲むため、区切り線と二重線に
+    ならないよう「自分自身または直前の行がハイライトのときは区切り線を出さない」
+    判定を入れている（→ 9.15）。
   - ページ最下部の問い合わせ CTA セクションは廃止（ヘッダーCTA・`StickyContactBar` で導線は担保）。
   - 上記はいずれも `preview.js` の `ServicesPagePreview` を一致させること。
 - **`/about`（会社概要）** の3セクション（代表挨拶／会社概要（表形式）／アクセス）は
@@ -898,3 +905,66 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - ローカル環境でモバイル幅（1枚表示・矢印の有効/無効切り替え・
   `StickyContactBar`の新データ参照）・PC幅（3列グリッド・矢印非表示・
   overflow無し）の両方をDOM実測で検証済み。
+
+### 9.15 管理画面UI改善・スマホ表示不具合修正・料金表ハイライト追加（2026-09）
+
+- **管理画面：編集フォーム最下部の余白**：`public/admin/index.html` に
+  `[class*='ControlPaneContainer'] { padding-bottom: 90px !important; }`
+  を追加（画面幅を問わず1箇所で完結、9.10の`findScrollContainer()`と同じ
+  理由でPC幅・スマホ幅どちらのスクロール実装にも効く）。クイックナビ
+  （`#cms-quick-nav-btn`）は常に画面下部に`position:fixed`で重なって
+  表示されるため、余白がゼロだとフォーム最後の項目がボタンの下に隠れて
+  操作できなくなる不具合があった。
+  **`!important`が必須**：Decap本体（emotion）が同じクラスへ動的に
+  独自スタイル（`padding-bottom`含む）を注入しており、その`<style>`は
+  このファイルの静的な`<style>`より後にDOM挿入されるため、同じ詳細度
+  では後勝ちでこちらの指定が無視されてしまうことを実機検証で確認した
+  （`!important`を付けて初めて反映された。このファイル内の他の
+  上書きルールが軒並み`!important`を使っているのと同じ理由）。
+- **`/products`ページ「下段掲載商品」カードの価格下余白**：`src/pages/products.astro`
+  の該当カードから `aspect-square`（スマホ幅で強制していた正方形の
+  アスペクト比）と、テキスト領域の `flex-1` を削除。スマホ幅は1列表示
+  （同じ行で高さを揃える必要がない）にも関わらず正方形に固定していた
+  ため、説明文が短い項目で「価格〜カード底辺」間に本来の`py-4`（16px）
+  を大きく超える余白（実測33px）ができていた不具合を解消（高さを
+  コンテンツに応じた自然な値に任せることで実測17px＝ほぼ`py-4`ぴったり
+  まで縮小）。`public/admin/preview.js` の `ProductsCatalogPreview`
+  （`renderProductCardPreview`のregular分岐）も同じ理由で追従修正。
+  ※ Works.astro/Service.astro/Products.astro（トップページ）等、他の
+  「aspect-squareで正方形に揃える」カードは対象外（複数列・スライダー
+  で高さを揃える必要があるため、意図した仕様のまま変更していない）。
+- **「下層ページ ＞ サービス内容・料金」料金表への強調表示（ハイライト）**：
+  `priceTable[]`に新フィールド`highlight`（boolean、既定false）を追加
+  （`config.yml` / `src/lib/pages.ts` の `ServicesPage.priceTable[].highlight`）。
+  ONの行は`services.astro`側で`border-2 border-primary`＋box-shadow
+  （トップページ「料金プラン」の人気プランと同じ配色・かげ）を適用し、
+  4辺を自前の枠線で囲む。既存の`showBadge`＋`badgeText`（項目名左の
+  小さいバッジ）とは独立した別の強調手段で、併用可能。通常行は
+  `border-t`の区切り線で仕切る単一リスト表示のため、ハイライト行の
+  前後で区切り線と二重線にならないよう「自分自身または直前の行が
+  ハイライトのときは区切り線を出さない」判定を追加。`preview.js`の
+  `ServicesPagePreview`（価格表部分）も同じロジックで追従。
+- **「サイト全体設定 ＞ 連絡先」への注釈追加**：`config.yml`の`contact`
+  オブジェクトに`hint`を追加し、この項目の入力内容が反映される箇所
+  （トップページ「アクセス」、プライバシーポリシー「事業者情報」、
+  `/llms.txt`）と、紛らわしい「画面下部固定バー」（9.13で分離済み）が
+  別セクションであることを管理画面上で明示（9.12の調査結果をそのまま
+  ユーザー向け注釈文に転記）。
+- **トップページ「料金プラン」スマホ表示：人気バッジの見切れ修正**：
+  9.14のスライダー化で`.card-slider-mobile`の`overflow-x:auto`を
+  適用した際、CSS仕様上「`overflow-x`が`visible`以外だと`overflow-y`も
+  自動的に`auto`扱いになる」（`overflow-x:auto`と`overflow-y:visible`は
+  共存できない）ため、人気プランの「人気No.1」バッジ（`absolute
+  -top-[14px]`でカード上端よりさらに上へはみ出す配置）の上半分が
+  スクロールコンテナの上端でクリップされる不具合が発生していた
+  （実機検証で`overflow-y: auto`が実際に計算されていることを確認）。
+  `Plans.astro`のtrack要素（`data-slider-track`）に`pt-6 sm:pt-0`
+  （スマホ幅のみ24pxの上余白）を追加し、バッジのはみ出し分をコンテナの
+  パディング領域内に収めることでクリップを回避。矢印ボタンは track の
+  高さが24px増えた分、素の`top-1/2`のままだと視覚上の中心が実際の
+  カードの中心より12px上にずれるため、`top-[calc(50%+12px)]`で補正
+  （`sm:hidden`のため見た目に影響するのはスマホ幅のみ）。実機検証で
+  バッジがコンテナ上端から12px内側（＝クリップなし）に収まることを
+  確認済み。`preview.js`の`renderPlans`はプレビューiframeが常にPC相当
+  幅（`sm:pt-0`が効く）のため実質的に影響しないが、グリッドclassNameの
+  厳密な一致のため`pt-6 sm:pt-0`を同様に追加した。

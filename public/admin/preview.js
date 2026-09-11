@@ -581,7 +581,7 @@
           // だけ実サイトと一致させている（幅を絞ってもscroll-snapで
           // 横スクロールはできるが、矢印UIは出ない）。
           'div',
-          { className: 'card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch' },
+          { className: 'card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch pt-6 sm:pt-0' },
           items.map(function (plan, i) {
             return h(
               'div',
@@ -1387,15 +1387,19 @@
       );
     }
 
+    // 下段掲載商品（regular）は products.astro と同じ理由で aspect-square を
+    // 付けない（スマホ幅は1列表示のため高さを揃える必要がなく、正方形に
+    // 固定すると説明文が短い項目で価格〜カード底辺間に不自然な余白ができる
+    // 不具合があった）。
     return h(
       'div',
-      { key: item.name, className: 'relative flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border' },
+      { key: item.name, className: 'relative flex flex-col bg-white rounded-card overflow-hidden border border-surface-border' },
       badge,
       imageUrl &&
         h('img', { src: imageUrl, alt: item.name + 'のイメージ', className: 'w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block' }),
       h(
         'div',
-        { className: 'flex-1 px-4 py-4 md:py-5' },
+        { className: 'px-4 py-4 md:py-5' },
         h('h3', { className: 'font-bold text-[15px] mb-1' }, item.name),
         item.description && h('p', { className: 'text-[12px] leading-[1.7] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line' }, item.description),
         price
@@ -1655,9 +1659,22 @@
               { className: 'rounded-2xl overflow-hidden border border-surface-border bg-white' },
               priceTable.map(function (row, i) {
                 var rowFeatures = (row.features || []).filter(Boolean);
+                // services.astro と同じ理由：ハイライト行は自前の青枠（4辺）で
+                // 囲むため、直上・直下の通常の区切り線と二重線にならないよう、
+                // 自分自身または直前の行がハイライトのときは区切り線を出さない。
+                var prevHighlighted = i > 0 && !!(priceTable[i - 1] && priceTable[i - 1].highlight);
+                var showDivider = i > 0 && !row.highlight && !prevHighlighted;
                 return h(
                   'div',
-                  { key: i, className: cx('px-5 py-4', i > 0 && 'border-t border-surface-border') },
+                  {
+                    key: i,
+                    className: cx(
+                      'px-5 py-4',
+                      showDivider && 'border-t border-surface-border',
+                      row.highlight &&
+                        'relative z-10 my-2 rounded-xl border-2 border-primary bg-white shadow-[0_10px_24px_-10px_rgba(var(--color-primary-rgb),0.35)]'
+                    ),
+                  },
                   h(
                     'div',
                     { className: 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1' },

@@ -40,6 +40,8 @@ export interface ServicesPage {
     showBadge?: boolean;
     /** バッジの表示文言（showBadge が true かつ非空のときのみ表示） */
     badgeText?: string;
+    /** true で、トップページ「料金プラン」の人気プランと同様の青枠＋かげで強調表示する */
+    highlight?: boolean;
   }[];
   priceNote?: string;
 }

@@ -203,6 +203,29 @@
         display: none !important;
       }
 
+      /*
+        編集フォーム最下部の余白確保。
+        クイックナビ（左下部のメニューアイコン／メニュー、#cms-quick-nav-btn
+        ／#cms-quick-nav-menu）は画面幅を問わず position:fixed で常に
+        画面下部に重なって表示されるため、フォーム自体の余白がゼロだと
+        最後の項目（入力欄・スイッチ等）がこのボタンの下に隠れてしまい、
+        スクロールしてもタップ・入力ができない事故につながる。
+        実際にスクロールしているコンテナ（PC幅は
+        [class*="ControlPaneContainer"] 自身、スマホ幅は
+        [class*="EditorContainer"] だが、そのスクロール可能領域は
+        .SplitPane > .Pane1 > ControlPaneContainer の高さに連動する
+        ＝9.7章参照）に直接 padding-bottom を持たせることで、画面幅に
+        関わらず1箇所の指定で最下部の余白を確保できる。
+        Decap本体（emotion）がこのクラスへ自前の padding を動的に注入して
+        おり、その <style> タグはこのファイルの静的な <style> より後に
+        DOM挿入される＝詳細度が同じ場合はDecap側が後勝ちしてしまうため、
+        !important で確実に上書きする（このファイル内の他の箇所と同じ理由・
+        同じ対策）。
+      */
+      [class*='ControlPaneContainer'] {
+        padding-bottom: 90px !important;
+      }
+
       @media (max-width: 799px) {
         /*
           html/body は overflow-x のみ隠しており、overflow-y は既定（visible）
