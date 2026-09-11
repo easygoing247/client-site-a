@@ -280,10 +280,6 @@ collections:
               - { label: "電話番号（表示用）", name: "phone", widget: string, required: false }
               - { label: "電話番号（tel:リンク用）", name: "phoneHref", widget: string, required: false }
               - { label: "メールアドレス", name: "email", widget: string, required: false }
-              - { label: "「お電話」ボタン文言（スマホ下部固定バー）", name: "phoneLabel", widget: string, required: false }
-              - { label: "「LINEで相談」ボタン文言（スマホ下部固定バー）", name: "lineLabel", widget: string, required: false }
-              - { label: "「お電話」ボタンを表示する（スマホ下部固定バー）", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINEのURL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。LINEのURLは下の「SNS設定」で管理します。" }
-              - { label: "「LINEで相談」ボタンを表示する（スマホ下部固定バー）", name: "showLineButton", widget: boolean, default: true }
 
           # --- 4b. SNS設定（サイト全体で一括管理。連絡先から独立） -----------
           - label: "SNS設定"
@@ -362,6 +358,16 @@ collections:
             fields:
               - { label: "表示名", name: "label", widget: string, required: false }
               - { label: "リンク先", name: "href", widget: string, required: false }
+
+          - label: "画面下部固定バー"
+            name: "stickyContactBar"
+            widget: object
+            hint: "スマホ表示時、画面下部に常時表示される「お電話」「LINEで相談」の固定バーの設定です（PC表示では非表示）。電話番号・LINEのURL自体は上の「連絡先」「SNS設定」で管理します。"
+            fields:
+              - { label: "「お電話」ボタン文言", name: "phoneLabel", widget: string, required: false }
+              - { label: "「LINEで相談」ボタン文言", name: "lineLabel", widget: string, required: false }
+              - { label: "「お電話」ボタンを表示する", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINEのURL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。LINEのURLは「SNS設定」で管理します。" }
+              - { label: "「LINEで相談」ボタンを表示する", name: "showLineButton", widget: boolean, default: true }
 
           - label: "共通アイコン"
             name: "icons"

@@ -28,10 +28,6 @@ export interface SiteInfo {
     phone: string;
     phoneHref: string;
     email: string;
-    phoneLabel: string;
-    lineLabel: string;
-    showPhoneButton: boolean;
-    showLineButton: boolean;
   };
   /** 公式SNS設定（サイト全体で一括管理）。並び順＝表示順。 */
   sns: { id: string; url: string; enabled: boolean }[];
@@ -192,6 +188,15 @@ export interface SiteInfo {
   nav: { label: string; href: string }[];
   navCta: { label: string; href: string };
   footerNav: { label: string; href: string }[];
+  /** スマホ表示時、画面下部に常時表示される「お電話」「LINEで相談」固定バーの設定。
+   * 電話番号・LINEのURL自体は `contact` / `sns` を参照する（このオブジェクトは
+   * 文言・表示トグルのみを持つ）。 */
+  stickyContactBar: {
+    phoneLabel: string;
+    lineLabel: string;
+    showPhoneButton: boolean;
+    showLineButton: boolean;
+  };
   icons: { check: string };
   copyright: string;
 }

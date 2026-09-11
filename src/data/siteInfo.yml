@@ -165,10 +165,6 @@ company:
   representative: 山田 太郎
   useTextLogo: false
 contact:
-  lineLabel: LINEで相談
-  showPhoneButton: true
-  showLineButton: true
-  phoneLabel: お電話
   phone: 000-000-0000
   phoneHref: tel:0000000000
   email: info@example.com
@@ -239,6 +235,11 @@ footerNav:
     href: /news
   - label: お問い合わせ
     href: /contact
+stickyContactBar:
+  phoneLabel: お電話
+  lineLabel: LINEで相談
+  showPhoneButton: true
+  showLineButton: true
 icons:
   check: ../assets/icon-check.png
 copyright: © 2026 LOGO. All Rights Reserved.

@@ -575,8 +575,13 @@
         { className: 'max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5' },
         renderSectionHeading(h, section.eyebrow, section.heading),
         h(
+          // 実サイト（Plans.astro）はスマホ幅で .card-slider-mobile による
+          // 横スクロールスライダーになるが、プレビューiframeは常時PC相当の
+          // 幅で表示されるため矢印ボタン等のJSは省略し、グリッドのクラス
+          // だけ実サイトと一致させている（幅を絞ってもscroll-snapで
+          // 横スクロールはできるが、矢印UIは出ない）。
           'div',
-          { className: 'grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch' },
+          { className: 'card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch' },
           items.map(function (plan, i) {
             return h(
               'div',

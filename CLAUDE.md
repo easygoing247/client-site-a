@@ -801,19 +801,21 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
     プレースホルダー表示に留まっており、実際のカードグリッドを
     再現していないため、この変更に伴う追従修正は不要（9.4参照）。
 
-### 9.12 「サイト全体設定 ＞ 連絡先」データの参照箇所（2026-09 調査）
+### 9.12 「サイト全体設定 ＞ 連絡先」データの参照箇所（2026-09 調査、9.13で構成変更）
 
-`siteInfo.yml` の `contact:`（CMS「サイト全体設定 ＞ 連絡先」、`phone` /
-`phoneHref` / `email` / `phoneLabel` / `lineLabel` / `showPhoneButton` /
-`showLineButton` の7フィールド）を実際に参照している箇所は以下の4ファイルの
-みで全数（`grep -rn "site\.contact\."` で確認済み）。**住所・郵便番号・
-最寄り駅・営業時間・定休日・駐車場は「連絡先」ではなく別オブジェクトの
-`site.access.store`（CMS「アクセス」）が持つ**ため混同しないこと
-（"連絡先"の管轄は電話・メール・LINE導線のみ）。
+`siteInfo.yml` の `contact:`（CMS「サイト全体設定 ＞ 連絡先」）を実際に
+参照している箇所を全数調査した（`grep -rn "site\.contact\."` で確認済み）。
+**住所・郵便番号・最寄り駅・営業時間・定休日・駐車場は「連絡先」ではなく
+別オブジェクトの `site.access.store`（CMS「アクセス」）が持つ**ため
+混同しないこと（"連絡先"の管轄は電話・メール・LINE導線のみ）。
+※ 調査時点では `phoneLabel` / `lineLabel` / `showPhoneButton` /
+`showLineButton` も `contact` 配下にあったが、9.13で「画面下部固定バー」
+という別オブジェクトへ切り出した。以下は現在の構成（`contact` は
+`phone`/`phoneHref`/`email`の3フィールドのみ）を反映済み。
 
 | ファイル | 参照フィールド | 用途 |
 |---|---|---|
-| `src/components/StickyContactBar.astro` | `phone` / `phoneHref` / `phoneLabel` / `lineLabel` / `showPhoneButton` / `showLineButton` | 全ページ共通・スマホ専用の画面下部固定バー（`md:hidden`）。「お電話」「LINEで相談」の2ボタン。LINEのURL自体は`site.contact`ではなく`orderedSnsLinks`/`snsUrl('line')`（SNS設定）から取得 |
+| `src/components/StickyContactBar.astro` | `phone` / `phoneHref`（ボタン文言・表示トグルは `site.stickyContactBar`、9.13参照） | 全ページ共通・スマホ専用の画面下部固定バー（`md:hidden`）の「お電話」ボタンのリンク先。LINEのURL自体は`site.contact`ではなく`orderedSnsLinks`/`snsUrl('line')`（SNS設定）から取得 |
 | `src/components/Access.astro` | `phone` / `phoneHref` | トップページ「アクセス」セクションの情報一覧（`dl`）に「電話番号」の行として、`site.access.labels.phone`ラベルと組み合わせて表示（住所等の他の行はすべて`site.access.store`由来） |
 | `src/pages/privacy.astro` | `phone` / `phoneHref` / `email` | プライバシーポリシー「第1条（事業者情報）」の「連絡先」行（電話番号・メールアドレスの両方またはどちらか一方があれば表示、`mailto:`リンク付き） |
 | `src/pages/llms.txt.ts` | `phone` / `email` | ビルド時生成される`/llms.txt`（[llmstxt.org](https://llmstxt.org/)準拠、LLMクローラー向け）の「会社情報」欄に「電話番号」「メールアドレス」の行として出力 |
@@ -833,3 +835,66 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   APIルートで、`site.contact.phone` / `site.contact.email` を含む
   会社情報を素の値のまま出力する（未入力時は`undefined`文字列が
   出力される点に注意。将来手を入れる際は空値ガードの追加を検討）。
+
+### 9.13 「画面下部固定バー」セクションの独立（2026-09）
+
+- **変更内容**：「サイト全体設定 ＞ 連絡先」に混在していた4項目
+  （「お電話」「LINEで相談」の各ボタン文言 `phoneLabel`/`lineLabel`、
+  各表示トグル `showPhoneButton`/`showLineButton`）を、独立した新規
+  セクション「画面下部固定バー」（`siteInfo.yml` の `stickyContactBar:`、
+  `config.yml` の `name: "stickyContactBar"`）へ切り出した。
+  配置は「フッターナビゲーション」（`footerNav`）と「共通アイコン」
+  （`icons`）の間（`config.yml`・`siteInfo.yml` 両方でこの順序を維持）。
+  「連絡先」（`contact:`）には `phone` / `phoneHref` / `email` の3項目
+  （電話番号・メールアドレスそのもの）のみが残る。
+- **狙い**：「連絡先」という名前から連想しにくい「画面下部固定バー
+  （スマホのみ表示されるUIパーツ）」の表示制御項目が混在していたため、
+  UI要素としての性質で切り分けて分かりやすくした。電話番号・メール
+  アドレス自体（実データ）と、それをスマホ下部バーでどう見せるか
+  （文言・ON/OFF）という関心事の分離でもある。
+- **実装**：
+  - `public/admin/config.yml`：「連絡先」オブジェクトから4フィールドを
+    削除し、`phone`/`phoneHref`/`email`のみに縮小。新規オブジェクト
+    「画面下部固定バー」（`name: "stickyContactBar"`）を
+    「フッターナビゲーション」と「共通アイコン」の間に追加し、
+    そこへ4フィールドを移設（ヒントテキストも「スマホ下部固定バー」
+    という重複した接頭辞を削除して整理）。
+  - `src/data/siteInfo.yml`：`contact:` から4項目を削除、`footerNav:`
+    の直後・`icons:` の直前に `stickyContactBar:` ブロックを新設。
+  - `src/lib/site.ts`：`SiteInfo.contact` 型から4フィールドを削除し、
+    `SiteInfo.stickyContactBar`（`phoneLabel`/`lineLabel`/
+    `showPhoneButton`/`showLineButton`）を`footerNav`と`icons`の間に追加。
+  - `src/components/StickyContactBar.astro`：`site.contact.phoneLabel`
+    等の4参照を `site.stickyContactBar.*` に変更（`phone`/`phoneHref`は
+    引き続き`site.contact`を参照＝実データはそのまま「連絡先」由来）。
+  - `public/admin/preview.js`：この4フィールドはどの `render*()` 関数
+    からも参照されていなかった（`StickyContactBar`自体がCMSプレビュー
+    対象外のため）ため、追従修正は不要だった。
+  - 移動元・移動先の両方で `grep` により旧参照（`contact.phoneLabel` 等）
+    が残っていないことを確認済み。
+
+### 9.14 トップページ「料金プラン」のスマホ用スライダー化（2026-09）
+
+- **要件**：「サービス内容」「商品一覧」（9.11）と同じ方式で、スマホ幅
+  （640px未満）のみ1枚送りスライダー化。sm以上（PC・タブレット）は
+  従来の `lg:grid-cols-3` グリッドを維持する。
+- **実装**：`Plans.astro` のカードラッパーに `.card-slider-mobile`
+  （9.11で追加したcomponentクラス）を付与し、矢印・スクロール実測による
+  表示/無効切り替えは共通の `src/scripts/cardSlider.ts` をそのまま再利用
+  （`data-slider-root` / `data-slider-track` / `data-slider-prev` /
+  `data-slider-next` の構成に合わせるだけで済んだ）。
+  マークアップは9.11の落とし穴を踏まえ、当初から明示的な `grid-cols-1`
+  を付けずに `card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch`
+  としている（Plansはそもそも`sm:grid-cols-2`を持たず`lg:`まで単列
+  スタックだったため、sm〜lg間の見た目は変更前後で変わらない）。
+- **`preview.js`の追従**：`renderPlans`（siteInfo プレビュー）は
+  「サービス内容」「商品一覧」と異なり `data.plans.items` を使って
+  実データのグリッドをそのまま描画しているため（別CMSエントリ参照では
+  ない）、ここは対応が必要だった。グリッドの className を実サイトと
+  一致する `card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch`
+  に変更（プレビューiframeは常にPC相当の幅で表示されるため、矢印ボタン
+  のJSは移植していない。幅を絞ってもscroll-snapで横スクロール自体は
+  可能）。
+- ローカル環境でモバイル幅（1枚表示・矢印の有効/無効切り替え・
+  `StickyContactBar`の新データ参照）・PC幅（3列グリッド・矢印非表示・
+  overflow無し）の両方をDOM実測で検証済み。
