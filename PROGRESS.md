@@ -198,6 +198,7 @@ LP版から複製後に実施した、複数ページ構成・下層ページ・
 - [x] ドットインジケーターのデザイン簡素化：アクティブ時のサイズ変更（w-2→w-5）を廃止し、常に同じ大きさで背景色のみが切り替わる仕様に変更（`cardSlider.ts`の`DOT_ACTIVE`/`DOT_INACTIVE`配列を単一クラスの`DOT_ACTIVE_CLASS`/`DOT_INACTIVE_CLASS`に簡素化）（→ CLAUDE.md 9.17）
 - [x] フッター背景色をテーマカラーごとに目に優しいトーンへ調整：ボタン等で使う鮮やかな`--color-primary-dark`とは別に、同じ色相を保ちつつ彩度34%・明度23%程度まで落とした専用変数`--color-footer-bg`（`bg-footer-bg`）を5プリセット分新設し、`Footer.astro`・`preview.js`の`renderFooter`をこちらに切り替え。white文字とのコントラストはいずれも9:1以上を確保。tailwind.config.mjs変更時はViteの通常HMRでは反映されず開発サーバーの再起動が必要と判明（本番ビルドには影響なし）（→ CLAUDE.md 9.6, 9.17）
 - [x] トップページ「サービス内容」のPCレイアウトを2列×2行の横長カード（左画像・右テキスト＋バッジ）に変更：`Service.astro`のグリッドを`md:grid-cols-2`固定にし、カードを`md:flex-row`＋画像`md:w-[38%] md:h-full object-cover`に変更。従来トップページカードに無かったバッジ（`item.badgeText`）表示も`/services`ページと同様に追加。640〜767px（sm相当）はアスペクト比のみ解除した1列縦積みの中間表示、640px未満のスマホスライダー仕様は変更なし。実機検証でPC幅の2列×2行・横長カード、タブレット幅の1列中間表示、スマホ幅のスライダー維持の3パターンすべてを確認（→ CLAUDE.md 9.17）
+- [x] Decap CMS「デザインテーマ設定」プレビューにフッター全体（背景色・ナビリンク・SNSアイコン・著作権表記）をリアルタイム表示：`SiteSettingsPreview`（`preview.js`）に、下層ページ系プレビューと同じ`publishedFooterHtml`（本番`/`から取得した公開済みフッターの実HTML）を、編集中の`data.theme`を反映した`<div data-theme>`の子として挿入。フッター自体はcolor実値を持たずCSS変数経由のクラス名のみのため、この配置だけで未保存のテーマ変更にそのまま追従する。`makePagePreview`と同じ`componentDidMount`の非同期再描画パターンも追加。`npm run build && npx astro preview`でローカルCMSにログインし、テーマ切替（レッド→グリーン→オレンジ）のたびにフッターの配色が即座に変わることを実機確認、`site-settings.json`への意図しない保存が無いことも確認済み（→ CLAUDE.md 9.18）
 
 ## 2b. 現在のステータス
 

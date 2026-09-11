@@ -214,8 +214,10 @@ public/
   `parseTextBlocksForPreview`（＝`src/lib/pages.ts` の `parseTextBlocks`）/
   `ServicesPagePreview` / `AboutPagePreview` / `ContactPagePreview` / `NewsListPagePreview`
   （お知らせ一覧ページ。見出し・リード文・一覧見出しのみ反映、記事一覧はプレースホルダー
-  ＝9.16） / `NewsPreview`（お知らせ記事詳細））も必ず追従修正すること。自動同期の
-  仕組みは無いため、変更の都度手動で見比べる必要がある。
+  ＝9.16） / `NewsPreview`（お知らせ記事詳細）/ `SiteSettingsPreview`（デザインテーマ
+  設定。編集中の`data.theme`をそのまま`data-theme`に反映するボタン・カード等の
+  サンプルに加え、フッター全体は`publishedFooterHtml`を流用＝9.18）も必ず追従
+  修正すること。自動同期の仕組みは無いため、変更の都度手動で見比べる必要がある。
 - **プレビューへのCSS流し込み**：`loadSiteStylesheetAndTheme()` が本番の `/` を
   fetch し、`<link rel="stylesheet">`（外部CSS）と `<style>`（インラインCSS）の
   両方を `CMS.registerPreviewStyle()` に渡す（`<style>` は `{ raw: true }` 指定）。
@@ -1133,3 +1135,46 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   - `preview.js`の`renderServices`（siteInfoプレビュー）はプレース
     ホルダーのみで実際のカードグリッドを描画しないため（9.11参照）、
     今回のレイアウト変更に伴う追従修正は不要だった。
+
+### 9.18 「デザインテーマ設定」プレビューへのフッター実表示追加（2026-09）
+
+- **要件**：管理画面「デザインテーマ設定」でテーマカラーを変更した際、
+  右側プレビューでフッター全体（背景色・ナビリンク・SNSアイコン・
+  著作権表記）の配色変化も即座に確認できるようにする。
+- **実装**：`SiteSettingsPreview`（`public/admin/preview.js`）に、
+  既存のボタン／カードのサンプル表示に加えて、`publishedFooterHtml`
+  （本番`/`から取得した公開済みフッターの実HTML。下層ページ系
+  プレビューの`pagePreviewShell`が使っているのと同じ変数、7章参照）を
+  そのまま挿入した。`Footer.astro`をJSで再実装するのではなく、
+  実際にビルドされたHTMLをそのまま流用する方式（productsや下層
+  ページのヘッダー・フッターと同じ考え方）。
+  - **色連動の仕組み**：フッターのHTML自体は`data-theme`属性を
+    持たず、色はすべて`bg-footer-bg`等のTailwindクラス（実体は
+    `var(--color-footer-bg)`等のCSS変数参照）で決まる。この
+    `publishedFooterHtml`を、`SiteSettingsPreview`が既に持っていた
+    「編集中の`data.theme`を`data-theme`に反映する`<div>`」の
+    **子要素として**挿入するだけで、CSS変数はその祖先の`data-theme`を
+    基準に再解決される。`publishedFooterHtml`自体は「公開時点の
+    テーマ」で生成された静的HTMLだが、色の実体はすべてCSS変数経由の
+    クラス名でありHTML側に色の実値は焼き込まれていないため、
+    編集中の（未保存の）テーマ変更にそのまま追従する。`pagePreviewShell`
+    が使う`currentTheme`（公開済みテーマの固定値）とは異なり、こちらは
+    `data.theme`（今まさに編集中の値）を使う点に注意。
+  - **初回マウント時の空白対策**：`publishedFooterHtml`は
+    `loadSiteStylesheetAndTheme()`の非同期fetch完了後にしか埋まらない
+    ため、`SiteSettingsPreview`にも`makePagePreview`と同じ
+    `componentDidMount`（`stylesReady.then(...).forceUpdate()`）／
+    `componentWillUnmount`のパターンを追加し、取得完了後に確実に
+    再描画されるようにした（`SiteSettingsPreview`は`makePagePreview`を
+    使わない独自実装のため、同じロジックを個別に持たせている）。
+  - フッターが取得できなかった場合（`astro dev`でCSSがJS注入される
+    等、7章に既出の理由）は、その旨をテキストで表示するフォールバックを
+    用意した。
+- **検証**：`npm run build && npx astro preview`（`astro dev`ではなく
+  ビルド済み`dist/`を配信するモードで確認すること＝7章のCSS流し込み
+  ルール参照）でローカルCMS（`local_backend`）にログインし、
+  「デザインテーマ設定」の「テーマカラー」セレクトを
+  レッド→グリーン→オレンジと切り替え、その都度フッターの背景色・
+  ボタン・カードの配色が即座に切り替わることを実機で確認済み
+  （保存はせず、`site-settings.json`が変更されていないことも
+  `git status`で確認した）。

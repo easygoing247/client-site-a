@@ -1185,27 +1185,61 @@
   var THEME_LABELS = { blue: 'ブルー', red: 'レッド', green: 'グリーン', purple: 'パープル', orange: 'オレンジ' };
 
   var SiteSettingsPreview = createClass({
+    // 公開済みフッターHTML（publishedFooterHtml）は非同期fetch
+    // （loadSiteStylesheetAndTheme()）の完了後にしか埋まらないため、
+    // 初回マウント時点ではまだ空の可能性がある。取得完了を待って
+    // forceUpdate() するパターンは下層ページ系プレビュー（makePagePreview）
+    // と同じ（このプレビューは同関数を使わず独自実装のため、同じロジックを
+    // ここにも個別に持たせている）。
+    componentDidMount: function () {
+      var self = this;
+      this._unmounted = false;
+      stylesReady.then(function () {
+        if (!self._unmounted) self.forceUpdate();
+      });
+    },
+    componentWillUnmount: function () {
+      this._unmounted = true;
+    },
     render: function () {
       var data = getData(this.props.entry);
       var theme = data.theme || 'blue';
       return h(
         'div',
-        { 'data-theme': theme, className: 'font-sans bg-surface p-8' },
-        h('p', { className: 'text-[13px] text-ink-soft mb-4' }, '選択中のテーマカラー：' + (THEME_LABELS[theme] || theme)),
-        h(
-          'a',
-          {
-            href: '#',
-            className: 'inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full w-fit bg-gradient-to-br from-primary to-primary-dark',
-          },
-          'ボタンのサンプル ›'
-        ),
-        h('p', { className: 'text-[13px] font-bold text-primary mt-6' }, 'リンク・見出しのサンプルテキスト'),
+        { 'data-theme': theme, className: 'font-sans bg-surface' },
         h(
           'div',
-          { className: 'mt-6 rounded-2xl p-6 bg-white border-2 border-primary', style: styleObj('box-shadow:0 16px 32px -12px rgba(var(--color-primary-rgb),0.28);') },
-          h('p', { className: 'text-[13px] text-secondary-light m-0' }, '人気プランカードのサンプル表示（枠線・影の色もテーマカラー連動）')
-        )
+          { className: 'p-8' },
+          h('p', { className: 'text-[13px] text-ink-soft mb-4' }, '選択中のテーマカラー：' + (THEME_LABELS[theme] || theme)),
+          h(
+            'a',
+            {
+              href: '#',
+              className: 'inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full w-fit bg-gradient-to-br from-primary to-primary-dark',
+            },
+            'ボタンのサンプル ›'
+          ),
+          h('p', { className: 'text-[13px] font-bold text-primary mt-6' }, 'リンク・見出しのサンプルテキスト'),
+          h(
+            'div',
+            { className: 'mt-6 rounded-2xl p-6 bg-white border-2 border-primary', style: styleObj('box-shadow:0 16px 32px -12px rgba(var(--color-primary-rgb),0.28);') },
+            h('p', { className: 'text-[13px] text-secondary-light m-0' }, '人気プランカードのサンプル表示（枠線・影の色もテーマカラー連動）')
+          ),
+          h('p', { className: 'text-[13px] text-ink-soft mt-8 mb-0' }, 'フッターのサンプル表示（背景色・リンク・著作権表記もテーマカラー連動）')
+        ),
+        // フッターは src/components/Footer.astro をJSで再現するのではなく、
+        // 公開済みの実HTML（publishedFooterHtml。商品／下層ページの
+        // プレビューと同じ仕組み＝7章参照）をそのまま流用する。フッター
+        // 自身は data-theme を持たないため、この div（編集中の theme を
+        // data-theme に反映）の子として置くだけで、bg-footer-bg 等の
+        // CSS変数がここで上書きした theme の値を正しく参照するようになる
+        // （publishedFooterHtml 自体は「公開時点のテーマ」で生成された
+        // 静的HTMLだが、色はすべてCSS変数経由のクラス名であって、
+        // フッター側に固定の data-theme やインラインカラーは含まれない
+        // ため、編集中のテーマ変更にそのまま追従する）。
+        publishedFooterHtml
+          ? h('div', htmlProp(publishedFooterHtml))
+          : h('p', { className: 'text-[12px] text-ink-faint px-8 pb-8' }, '（本番サイトからフッターを取得できませんでした。npm run build && npm run preview で確認してください）')
       );
     },
   });
