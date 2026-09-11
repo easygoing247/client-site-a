@@ -370,12 +370,6 @@ collections:
               - { label: "「お電話」ボタンを表示する", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINEのURL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。LINEのURLは「SNS設定」で管理します。" }
               - { label: "「LINEで相談」ボタンを表示する", name: "showLineButton", widget: boolean, default: true }
 
-          - label: "共通アイコン"
-            name: "icons"
-            widget: object
-            fields:
-              - { label: "チェックマークアイコン", name: "check", widget: image, required: false }
-
           # --- 7. コピーライト表記 -------------------------------------------
           - { label: "コピーライト表記", name: "copyright", widget: string, required: false }
 

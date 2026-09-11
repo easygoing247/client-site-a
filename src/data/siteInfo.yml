@@ -23,15 +23,15 @@ features_section:
     - number: "01"
       title: 高品質デザイン
       text: 目的に合わせたデザインで、信頼感と成果を生むサイトを制作します。
-      icon: ../assets/icon-design.png
+      icon: ../assets/icon-design.svg
     - number: "02"
       title: スマホ最適化
       text: スマートフォンでの見やすさ・使いやすさを重視した設計で離脱を防ぎます。
-      icon: ../assets/icon-mobile.png
+      icon: ../assets/icon-mobile.svg
     - number: "03"
       title: 手厚いサポート
       text: 公開後の運用・改善まで伴走し、継続的な成果につなげる支援を行います。
-      icon: ../assets/icon-support.png
+      icon: ../assets/icon-support.svg
 services:
   eyebrow: SERVICE
   heading: サービス内容
@@ -240,8 +240,6 @@ stickyContactBar:
   lineLabel: LINEで相談
   showPhoneButton: true
   showLineButton: true
-icons:
-  check: ../assets/icon-check.png
 copyright: © 2026 LOGO. All Rights Reserved.
 features:
   enableFeatures: true

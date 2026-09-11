@@ -7,10 +7,12 @@
 // （Service.astro / Products.astro）と同じ考え方で、スタイルは
 // global.css の `.card-slider-mobile`、JSは共通の src/scripts/cardSlider.ts
 // を使う。
+// 「含まれる内容」チェックリストのチェックマークは、画像（旧 site.icons.check
+// の低解像度PNG）ではなくインラインSVG（stroke: var(--color-primary)）で
+// 描画する。画像では実現できないテーマカラー連動が必要なため（/services
+// ページの料金表チェックリストと同じアイコン・実装）。
 // ============================================================================
-import { Image } from 'astro:assets';
 import { site } from '../lib/site';
-import { resolveImageOrNull } from '../lib/images';
 import Button from './Button.astro';
 
 interface Props {
@@ -18,7 +20,6 @@ interface Props {
 }
 
 const { muted = false } = Astro.props;
-const checkIcon = resolveImageOrNull(site.icons.check);
 const planButton = site.plans.buttonLabel && site.plans.buttonHref;
 const isSlider = (site.plans.items?.length ?? 0) > 1;
 ---
@@ -80,7 +81,9 @@ const isSlider = (site.plans.items?.length ?? 0) > 1;
                       .filter((feature) => feature)
                       .map((feature) => (
                         <li class="flex gap-2 items-center text-[13px] text-secondary-light">
-                          {checkIcon && <Image src={checkIcon} alt="" aria-hidden="true" class="w-4 h-4 flex-none" width={16} height={16} />}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none">
+                            <path d="M4 12.5l5 5L20 6" style="stroke: var(--color-primary);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
                           {feature}
                         </li>
                       ))}

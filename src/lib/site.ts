@@ -197,7 +197,6 @@ export interface SiteInfo {
     showPhoneButton: boolean;
     showLineButton: boolean;
   };
-  icons: { check: string };
   copyright: string;
 }
 

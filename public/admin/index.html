@@ -1479,20 +1479,98 @@
           },
           true
         );
+        // ==================================================================
+        // 10) 画面を移動せず連続して「公開する」を実行すると、2回目以降
+        //     ボタンが不活性のまま復帰しない不具合の補正。
+        //
+        //     Decap CMS（旧Netlify CMS）には、boolean／selectウィジェットを
+        //     含むエントリで「値を変更→公開→続けて値を変更」すると、
+        //     公開ボタンの活性判定（内部の差分検知）が壊れたままになる
+        //     既知の不具合報告がある（decaporg/decap-cms#6202）。
+        //     ローカル環境（local_backend、文字列／真偽値／選択肢の各
+        //     ウィジェットで複数パターン）では再現しなかったが、実運用
+        //     （GitHub連携・ネットワーク遅延あり）では発生しうるとして
+        //     報告されたため、発生条件を問わず確実に解消できるよう、
+        //     上の「公開して新規作成」と同じ考え方・同じ手法（postSave
+        //     検知＋location.reload()でReduxの内部状態を必ずクリーンな
+        //     状態から組み立て直す）を、通常の「公開する」実行後にも
+        //     適用する。
+        //
+        //     安全性：postSaveが発火する時点で直前の変更はすべて
+        //     git（ローカルでは decap-server）へ保存済みであり、
+        //     未保存の入力は存在しない。そのためリロードしても
+        //     入力中のデータを失うことはない（＝「保存が終わった
+        //     瞬間」だけを狙ってリロードするのがポイントで、その後の
+        //     新しい入力を検知してからリロードする設計にはしていない。
+        //     後者だと、検知後にリロードするまでの間に入力された
+        //     未保存の変更を巻き込んで消してしまう恐れがあるため）。
+        //     スクロール位置だけはリロードで失われると体験を損なうため、
+        //     リロード直前に編集フォームのスクロール位置を
+        //     sessionStorage へ退避し、再読み込み後に復元する
+        //     （フォームのスクロールコンテナ特定は9.7章のscroll-sync系と
+        //     同じ findScrollContainer() を再利用する）。
+        // ==================================================================
+        function saveScrollPositionForReload() {
+          try {
+            var container = findScrollContainer();
+            if (container) {
+              sessionStorage.setItem('cms-publish-reload-scroll', String(container.scrollTop));
+            }
+          } catch (e) {
+            // sessionStorageが使えない環境（プライベートブラウズ等）では
+            // スクロール位置の復元だけ諦め、リロード自体は続行する。
+          }
+        }
+
+        function restoreScrollPositionAfterReload() {
+          var saved;
+          try {
+            saved = sessionStorage.getItem('cms-publish-reload-scroll');
+            if (saved !== null) sessionStorage.removeItem('cms-publish-reload-scroll');
+          } catch (e) {
+            return;
+          }
+          if (saved === null || saved === undefined) return;
+          var target = parseFloat(saved);
+          if (!isFinite(target) || target <= 0) return;
+          var attempts = 0;
+          var timer = setInterval(function () {
+            attempts++;
+            var container = findScrollContainer();
+            // エントリ本体（フォーム）が実際にマウントされ、スクロール
+            // 可能になるまで待ってから復元する。20回（約4秒）試みても
+            // 復元できなければ諦める（別エントリへ直接アクセスした場合等）。
+            if (container && container.scrollHeight - container.clientHeight > 4) {
+              container.scrollTop = target;
+              clearInterval(timer);
+            } else if (attempts > 20) {
+              clearInterval(timer);
+            }
+          }, 200);
+        }
+
         window.CMS.registerEventListener({
           name: 'postSave',
           handler: function () {
-            if (!pendingCreateNewCollection) return;
-            var collectionName = pendingCreateNewCollection;
-            pendingCreateNewCollection = null;
-            // postSave発火の直後はDecap自身の後続処理（トースト表示等）が
-            // まだ進行中のため、わずかに待ってから遷移・リロードする。
+            if (pendingCreateNewCollection) {
+              var collectionName = pendingCreateNewCollection;
+              pendingCreateNewCollection = null;
+              // postSave発火の直後はDecap自身の後続処理（トースト表示等）が
+              // まだ進行中のため、わずかに待ってから遷移・リロードする。
+              setTimeout(function () {
+                location.hash = '#/collections/' + collectionName + '/new';
+                location.reload();
+              }, 300);
+              return;
+            }
+            // 通常の「公開する」実行後（＝新規作成への遷移を伴わない場合）。
+            saveScrollPositionForReload();
             setTimeout(function () {
-              location.hash = '#/collections/' + collectionName + '/new';
               location.reload();
             }, 300);
           },
         });
+        window.addEventListener('load', restoreScrollPositionAfterReload);
       })();
     </script>
   </body>

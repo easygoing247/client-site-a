@@ -618,7 +618,17 @@
                     return h(
                       'li',
                       { key: fi, className: 'flex gap-2 items-center text-[13px] text-secondary-light' },
-                      h('span', { className: 'text-primary flex-none' }, '✓'),
+                      h(
+                        'svg',
+                        { key: 'i', width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', className: 'flex-none' },
+                        h('path', {
+                          d: 'M4 12.5l5 5L20 6',
+                          style: styleObj('stroke: var(--color-primary);'),
+                          strokeWidth: 2.4,
+                          strokeLinecap: 'round',
+                          strokeLinejoin: 'round',
+                        })
+                      ),
                       feature
                     );
                   })
@@ -1747,7 +1757,17 @@
                         return h(
                           'li',
                           { key: fi, className: 'flex gap-2 items-start text-[13px] text-secondary-light' },
-                          h('span', { className: 'text-primary flex-none' }, '✓'),
+                          h(
+                            'svg',
+                            { key: 'i', width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', className: 'flex-none mt-0.5' },
+                            h('path', {
+                              d: 'M4 12.5l5 5L20 6',
+                              style: styleObj('stroke: var(--color-primary);'),
+                              strokeWidth: 2.4,
+                              strokeLinecap: 'round',
+                              strokeLinejoin: 'round',
+                            })
+                          ),
                           feature
                         );
                       })
