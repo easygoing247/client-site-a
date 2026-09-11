@@ -5,6 +5,10 @@ lead: |-
 itemsHeading: サービス内容
 priceHeading: 料金表
 items:
+  - reverseLayout: true
+    title: 運用・保守サポート
+    description: 更新作業やセキュリティ対策など、安心して運用できる体制を提供します。
+    image: /src/assets/ceo-image.png
   - title: Webサイト制作
     description: |-
       コーポレートサイトやサービスサイトなど、
@@ -31,10 +35,6 @@ items:
       - コンテンツ企画
       - 効果測定・改善提案
     reverseLayout: false
-  - reverseLayout: false
-    title: 運用・保守サポート
-    description: 更新作業やセキュリティ対策など、安心して運用できる体制を提供します。
-    image: /src/assets/ceo-image.png
 priceTable:
   - name: Webサイト制作（5ページ程度）
     price: 300000
