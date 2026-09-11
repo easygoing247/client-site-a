@@ -37,19 +37,6 @@ services:
   heading: サービス内容
   linkLabel: サービス内容を見る
   linkHref: /services
-  items:
-    - title: Webサイト制作
-      text: コーポレートサイトやサービスサイトなど、目的に合わせたWebサイトを制作します。
-      image: ../assets/service-website.jpg
-    - title: LP制作
-      text: 商品・サービスの魅力を伝え、成果につながるランディングページを制作します。
-      image: ../assets/service-lp.jpg
-    - title: SEO・集客支援
-      text: 検索エンジンに強い構造設計とコンテンツで、集客・成果をサポートします。
-      image: ../assets/service-seo.jpg
-    - title: 運用・保守サポート
-      text: 更新作業やセキュリティ対策など、安心して運用できる体制を提供します。
-      image: ../assets/service-support.jpg
 flow:
   eyebrow: FLOW
   heading: ご相談から納品までの流れ

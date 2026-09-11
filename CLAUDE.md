@@ -379,6 +379,24 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   ヒーローと「選ばれる3つの理由」の間に**固定配置**（`sectionOrder` 対象外）。
   `features.enableNews` と `newsSection`（`count` / 見出し / 一覧リンク）で制御。
   `index.astro` で `<Hero />` の直後に `<News />` を置く。
+- **「サービス・事業内容」（トップページ）** は `siteInfo.yml` の `services`
+  （`eyebrow` / `heading` / `linkLabel` / `linkHref` のみ）と、カード個別項目
+  （画像・タイトル・説明）は `services.yml`「サービス詳細」（`servicesPage.items`）
+  を単一のデータソースとして [Service.astro](src/components/Service.astro) が
+  直接参照する（`siteInfo.yml` 側に `services.items` は持たない＝二重管理禁止）。
+  `/services` ページと表示順・内容が常に一致する。`preview.js` の
+  `renderServices`（サイト設定プレビュー）は別CMSエントリのデータを参照できない
+  ため、`products` と同様プレースホルダー表示に留める（実データは
+  `ServicesPagePreview` 側で確認する）。
+- **「サービス・事業内容」（トップページ）** は `siteInfo.yml` の `services`
+  （`eyebrow` / `heading` / `linkLabel` / `linkHref` のみ）と、カード個別項目
+  （画像・タイトル・説明）は `services.yml`「サービス詳細」（`servicesPage.items`）
+  を単一のデータソースとして [Service.astro](src/components/Service.astro) が
+  直接参照する（`siteInfo.yml` 側に `services.items` は持たない＝二重管理禁止）。
+  `/services` ページと表示順・内容が常に一致する。`preview.js` の
+  `renderServices`（サイト設定プレビュー）は別CMSエントリのデータを参照できない
+  ため、`products` と同様プレースホルダー表示に留める（実データは
+  `ServicesPagePreview` 側で確認する）。
 - **「サービス・事業内容」** セクションの下層リンクは `services.linkLabel` /
   `services.linkHref`、**「料金プラン」** カードのボタンは `plans.buttonLabel` /
   `plans.buttonHref`。人気プラン（`popular: true`）のボタンは

@@ -1,9 +1,15 @@
 ---
 // ============================================================================
 // Service.astro — 「サービス・事業内容」
+// 見出し・リンク文言は siteInfo.yml の `services`（トップページ専用の設定）、
+// カード個別項目（画像・タイトル・説明）は「下層ページ ＞ サービス内容・料金」
+// の `services.yml`「サービス詳細」（`servicesPage.items`）を単一のデータソースと
+// して参照する（二重管理防止）。/services ページ（`src/pages/services.astro`）と
+// 完全に同じ項目・並び順を共有する。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
+import { servicesPage } from '../lib/pages';
 import { resolveImageOrNull } from '../lib/images';
 import Button from './Button.astro';
 
@@ -12,6 +18,7 @@ interface Props {
 }
 
 const { muted = false } = Astro.props;
+const items = servicesPage.items ?? [];
 ---
 
 {
@@ -31,7 +38,7 @@ const { muted = false } = Astro.props;
           )}
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {site.services.items.map((item) => {
+          {items.map((item) => {
             const image = resolveImageOrNull(item.image);
             return (
               <!--
@@ -62,7 +69,7 @@ const { muted = false } = Astro.props;
                 */}
                 <div class="flex-1 px-[18px] py-4 md:py-7">
                   {item.title && <h3 class="font-bold text-[15px] mb-2">{item.title}</h3>}
-                  {item.text && <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.text}</p>}
+                  {item.description && <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.description}</p>}
                 </div>
               </article>
             );

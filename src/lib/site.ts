@@ -101,7 +101,10 @@ export interface SiteInfo {
     /** セクション内に置く下層ページへのリンク文言（未入力なら非表示） */
     linkLabel: string;
     linkHref: string;
-    items: { title: string; text: string; image: string }[];
+    // カード個別項目（画像・タイトル・説明）は siteInfo.yml では持たず、
+    // 「下層ページ ＞ サービス内容・料金」の services.yml「サービス詳細」
+    // （src/lib/pages.ts の servicesPage.items）を Service.astro が直接参照する
+    // （二重管理防止。/services ページと完全に同じデータ・並び順を共有）。
   };
   flow: {
     eyebrow: string;

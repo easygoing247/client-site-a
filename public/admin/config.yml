@@ -101,19 +101,12 @@ collections:
           - label: "サービス"
             name: "services"
             widget: object
+            hint: "個別のサービス項目（画像・タイトル・説明）は「下層ページ ＞ サービス内容・料金」の「サービス詳細」で一元管理します。ここではトップページのセクション見出しと下層ページへのリンク文言のみを設定します。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
               - { label: "下層ページへのリンク文言（例：サービス内容を見る）", name: "linkLabel", widget: string, required: false, hint: "未入力の場合、セクション内のリンクボタンは表示されません。" }
               - { label: "リンク先", name: "linkHref", widget: string, required: false, default: "/services" }
-              - label: "サービス項目"
-                name: "items"
-                widget: list
-                required: false
-                fields:
-                  - { label: "タイトル", name: "title", widget: string, required: false }
-                  - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
-                  - { label: "画像", name: "image", widget: image, required: false }
 
           - label: "制作の流れ"
             name: "flow"

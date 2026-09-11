@@ -348,10 +348,13 @@
 
   // ==========================================================================
   // サービス・事業内容
+  // カード個別項目（画像・タイトル・説明）は siteInfo.yml には無く、
+  // 「下層ページ ＞ サービス内容・料金」（別CMSエントリ）の「サービス詳細」を
+  // 実サイトが直接参照する。このプレビューからは編集中のそのエントリの値を
+  // 参照できないため、products と同様プレースホルダー表示に留める。
   // ==========================================================================
   function renderServices(h, data, getAsset, muted) {
     var section = data.services || {};
-    var items = section.items || [];
     return h(
       'section',
       { id: 'services', className: cx('py-16 px-5', muted && 'bg-surface-muted') },
@@ -360,27 +363,9 @@
         { className: 'max-w-[1100px] mx-auto' },
         renderSectionHeading(h, section.eyebrow, section.heading),
         h(
-          'div',
-          { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5' },
-          items.map(function (item, i) {
-            var imageUrl = assetUrl(getAsset, item.image);
-            return h(
-              'article',
-              { key: i, className: 'flex flex-col aspect-square md:aspect-auto border border-surface-border rounded-card overflow-hidden bg-white' },
-              imageUrl &&
-                h('img', {
-                  src: imageUrl,
-                  alt: item.title ? item.title + 'のイメージ' : '',
-                  className: 'w-full flex-none aspect-video md:aspect-auto md:h-[150px] object-cover block',
-                }),
-              h(
-                'div',
-                { className: 'flex-1 px-[18px] py-4 md:py-7' },
-                item.title && h('h3', { className: 'font-bold text-[15px] mb-2' }, item.title),
-                item.text && h('p', { className: 'text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line' }, item.text)
-              )
-            );
-          })
+          'p',
+          { className: 'text-center text-[13px] text-ink-faint' },
+          '（サービス項目一覧は「下層ページ ＞ サービス内容・料金」の「サービス詳細」から表示されるため、このプレビューでは省略しています）'
         ),
         section.linkLabel &&
           section.linkHref &&
