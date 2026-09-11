@@ -34,7 +34,7 @@ features_section:
       icon: ../assets/icon-support.png
 services:
   eyebrow: SERVICE
-  heading: サービス・事業内容
+  heading: サービス内容
   linkLabel: サービス内容を見る
   linkHref: /services
   items:
