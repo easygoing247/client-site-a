@@ -2,9 +2,13 @@
 // ============================================================================
 // Works.astro — 「実績・活用事例」（features.enableWorks で表示制御）
 // カードは型化ページ（Content Collections: works）から取得する。個別ページ
-// （/works/[slug]）が実在するため、旧バージョン（siteInfo.yml の固定リスト・
-// リンク無し）と異なり、カード自体が /works/[slug] へのリンクになる。
-// トップページに表示する件数は site.works.count（既定値は resolveWorksCount 側）。
+// （/works/[slug]）が実在するため、カード自体が /works/[slug] へのリンクになる。
+// ・表示件数は site.works.count（先頭N件。既定3）。
+// ・並び順は site.works.order（CMS「表示順序」リストのドラッグ&ドロップ）を
+//   優先し、未掲載の実績は order（数値フィールド）→ 登録順でその後ろに続く。
+// ・PC表示の並列カード枚数は site.works.columns（既定3、1〜3）。表示件数が
+//   その枚数を超える場合は、両端の矢印クリック／フリックでスライド閲覧する
+//   （外部ライブラリ不使用：CSS scroll-snap のネイティブ機構を使う）。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
@@ -16,9 +20,36 @@ interface Props {
 
 const { muted = false } = Astro.props;
 const count = Number(site.works.count) > 0 ? Math.floor(Number(site.works.count)) : 3;
-const works = (await getCollection('works'))
+const columns = Math.min(3, Math.max(1, Math.floor(Number(site.works.columns)) || 3));
+
+const allWorks = await getCollection('works');
+
+// 「表示順序」（CMSでドラッグ&ドロップした slug のリスト）を優先し、
+// そこに無い実績は従来の order（数値）→ 登録順でその後ろに続ける。
+const orderList = (site.works.order ?? []).filter(
+  (slug): slug is string => !!slug && String(slug).trim() !== ''
+);
+const bySlug = new Map<string, (typeof allWorks)[number]>(allWorks.map((w) => [w.slug, w]));
+const seen = new Set<string>();
+const ordered: typeof allWorks = [];
+orderList.forEach((slug) => {
+  const work = bySlug.get(slug);
+  if (work && !seen.has(slug)) {
+    ordered.push(work);
+    seen.add(slug);
+  }
+});
+allWorks
+  .filter((w) => !seen.has(w.slug))
   .sort((a, b) => a.data.order - b.data.order)
-  .slice(0, count);
+  .forEach((w) => ordered.push(w));
+
+const works = ordered.slice(0, count);
+// 矢印はいったんマークアップに含めておき、実際にオーバーフローしている
+// かどうか（PCで表示件数が columns 超、またはスマホで2件以上など）は
+// クライアント側で scrollWidth を実測して判定する（下部 <script> 参照）。
+// ここでは「そもそも2件以上あるか」だけで有無を決める。
+const isSlider = works.length > 1;
 ---
 
 {
@@ -37,41 +68,122 @@ const works = (await getCollection('works'))
             </h2>
           )}
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {works.map((work) => (
-            <!--
-              スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
-              含めたカード全体」のシルエットが正方形に近くなるよう、
-              カードを flex flex-col aspect-square のコンテナ化する。
-              画像自体は横長（aspect-video）のまま保ち、残りの高さを
-              テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
-              解除し、画像は元の固定高さ（170px）に戻る。
-            -->
-            <a
-              href={`/works/${work.slug}/`}
-              class="flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
-            >
-              {work.data.mainImage && (
-                <Image
-                  src={work.data.mainImage}
-                  alt={work.data.title ? `${work.data.title}の実績イメージ` : ''}
-                  class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
-                  width={450}
-                  height={253}
-                  format="webp"
-                  loading="lazy"
-                />
-              )}
-              <div class="flex-1 px-4 py-4 md:py-6">
-                {work.data.title && <h3 class="font-bold text-[15px] mb-1">{work.data.title}</h3>}
-                {work.data.summary && (
-                  <p class="text-[12px] text-ink-soft m-0 line-clamp-2 whitespace-pre-line">{work.data.summary}</p>
+
+        <div class="relative">
+          <div
+            id="works-track"
+            class="works-track"
+            style={`--works-cols:${columns};`}
+          >
+            {works.map((work) => (
+              <!--
+                スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
+                含めたカード全体」のシルエットが正方形に近くなるよう、
+                カードを flex flex-col aspect-square のコンテナ化する。
+                画像自体は横長（aspect-video）のまま保ち、残りの高さを
+                テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
+                解除し、画像は元の固定高さ（170px）に戻る。
+              -->
+              <a
+                href={`/works/${work.slug}/`}
+                class="works-card flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
+              >
+                {work.data.mainImage && (
+                  <Image
+                    src={work.data.mainImage}
+                    alt={work.data.title ? `${work.data.title}の実績イメージ` : ''}
+                    class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
+                    width={450}
+                    height={253}
+                    format="webp"
+                    loading="lazy"
+                  />
                 )}
-              </div>
-            </a>
-          ))}
+                <div class="flex-1 px-4 py-4 md:py-6">
+                  {work.data.title && <h3 class="font-bold text-[15px] mb-1">{work.data.title}</h3>}
+                  {work.data.summary && (
+                    <p class="text-[12px] text-ink-soft m-0 line-clamp-2 whitespace-pre-line">{work.data.summary}</p>
+                  )}
+                  {typeof work.data.price === 'number' && (
+                    <div class="text-[14px] font-bold text-primary mt-2">
+                      ¥{work.data.price.toLocaleString('ja-JP')}<span class="text-[11px] font-normal text-ink-soft">〜</span>
+                    </div>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+
+          {isSlider && (
+            <>
+              <button
+                type="button"
+                id="works-prev"
+                aria-label="前の実績を表示"
+                class="works-arrow works-arrow-prev absolute top-1/2 -translate-y-1/2 left-0 md:-left-4 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M15 6l-6 6 6 6" stroke="currentColor" class="text-secondary" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="works-next"
+                aria-label="次の実績を表示"
+                class="works-arrow works-arrow-next absolute top-1/2 -translate-y-1/2 right-0 md:-right-4 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" class="text-secondary" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </section>
   )
 }
+
+<script>
+  // 実績カードのスライダー（CSS scroll-snap を使ったネイティブ実装。
+  // 外部ライブラリ不使用）。PCでは矢印クリックでカード幅分スクロールし、
+  // スマホでは横フリック操作でネイティブにスクロールできる（scroll-snap
+  // によりカード境界でぴたっと止まる）。
+  const track = document.getElementById('works-track') as HTMLElement | null;
+  const prevBtn = document.getElementById('works-prev') as HTMLButtonElement | null;
+  const nextBtn = document.getElementById('works-next') as HTMLButtonElement | null;
+
+  if (track) {
+    const step = () => {
+      const first = track.querySelector<HTMLElement>(':scope > a');
+      if (!first) return track.clientWidth;
+      const style = getComputedStyle(track);
+      const gap = parseFloat(style.columnGap || style.gap || '0') || 0;
+      return first.getBoundingClientRect().width + gap;
+    };
+
+    const updateArrows = () => {
+      const hasOverflow = track.scrollWidth > track.clientWidth + 4;
+      if (prevBtn) prevBtn.hidden = !hasOverflow;
+      if (nextBtn) nextBtn.hidden = !hasOverflow;
+      if (!hasOverflow) return;
+      if (prevBtn) prevBtn.disabled = track.scrollLeft <= 4;
+      if (nextBtn) nextBtn.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    };
+
+    prevBtn?.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
+    nextBtn?.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
+
+    let scrollTicking = false;
+    track.addEventListener('scroll', () => {
+      if (scrollTicking) return;
+      scrollTicking = true;
+      requestAnimationFrame(() => {
+        updateArrows();
+        scrollTicking = false;
+      });
+    });
+    window.addEventListener('resize', updateArrows);
+    updateArrows();
+  }
+</script>

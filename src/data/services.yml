@@ -5,6 +5,7 @@ lead: |-
 itemsHeading: サービス内容
 items:
   - title: Webサイト制作
+    badgeText: 人気
     description: |-
       コーポレートサイトやサービスサイトなど、
       目的に合わせたWebサイトを企画・デザイン・実装まで一貫して制作します。

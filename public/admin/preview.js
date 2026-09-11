@@ -230,6 +230,8 @@
     var nav = filterVisibleNavForPreview(data, data.nav);
     var navCta = data.navCta || {};
     var logoUrl = assetUrl(getAsset, company.logo);
+    var showTextLogo = !logoUrl || company.useTextLogo === true;
+    var textLogo = company.textLogo || company.name || 'LOGO';
 
     return h(
       'header',
@@ -237,9 +239,9 @@
       h(
         'div',
         { className: 'max-w-[1200px] mx-auto px-5 py-[14px] flex items-center justify-between gap-4' },
-        logoUrl
-          ? h('img', { src: logoUrl, alt: (company.name || '') + ' ロゴ', className: 'h-7 w-auto object-contain' })
-          : h('div', { className: 'font-bold text-[18px] text-secondary' }, company.name || 'LOGO'),
+        showTextLogo
+          ? h('span', { className: 'text-[20px] font-bold text-secondary leading-none' }, textLogo)
+          : h('img', { src: logoUrl, alt: (company.name || '') + ' ロゴ', className: 'h-7 w-auto object-contain' }),
         h(
           'nav',
           { className: 'hidden md:flex items-center gap-8' },
@@ -482,6 +484,7 @@
           { className: 'flex flex-col lg:flex-row lg:items-stretch gap-3 lg:gap-2' },
           steps.reduce(function (acc, step, i) {
             var isLast = i === steps.length - 1;
+            var isHighlighted = step.highlight === true;
             acc.push(
               h(
                 'div',
@@ -489,16 +492,16 @@
                   key: 'step-' + i,
                   className: cx(
                     'flex-1 rounded-2xl border-2 p-6 flex flex-col items-center text-center',
-                    isLast ? 'border-primary bg-gradient-to-br from-primary to-primary-dark' : 'border-surface-border bg-white'
+                    isHighlighted ? 'border-primary bg-gradient-to-br from-primary to-primary-dark' : 'border-surface-border bg-white'
                   ),
                 },
                 step.number != null &&
-                  h('div', { className: cx('text-[26px] font-bold mb-2 leading-none', isLast ? 'text-white' : 'text-primary') }, String(step.number)),
-                step.title && h('h3', { className: cx('text-[14px] font-bold mb-1.5', isLast && 'text-white') }, step.title),
+                  h('div', { className: cx('text-[26px] font-bold mb-2 leading-none', isHighlighted ? 'text-white' : 'text-primary') }, String(step.number)),
+                step.title && h('h3', { className: cx('text-[14px] font-bold mb-1.5', isHighlighted && 'text-white') }, step.title),
                 step.text &&
                   h(
                     'p',
-                    { className: cx('text-[12px] leading-[1.7] m-0 whitespace-pre-line', isLast ? 'text-white/85' : 'text-ink-soft') },
+                    { className: cx('text-[12px] leading-[1.7] m-0 whitespace-pre-line', isHighlighted ? 'text-white/85' : 'text-ink-soft') },
                     step.text
                   )
               )
@@ -1002,6 +1005,8 @@
     var company = data.company || {};
     var footerNav = filterVisibleNavForPreview(data, data.footerNav);
     var logoUrl = assetUrl(getAsset, company.logo);
+    var showTextLogo = !logoUrl || company.useTextLogo === true;
+    var textLogo = company.textLogo || company.name || 'LOGO';
     var snsLinks = orderedSnsForPreview(data);
 
     return h(
@@ -1013,9 +1018,9 @@
         h(
           'div',
           { className: 'text-center md:text-left' },
-          logoUrl
-            ? h('img', { src: logoUrl, alt: (company.name || '') + ' ロゴ', className: 'h-6 w-auto object-contain mb-4 mx-auto md:mx-0 block' })
-            : h('div', { className: 'font-bold text-white mb-4' }, company.name || 'LOGO'),
+          showTextLogo
+            ? h('p', { className: 'text-[18px] font-bold text-white mb-4' }, textLogo)
+            : h('img', { src: logoUrl, alt: (company.name || '') + ' ロゴ', className: 'h-6 w-auto object-contain mb-4 mx-auto md:mx-0 block' }),
           snsLinks.length > 0 &&
             h(
               'div',
@@ -1432,8 +1437,7 @@
           h(
             'div',
             { className: 'max-w-[1100px] mx-auto' },
-            regularHeading && h('h2', { className: 'text-center font-bold mb-3', style: styleObj('font-size:clamp(20px,3vw,26px);') }, regularHeading),
-            h('p', { className: 'text-center text-[11px] text-ink-faint mb-10' }, '※PC表示時の目安列数です。表示は画面幅により自動調整されます。'),
+            regularHeading && h('h2', { className: 'text-center font-bold mb-10', style: styleObj('font-size:clamp(20px,3vw,26px);') }, regularHeading),
             h(
               'div',
               { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' },
@@ -1600,7 +1604,18 @@
                 h(
                   'div',
                   {},
-                  item.title && h('h3', { className: 'text-[19px] font-bold mb-3' }, item.title),
+                  item.title &&
+                    h(
+                      'h3',
+                      { className: 'flex items-center flex-wrap gap-x-2 gap-y-1 text-[19px] font-bold mb-3' },
+                      item.badgeText &&
+                        h(
+                          'span',
+                          { className: 'inline-flex items-center rounded-full bg-primary text-white text-[11px] font-bold leading-none px-2.5 py-1 whitespace-nowrap' },
+                          item.badgeText
+                        ),
+                      item.title
+                    ),
                   item.description &&
                     h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4' }, item.description),
                   features.length > 0 &&

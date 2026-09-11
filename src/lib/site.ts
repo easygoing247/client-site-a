@@ -13,6 +13,10 @@ export interface SiteInfo {
   company: {
     name: string;
     logo: string;
+    /** ロゴ画像が無い場合、または useTextLogo が true の場合に表示するテキストロゴ */
+    textLogo?: string;
+    /** true でロゴ画像より常にテキストロゴを優先表示する */
+    useTextLogo?: boolean;
     siteName: string;
     tagline: string;
     description: string;
@@ -109,7 +113,7 @@ export interface SiteInfo {
   flow: {
     eyebrow: string;
     heading: string;
-    steps: { number: number; title: string; text: string }[];
+    steps: { number: number; title: string; text: string; highlight?: boolean }[];
   };
   works: {
     eyebrow: string;
@@ -119,6 +123,11 @@ export interface SiteInfo {
     // （二重管理防止。/works/[slug] と表示内容・並び順が常に一致する）。
     /** トップページに表示する件数 */
     count: number;
+    /** PC表示時の並列カード枚数（1〜3。超過分はスライダーで閲覧） */
+    columns?: number;
+    /** ドラッグ&ドロップで並べ替える表示順序（works の slug のリスト）。
+     * 未掲載の実績は末尾に追加順で並ぶ。 */
+    order?: string[];
   };
   plans: {
     eyebrow: string;

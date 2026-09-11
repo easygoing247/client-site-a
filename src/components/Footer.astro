@@ -14,6 +14,8 @@ import { resolveImageOrNull } from '../lib/images';
 import { orderedSnsLinks } from '../lib/sns';
 
 const logo = resolveImageOrNull(site.company.logo);
+const showTextLogo = !logo || site.company.useTextLogo === true;
+const textLogo = site.company.textLogo || site.company.name;
 const footerNav = visibleNavItems(site.footerNav);
 // 2列レイアウトの行数は、表示される項目数に合わせて動的に算出する
 // （非表示セクションが増えても不自然な空白行ができないようにするため）
@@ -28,15 +30,18 @@ const snsLinks = orderedSnsLinks();
   <div class="max-w-[900px] mx-auto flex flex-col md:flex-row md:justify-between gap-9 mb-9">
     <!-- 左：ロゴ＋SNS -->
     <div class="text-center md:text-left">
-      {logo && (
-        <Image
-          src={logo}
-          alt={`${site.company.name} ロゴ`}
-          class="h-6 w-auto object-contain mb-4 mx-auto md:mx-0 block"
-          width={161}
-          height={63}
-        />
-      )}
+      {showTextLogo
+        ? (textLogo && <p class="text-[18px] font-bold text-white mb-4 leading-none">{textLogo}</p>)
+        : (logo && (
+            <Image
+              src={logo}
+              alt={`${site.company.name} ロゴ`}
+              class="h-6 w-auto object-contain mb-4 mx-auto md:mx-0 block"
+              width={161}
+              height={63}
+            />
+          ))
+      }
       <div class:list={['flex items-center justify-center md:justify-start gap-3', snsLinks.length === 0 && 'hidden']}>
         {
           snsLinks.map((sns) => (

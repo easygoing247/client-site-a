@@ -132,7 +132,7 @@
   }
 
   /*
-    /products ページ「そうではない商品」セクションのグリッド列数（CMS の
+    /products ページ「下段掲載商品」セクションのグリッド列数（CMS の
     「商品作成」＞ regularColumns、既定3）。Tailwind の JIT はテンプレート
     文字列で組み立てたクラス名（例: `lg:grid-cols-${n}`）を検出できないため、
     列数は CSS変数 --products-cols 経由のインラインstyleで渡し、この
@@ -145,6 +145,38 @@
   @media (min-width: 768px) {
     .products-grid {
       grid-template-columns: repeat(var(--products-cols, 3), minmax(0, 1fr));
+    }
+  }
+
+  /*
+    トップページ「実績・活用事例」のスライダー（Works.astro）。
+    Swiper 等の外部ライブラリは使わず、CSS scroll-snap のネイティブ機構
+    だけでPC矢印クリック／スマホのフリックの両方に対応する（軽量・
+    外部CDN不使用のパフォーマンス方針を維持するため）。
+    列数（PC表示時の並列カード枚数、CMSの site.works.columns）は
+    products-grid と同じ理由でCSS変数 --works-cols 経由。
+  */
+  .works-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    gap: 1.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+  .works-track::-webkit-scrollbar {
+    display: none;
+  }
+  .works-track > a {
+    scroll-snap-align: start;
+    min-width: 0;
+  }
+  @media (min-width: 640px) {
+    .works-track {
+      grid-auto-columns: calc((100% - (var(--works-cols, 3) - 1) * 1.5rem) / var(--works-cols, 3));
     }
   }
 

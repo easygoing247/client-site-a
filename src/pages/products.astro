@@ -4,8 +4,8 @@
 // データソースは src/data/products.yml（src/lib/pages.ts の productsPage）。
 // トップページ「商品一覧」セクション（Products.astro）と同じデータを
 // 単一の情報源として共有する。
-// ・「目立たせたい商品」（section: featured/both）＝横長カード
-// ・「そうではない商品」（section: regular/both）＝縦型カード（列数はCMS設定）
+// ・「上段掲載商品」（section: featured/both）＝横長カード
+// ・「下段掲載商品」（section: regular/both）＝縦型カード（列数はCMS設定）
 // ・個別詳細ページへは遷移させず、カードクリックで画像をモーダル拡大表示する
 //   （src/pages/works/[slug].astro とは異なる方針。下部 <script> 参照）。
 // ============================================================================
@@ -116,9 +116,8 @@ const regularItems = await Promise.all(
       <section class="py-14 px-5 bg-surface-muted">
         <div class="max-w-[1100px] mx-auto">
           {regularHeading && (
-            <h2 class="text-center font-bold mb-3" style="font-size:clamp(20px,3vw,26px);">{regularHeading}</h2>
+            <h2 class="text-center font-bold mb-10" style="font-size:clamp(20px,3vw,26px);">{regularHeading}</h2>
           )}
-          <p class="text-center text-[11px] text-ink-faint mb-10">※PC表示時の目安列数です。表示は画面幅により自動調整されます。</p>
           <div class="products-grid gap-5" style={`--products-cols:${regularColumns};`}>
             {regularItems.map((item) => {
               const Tag = item.lightboxSrc ? 'button' : 'div';

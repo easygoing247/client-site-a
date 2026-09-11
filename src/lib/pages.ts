@@ -22,6 +22,8 @@ export interface ServicesPage {
   priceHeading?: string;
   items?: {
     title?: string;
+    /** サービス名の左隣に表示するバッジ文言（未入力ならバッジ非表示） */
+    badgeText?: string;
     description?: string;
     image?: string;
     features?: string[];
@@ -137,7 +139,7 @@ export interface ProductItemConfig {
   price?: number | string;
   showBadge?: boolean;
   badgeText?: string;
-  /** 表示区分：featured=目立たせたい商品／regular=そうではない商品／both=両方 */
+  /** 表示区分：featured=上段掲載商品／regular=下段掲載商品／both=両方 */
   section?: ProductSectionPlacement;
 }
 
@@ -145,11 +147,11 @@ export interface ProductsPage {
   /** /products ページの見出し（既定「商品一覧」） */
   heading?: string;
   lead?: string;
-  /** 「目立たせたい商品」セクションの見出し（既定「新商品」） */
+  /** 「上段掲載商品」セクションの見出し（既定「新商品」） */
   featuredHeading?: string;
-  /** 「そうではない商品」セクションの見出し（既定「通年商品」） */
+  /** 「下段掲載商品」セクションの見出し（既定「通年商品」） */
   regularHeading?: string;
-  /** 「そうではない商品」セクションのPC表示時のグリッド列数の目安（既定 3） */
+  /** 「下段掲載商品」セクションのPC表示時のグリッド列数の目安（既定 3） */
   regularColumns?: number;
   items?: ProductItemConfig[];
 }
@@ -216,7 +218,7 @@ export function resolveAllProductItems(items: ProductItemConfig[] | undefined): 
     }));
 }
 
-/** 「そうではない商品」セクションのグリッド列数を安全な範囲（2〜4）に丸める。 */
+/** 「下段掲載商品」セクションのグリッド列数を安全な範囲（2〜4）に丸める。 */
 export function resolveProductColumns(value: number | undefined): number {
   const n = Math.floor(Number(value));
   if (!Number.isFinite(n) || n < 2) return 3;

@@ -680,3 +680,50 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   型化ページではなく可変リスト）に割り当て、`/products` ページ（横長「新商品」＋
   縦型「通年商品」の2セクション、画像クリックでライトボックス拡大表示）と
   トップページ「商品一覧」セクションの両方がこれを参照する（→ 4章）。
+
+### 9.9 最近の仕様変更サマリ（2026-09 バッチ・続き）
+
+- **テキストロゴのフォールバック**：`site.company.textLogo`（未入力なら
+  `company.name`）／`useTextLogo`（true でロゴ画像より常に優先）。
+  `Header.astro` / `Footer.astro` は `!logo || useTextLogo` でテキスト表示に
+  切り替える。`preview.js` の `renderHeader` / `renderFooter` も同じ判定。
+- **「制作の流れ」の強調ステップ**：`flow.steps[].highlight`（boolean）が
+  true のステップだけテーマカラーの背景で強調表示する（旧実装は
+  `i === steps.length - 1` で最後の項目に固定していた）。複数 ON も可。
+  `Flow.astro` / `preview.js` の `renderFlow` を対応させること。
+- **実績・活用事例の拡張**（`Works.astro`）：
+  - カードに `work.data.price` があれば `¥xxx〜` を表示。
+  - トップページに表示する並び順は `site.works.order`（CMS「表示順序」＝
+    `widget: list` ＋ 各項目 `widget: relation`（`collection: works`,
+    `value_field: "{{slug}}"`, `display_fields: ["title"]`）でドラッグ&ドロップ
+    並び替え）を優先し、そこに無い実績は `order`（数値フィールド）→
+    登録順で後ろに続く。**Decap の folder コレクション自体はドラッグ&ドロップ
+    並び替えに対応していない**ため、「並び順だけを別途 `relation` の
+    `list` として siteInfo 側に持つ」のがこのテンプレートでの標準パターン。
+    型化ページの並び順を CMS でドラッグ操作にしたい場合は今後もこの構成
+    （siteInfo.yml 側に `order: list<relation>` を足し、コンポーネント側で
+    「order リストにある分＋残りは数値 order でフォールバック」の二段構え
+    でソートする）を踏襲すること。
+  - PC表示の並列カード枚数は `site.works.columns`（1〜3、既定3）。表示件数が
+    2件以上ある場合は常に矢印ボタンをマークアップに含め、実際に
+    オーバーフローしているか（`scrollWidth > clientWidth`）をクライアント
+    JS で判定して表示/非表示・有効/無効を切り替える（PCで列数以下なら
+    非表示、スマホは1枚表示のため2件以上あれば常に表示、という非対称な
+    条件を、SSR側で分岐せずクライアント側の実測1本に統一するため）。
+  - スライダー本体は Swiper 等の外部ライブラリを使わず、CSS
+    `scroll-snap-type: x mandatory` ＋ 矢印クリック時の `scrollBy({behavior:
+    'smooth'})` によるネイティブ実装（`global.css` の `.works-track`、
+    列数は `.products-grid` と同じ理由で CSS変数 `--works-cols` 経由）。
+    外部CDN不使用の既存方針（9.6）を維持するため。スマホのフリックは
+    ブラウザ標準のタッチスクロールがそのまま機能する。
+- **商品作成のラベル変更**：CMS上の表記を「目立たせたい商品」→
+  「上段掲載商品」、「そうではない商品」→「下段掲載商品」に統一
+  （`section` の値 `featured`/`regular` 自体は変更していない。既存データ
+  互換のため）。`/products` ページの「※PC表示時の目安列数です」の注釈は
+  ページ本文からは削除（CMS側のフィールドヒントには残している）。
+- **`/services` サービス詳細への強調バッジ**：`services.yml` の
+  `items[].badgeText`（文字列のみ、ON/OFFトグルは無し＝入力があれば表示）。
+  サービス名の左隣にテーマカラーの pill バッジを表示。料金表側の
+  `showBadge`＋`badgeText`（2フィールド）とは異なる、より単純な1フィールド
+  方式であることに注意（用途に応じてどちらのパターンでも良いが、混在させる
+  場合はこの差異を意識すること）。

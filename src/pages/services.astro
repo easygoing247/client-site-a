@@ -60,7 +60,16 @@ const priceTable = servicesPage.priceTable ?? [];
                   </div>
                 )}
                 <div>
-                  {item.title && <h3 class="text-[19px] font-bold mb-3">{item.title}</h3>}
+                  {item.title && (
+                    <h3 class="flex items-center flex-wrap gap-x-2 gap-y-1 text-[19px] font-bold mb-3">
+                      {item.badgeText && (
+                        <span class="inline-flex items-center rounded-full bg-primary text-white text-[11px] font-bold leading-none px-2.5 py-1 whitespace-nowrap">
+                          {item.badgeText}
+                        </span>
+                      )}
+                      {item.title}
+                    </h3>
+                  )}
                   {item.description && (
                     <p class="text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-4">{item.description}</p>
                   )}

@@ -122,6 +122,7 @@ collections:
                   - { label: "番号", name: "number", widget: number, value_type: int, required: false }
                   - { label: "タイトル", name: "title", widget: string, required: false }
                   - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
+                  - { label: "このステップを強調表示する", name: "highlight", widget: boolean, default: false, required: false, hint: "ONにしたステップだけ、テーマカラーの背景で目立たせて表示します（複数ONも可）。" }
 
           - label: "商品一覧"
             name: "productsSection"
@@ -137,11 +138,26 @@ collections:
           - label: "実績"
             name: "works"
             widget: object
-            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績・活用事例一覧（型化ページ）」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数のみを設定します。"
+            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績・活用事例一覧（型化ページ）」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数・並び順・列数のみを設定します。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
               - { label: "トップページに表示する件数", name: "count", widget: number, value_type: int, default: 3, min: 1, max: 12, required: false }
+              - { label: "PC表示時の並列カード枚数（1〜3）", name: "columns", widget: number, value_type: int, default: 3, min: 1, max: 3, required: false, hint: "実績カードの表示件数がこの枚数を超える場合、両端の矢印でスライド閲覧できるようになります。" }
+              - label: "表示順序"
+                name: "order"
+                widget: list
+                required: false
+                hint: "ドラッグ&ドロップで並び替えると、トップページでの表示順に反映されます。ここに追加していない実績（または新しく作成した実績）は、この一覧の後ろに登録順で表示されます。"
+                field:
+                  label: "実績"
+                  name: "item"
+                  widget: relation
+                  collection: "works"
+                  search_fields: ["title"]
+                  display_fields: ["title"]
+                  value_field: "{{slug}}"
+                  required: false
 
           - label: "料金プラン"
             name: "plans"
@@ -247,6 +263,8 @@ collections:
             fields:
               - { label: "会社名", name: "name", widget: string, required: false }
               - { label: "ロゴ画像", name: "logo", widget: image, required: false }
+              - { label: "テキストロゴ（サイト名）", name: "textLogo", widget: string, required: false, hint: "ロゴ画像が未設定の場合、またはこの下の「テキストロゴを使用する」がONの場合に、ヘッダー・フッターのロゴ位置へ文字として表示されます。未入力の場合は「会社名」を使用します。" }
+              - { label: "テキストロゴを使用する（ロゴ画像より優先）", name: "useTextLogo", widget: boolean, default: false, required: false }
               - { label: "サイトタイトル（<title>用）", name: "siteName", widget: string, required: false }
               - { label: "キャッチコピー（内部用）", name: "tagline", widget: string, required: false }
               - { label: "サイト説明文（meta description）", name: "description", widget: text, required: false }
@@ -431,9 +449,9 @@ collections:
         fields:
           - { label: "ページ見出し（/products）", name: "heading", widget: string, required: false }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
-          - { label: "「目立たせたい商品」セクションの見出し", name: "featuredHeading", widget: string, required: false, default: "新商品", hint: "横長カードで表示するセクションの見出しです。空欄にすると「新商品」を表示します。" }
-          - { label: "「そうではない商品」セクションの見出し", name: "regularHeading", widget: string, required: false, default: "通年商品", hint: "縦型カードで表示するセクションの見出しです。空欄にすると「通年商品」を表示します。" }
-          - { label: "「そうではない商品」のグリッド列数（PC表示時の目安）", name: "regularColumns", widget: number, value_type: int, default: 3, min: 2, max: 4, required: false, hint: "※PC表示時の目安列数です。スマホでは常に1列、タブレット幅では自動調整されます。" }
+          - { label: "上段掲載商品セクションの見出し", name: "featuredHeading", widget: string, required: false, default: "新商品", hint: "横長カードで表示するセクションの見出しです。空欄にすると「新商品」を表示します。" }
+          - { label: "下段掲載商品セクションの見出し", name: "regularHeading", widget: string, required: false, default: "通年商品", hint: "縦型カードで表示するセクションの見出しです。空欄にすると「通年商品」を表示します。" }
+          - { label: "下段掲載商品のグリッド列数（PC表示時の目安）", name: "regularColumns", widget: number, value_type: int, default: 3, min: 2, max: 4, required: false, hint: "※PC表示時の目安列数です。スマホでは常に1列、タブレット幅では自動調整されます。" }
           - label: "商品項目"
             name: "items"
             widget: list
@@ -454,8 +472,8 @@ collections:
                 required: false
                 hint: "この商品をどちらのセクションに表示するかを選びます。"
                 options:
-                  - { label: "目立たせたい商品（新商品等）", value: "featured" }
-                  - { label: "そうではない商品（通年商品等）", value: "regular" }
+                  - { label: "上段掲載商品（新商品等）", value: "featured" }
+                  - { label: "下段掲載商品（通年商品等）", value: "regular" }
                   - { label: "両方に表示", value: "both" }
 
   # ==========================================================================
@@ -524,6 +542,7 @@ collections:
             required: false
             fields:
               - { label: "サービス名", name: "title", widget: string, required: false }
+              - { label: "バッジテキスト（例：人気／おすすめ）", name: "badgeText", widget: string, required: false, hint: "入力すると、サービス名の左隣にテーマカラーのバッジが表示されます。未入力ならバッジは表示されません。" }
               - { label: "説明（Enterキーで改行可）", name: "description", widget: text, required: false }
               - { label: "画像", name: "image", widget: image, required: false }
               - { label: "画像とテキストの配置を左右反転する", name: "reverseLayout", widget: boolean, default: false, required: false, hint: "OFF：画像が左・テキストが右（既定）／ON：画像が右・テキストが左。スマホ表示（1カラム）では常に画像→テキストの順です。" }

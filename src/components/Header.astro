@@ -10,15 +10,22 @@ import MobileNavDrawer from './MobileNavDrawer.astro';
 
 const logo = resolveImageOrNull(site.company.logo);
 const nav = visibleNavItems(site.nav);
+// ロゴ画像が無い、または「テキストロゴを使用する」がONの場合は
+// テキストロゴ（未入力なら会社名）を表示する。
+const showTextLogo = !logo || site.company.useTextLogo === true;
+const textLogo = site.company.textLogo || site.company.name;
 ---
 
 <header
   class="sticky top-0 z-50 border-b border-surface-border bg-white/95 backdrop-blur-sm"
 >
   <div class="max-w-[1200px] mx-auto px-5 py-[14px] flex items-center justify-between gap-4">
-    {logo && (
-      <a href="/" aria-label="トップページへ戻る">
-        <Image src={logo} alt={`${site.company.name} ロゴ`} class="h-7 w-auto object-contain" width={161} height={63} />
+    {(logo || textLogo) && (
+      <a href="/" aria-label="トップページへ戻る" class="flex items-center">
+        {showTextLogo
+          ? (textLogo && <span class="text-[20px] font-bold text-secondary leading-none">{textLogo}</span>)
+          : (logo && <Image src={logo} alt={`${site.company.name} ロゴ`} class="h-7 w-auto object-contain" width={161} height={63} />)
+        }
       </a>
     )}
 

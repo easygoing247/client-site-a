@@ -33,25 +33,26 @@ const enabled = site.features.enableFlow;
       {
         steps.map((step, i) => {
           const isLast = i === steps.length - 1;
+          const isHighlighted = step.highlight === true;
           return (
             <>
               <div
                 role="listitem"
                 class:list={[
                   'flex-1 rounded-2xl border-2 p-6 flex flex-col items-center text-center transition-colors',
-                  isLast
+                  isHighlighted
                     ? 'border-primary bg-gradient-to-br from-primary to-primary-dark'
                     : 'border-surface-border bg-white',
                 ]}
               >
                 {step.number != null && (
-                  <div class:list={['text-[26px] font-bold mb-2 leading-none', isLast ? 'text-white' : 'text-primary']}>
+                  <div class:list={['text-[26px] font-bold mb-2 leading-none', isHighlighted ? 'text-white' : 'text-primary']}>
                     {step.number}
                   </div>
                 )}
-                {step.title && <h3 class:list={['text-[14px] font-bold mb-1.5', isLast && 'text-white']}>{step.title}</h3>}
+                {step.title && <h3 class:list={['text-[14px] font-bold mb-1.5', isHighlighted && 'text-white']}>{step.title}</h3>}
                 {step.text && (
-                  <p class:list={['text-[12px] leading-[1.7] m-0 whitespace-pre-line', isLast ? 'text-white/85' : 'text-ink-soft']}>
+                  <p class:list={['text-[12px] leading-[1.7] m-0 whitespace-pre-line', isHighlighted ? 'text-white/85' : 'text-ink-soft']}>
                     {step.text}
                   </p>
                 )}
