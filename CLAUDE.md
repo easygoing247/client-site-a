@@ -384,6 +384,24 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   配信される実体バージョンが無告知で変わり得て再現性が無い。バージョンを
   上げる際は https://github.com/decaporg/decap-cms/releases を確認し、
   この行のバージョンと隣接コメントの日付を両方更新すること。
+- **「公開して新規作成」がフォームをリセットしない不具合への補正**：
+  `local_backend: true` ＋ `decap-server`（`npm run cms:proxy`）を使った
+  実機検証で、既存エントリの編集画面から「公開して新規作成」を実行すると
+  git への保存自体は成功するのに Decap 側が `#/collections/<name>/new` への
+  ルート遷移を行わず、直前の編集画面のまま留まることを確認した
+  （`/new` 画面に既にいる状態から実行した場合はハッシュの変化こそないが、
+  同様に Redux 側の入力値がリセットされない）。一方 `/new` へブラウザの
+  通常のページ読み込みで直接アクセスすると必ず空欄になることも確認済み。
+  「公開して複製する」は複製元の内容を引き継ぐのが仕様どおりの正しい動作
+  のため対象外。`public/admin/index.html` に、メニュー項目
+  「公開して新規作成」のクリックを検知してコレクション名を控え、
+  Decap の `postSave` イベント（保存完了時に発火）を検知した時点で
+  `location.hash` を強制的に `#/collections/<name>/new` へ設定して
+  `location.reload()` する補正コードを追加している（`public/admin/index.html`
+  末尾付近の `<script>` 内、「9) 「公開して新規作成」実行後に...」という
+  コメントブロック参照）。Decap のバージョンアップ等で
+  この挙動自体が修正された場合も、この補正コードは無害（単に少し余計に
+  リロードされるだけ）なので残しておいて問題ない。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
 - **公式SNS**：siteInfo.yml トップレベルの `sns` リスト（CMS「SNS設定」、`{id, url, enabled}`、
   id は `line`/`instagram`/`x`/`facebook`/`youtube`/`tiktok`）に一元化。アイコン定義（SVG パス・

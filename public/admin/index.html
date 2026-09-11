@@ -168,6 +168,29 @@
       }
 
       /*
+        上のViewControlsを見た目だけヘッダー右側（ToolbarSubSectionLast付近）
+        へ寄せるための固定配置。以前は targetWrapper.appendChild() でDOM上
+        物理的に付け替えていたが、この要素はDecap本体（React）が生成・管理
+        するノードのため、後から編集画面をアンマウントする際にReact側は
+        「元の親要素の子である」という内部参照のまま removeChild しようと
+        し、実際の親（我々が appendChild で差し替えた側）と食い違って
+        `NotFoundError: Failed to execute 'removeChild' ...` が発生する
+        ことがあった。特に「公開して新規作成」はエディタ全体を一旦
+        アンマウントしてから真っさらな新規フォームを再マウントする、より
+        大きな作り直しを伴うため、このタイミングで例外が起きると
+        画面遷移そのものが失敗し、直前の編集画面に留まってしまう
+        （「公開して複製する」は既存フォームを流用する軽い更新のため
+        同じ経路を通らず、症状が出にくかったと考えられる）。
+        DOM上の親子関係には一切手を加えず、CSSのposition:fixedのみで
+        見た目の位置を再現することで、Reactのアンマウント処理と衝突しない
+        ようにする（下部の<script> relocateViewControls() 参照）。
+      */
+      [class*='ViewControls'].cms-view-controls-pinned {
+        position: fixed !important;
+        z-index: 1001 !important;
+      }
+
+      /*
         「プレビューのチェック」テキストボタン（RefreshPreviewButton）は
         クリックしても目に見える反応がなく、実質的に不要なため非表示にする
         （React管理下のノードのため、DOM上から物理的に削除するとReact側の
@@ -1101,23 +1124,31 @@
         //    ボタン（ViewControls）を、プレビューペイン右上のフローティング
         //    表示から、画面最上部のヘッダーバー内、非表示にした
         //    「プレビューのチェック」ボタンが元あった場所（アカウント
-        //    アイコン側の区切り線のすぐ左＝ToolbarSubSectionLast内）へ
-        //    移動する。
-        //    CSSのposition指定を打ち消すだけではDOM上の位置（プレビュー
-        //    ペインの内側）自体は変わらずヘッダーには表示できないため、
-        //    実際のDOMノードをヘッダー側のコンテナへ移動させる。
-        //    Reactが生成・管理しているノードをそのまま別の場所へ
-        //    appendChild/insertBeforeで移動させても、React内部の参照は
-        //    そのノードを指し続けるため、以降の再レンダー・イベント処理は
-        //    移動先でも問題なく機能する（クイックナビボタンをdocument.body
-        //    直下へ配置しているのと同じ手法）。
-        //    エントリ編集画面への出入りのたびにこの要素は再生成される
-        //    ため、MutationObserverで継続的に検知して移動し続ける。
-        //    ToolbarSubSectionLast は「プレビューのチェック」ボタンの
-        //    ラッパー（ToolbarSubSectionFirst-ToolbarSubSectionLast）を
-        //    指す。ToolbarSectionMainの1番目の子要素（公開状態バッジ）は
-        //    "ToolbarSubSectionFirst"のみでLastを含まないため、
-        //    [class*="ToolbarSubSectionLast"]で一意に絞り込める。
+        //    アイコン側の区切り線のすぐ左＝ToolbarSubSectionLast付近）へ
+        //    "見た目だけ" 寄せる。
+        //
+        //    【重要・過去の実装からの変更点】
+        //    以前は targetWrapper.appendChild(viewControls) でDOM上
+        //    物理的に付け替えていたが、この要素はDecap本体（React）が
+        //    生成・管理するノードであり、物理的な再親付けは危険だと判明
+        //    した：Reactは内部のFiberツリーで「元の親の子である」という
+        //    参照を保持し続けるため、後で編集画面をアンマウントする際に
+        //    その元の親に対して removeChild しようとし、実際の親（我々が
+        //    appendChildで差し替えた側）と食い違って
+        //    `NotFoundError: Failed to execute 'removeChild' on 'Node'...`
+        //    が発生し得る。これが起きるとReactのアンマウント処理自体が
+        //    失敗し、「公開して新規作成」（エディタ全体を一旦アンマウント
+        //    してから真っさらな新規フォームを再マウントする、大きな
+        //    作り直しを伴う操作）が画面遷移しないまま直前の編集画面に
+        //    留まってしまう不具合の原因になっていた（「公開して複製する」
+        //    は既存フォームを流用する軽い更新のため同じ経路を通らず、
+        //    症状が出にくかったと考えられる）。
+        //    そのため、DOM上の親子関係には一切手を加えず、CSSの
+        //    position:fixed（`.cms-view-controls-pinned`。<style>参照）＋
+        //    ToolbarSubSectionLast の getBoundingClientRect() から算出した
+        //    座標を直接指定することで、見た目だけをヘッダー内にあるように
+        //    再現する。ToolbarContainer は常にビューポート上部に固定表示
+        //    されるため、mutation・タイマーで再計算しても問題ない。
         // ==================================================================
         var lastViewControlsNode = null;
         function relocateViewControls() {
@@ -1135,15 +1166,27 @@
             applyScrollSyncIcon();
           }
           var targetWrapper = document.querySelector('[class*="ToolbarSubSectionLast"]');
-          if (!targetWrapper) return;
-          if (viewControls.parentElement === targetWrapper) return;
-          targetWrapper.appendChild(viewControls);
+          if (!targetWrapper) {
+            viewControls.classList.remove('cms-view-controls-pinned');
+            viewControls.style.top = '';
+            viewControls.style.left = '';
+            return;
+          }
+          var rect = targetWrapper.getBoundingClientRect();
+          if (rect.width === 0 && rect.height === 0) return; // 非表示中は計算しない
+          viewControls.classList.add('cms-view-controls-pinned');
+          // ToolbarSubSectionLast の右端に沿わせ、縦方向は中央に揃える
+          // （appendChildで最後の子として並んでいた頃の見た目に近づける）。
+          var controlsRect = viewControls.getBoundingClientRect();
+          viewControls.style.left = Math.max(0, rect.right - controlsRect.width) + 'px';
+          viewControls.style.top = rect.top + (rect.height - controlsRect.height) / 2 + 'px';
         }
 
         var viewControlsObserver = new MutationObserver(function () {
           relocateViewControls();
         });
         viewControlsObserver.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('resize', relocateViewControls);
         relocateViewControls();
 
         // ==================================================================
@@ -1345,6 +1388,69 @@
             // scrollSyncEnabledの値と一致した色に維持し続ける。
             applyScrollSyncIcon();
           }, 500);
+        });
+
+        // ==================================================================
+        // 9) 「公開して新規作成」実行後にフォームが空欄へリセットされない
+        //    不具合の補正。
+        //
+        //    調査の結果（ローカルバックエンドで実機検証済み）：
+        //    ・「公開して新規作成」を押すと git への保存自体は正しく行われる
+        //      （persistEntry・postSaveイベントは正常に発火する）。
+        //    ・しかし、既存エントリの編集画面（#/collections/<name>/entries/
+        //      <slug>）から実行した場合、Decap側は保存後に
+        //      `#/collections/<name>/new` へのルート遷移を行わない
+        //      （ハッシュが変化しないまま同じ編集画面に留まる）ことを
+        //      複数回の実機検証で確認した。既に `/new` 画面にいる状態から
+        //      実行した場合はハッシュの見た目上の変化こそないが、その場合も
+        //      Reduxの内部状態はリセットされず直前の入力値が残り続ける。
+        //      （「公開して複製する」は同じ経路でも正しく `/new` へ遷移し、
+        //      複製元の内容がプリセットされる＝これは仕様どおりの正しい
+        //      動作なので対象外とする。）
+        //    ・`/new` へブラウザの通常のページ読み込み（リロード）で
+        //      直接アクセスすると、Reduxが初期状態から組み立てられるため
+        //      必ず空欄になることを確認済み。
+        //    → Decap側の「新規作成」アクションが期待通りに遷移・リセットを
+        //      行わないため、保存完了（postSaveイベント）を検知した時点で
+        //      このスクリプト側から確実に `#/collections/<name>/new` へ
+        //      ページの再読み込みを行うことで補正する。
+        //
+        //    メニュー項目のクリックだけでは保存完了のタイミングが分からず、
+        //    postSaveイベントだけでは「どのボタンで保存されたか」が
+        //    分からないため、両方を組み合わせる：クリック時にコレクション名を
+        //    ハッシュから読み取って控えておき、postSave発火時にそのコレクション
+        //    の `/new` へ強制的に遷移し直す。
+        // ==================================================================
+        var pendingCreateNewCollection = null;
+        document.addEventListener(
+          'click',
+          function (e) {
+            var node = e.target;
+            var text = '';
+            for (var i = 0; i < 6 && node; i++) {
+              text = (node.textContent || '').trim();
+              if (text) break;
+              node = node.parentElement;
+            }
+            if (!/^公開して新規作成/.test(text)) return;
+            var m = location.hash.match(/^#\/collections\/([^/]+)/);
+            pendingCreateNewCollection = m ? m[1] : null;
+          },
+          true
+        );
+        window.CMS.registerEventListener({
+          name: 'postSave',
+          handler: function () {
+            if (!pendingCreateNewCollection) return;
+            var collectionName = pendingCreateNewCollection;
+            pendingCreateNewCollection = null;
+            // postSave発火の直後はDecap自身の後続処理（トースト表示等）が
+            // まだ進行中のため、わずかに待ってから遷移・リロードする。
+            setTimeout(function () {
+              location.hash = '#/collections/' + collectionName + '/new';
+              location.reload();
+            }, 300);
+          },
         });
       })();
     </script>
