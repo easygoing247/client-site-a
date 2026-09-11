@@ -228,44 +228,64 @@
 
       /*
         プレビュー領域のデバイス幅切替（PC／タブレット／スマホ）。
-        .Pane2 自体は react-split-pane の柔軟幅コンテナのため、内部の
-        iframeにだけ固定幅を指定し、はみ出す場合は .Pane2 側の
-        overflow-x:auto で横スクロールさせる（Pane2自身の幅・高さは
-        変更しない＝スクロール不能やフリーズを避けるため）。
-        react-split-pane の Pane は inline style で display:flex を
-        持つため、iframe側の margin:0 auto はフレックスの主軸（横方向）の
-        オートマージンとして機能し、幅が.Pane2より狭いときに中央寄せされる
-        （flexコンテナでのmargin:auto中央寄せは仕様上の標準的な挙動）。
+        当初はPane2内部のiframeにだけ固定幅を与えて中央寄せする方式で
+        実装したが、「フォームとプレビューを区切る境界線（Resizer）は
+        動かず、プレビューだけが自分の中で縮む」見た目になり、実際の
+        デバイス幅シミュレーションとしては直感的でなかった。
+        そのため、react-split-pane が Pane1/Pane2 に与える幅そのものを
+        （.SplitPane に付与する data-cms-device 属性経由で）上書きし、
+        境界線自体が右へ動いてプレビューの表示幅ちょうどに収まる方式に
+        変更した。react-split-pane 自身が Pane1/Pane2 へ設定する幅は
+        インラインstyle（!importantなし）のため、こちらの!important指定が
+        常に優先される。PC（無指定）に戻すとインラインstyleがそのまま
+        効き、ユーザーが手動でResizerをドラッグして幅調整する従来の
+        動作もそのまま使える（Resizerのmousedown/touchstartで自動的に
+        PCへ戻す処理をJS側に実装し、強制幅とドラッグ操作が競合して
+        「ドラッグしても見た目が動かない」体験にならないようにしている）。
       */
-      .Pane2 {
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
+      .SplitPane[data-cms-device] > .Pane1,
+      .SplitPane[data-cms-device] > .Pane2 {
+        transition: flex-basis 0.2s ease, width 0.2s ease;
+      }
+      .SplitPane[data-cms-device='tablet'] > .Pane1 {
+        width: calc(100% - 768px) !important;
+        flex: 0 0 calc(100% - 768px) !important;
+        max-width: none !important;
+      }
+      .SplitPane[data-cms-device='tablet'] > .Pane2 {
+        width: 768px !important;
+        flex: 0 0 768px !important;
+        max-width: none !important;
+      }
+      .SplitPane[data-cms-device='mobile'] > .Pane1 {
+        width: calc(100% - 375px) !important;
+        flex: 0 0 calc(100% - 375px) !important;
+        max-width: none !important;
+      }
+      .SplitPane[data-cms-device='mobile'] > .Pane2 {
+        width: 375px !important;
+        flex: 0 0 375px !important;
+        max-width: none !important;
       }
       .Pane2 iframe {
+        width: 100% !important;
         height: 100% !important;
-        flex: none !important;
-        transition: width 0.2s ease;
-      }
-      .Pane2[data-cms-device='tablet'] iframe {
-        width: 768px !important;
-        max-width: none !important;
-        margin: 0 auto !important;
-      }
-      .Pane2[data-cms-device='mobile'] iframe {
-        width: 375px !important;
-        max-width: none !important;
-        margin: 0 auto !important;
       }
 
       /*
-        デバイス幅切替ボタン（PC／タブレット／スマホ）。Decap本体（React）が
-        管理するノードの中には一切追加せず、独立した要素として
-        document.bodyへ追加し、position:fixedで.Pane2の右上に重ねて表示する
-        （9)節のViewControls移設と同じ理由＝React管理下のノードへの
-        物理的な子要素追加・親付け替えを避けるため）。
-        表示位置はJS側（relocateDeviceToolbar）が.Pane2のgetBoundingClientRect()
-        を基に算出する。プレビューペイン自体が非表示のスマホ・タブレット幅
-        （@media (max-width: 799px)）では.visibleクラスが付かず非表示のまま。
+        デバイス幅切替ボタン（PC／タブレット／スマホ）。プレビュー枠には
+        一切重ねず、画面最上部のヘッダー内（既存のViewControls＝
+        プレビュー切替／スクロール同期ボタンのすぐ左）に並べて表示する。
+        Decap本体（React）が管理するノードの中には追加せず、独立した
+        要素としてdocument.bodyへ追加し、position:fixedでViewControlsの
+        getBoundingClientRect()を基準に位置合わせする（9)節のViewControls
+        移設と同じ理由＝React管理下のノードへの物理的な子要素追加・
+        親付け替えを避けるため）。
+        以前はプレビューiframeの右上に直接重ねて配置していたが、
+        サイトのハンバーガーメニュー（多くの場合ヘッダー右上に配置）と
+        座標が重なり、クリックがこのツールバーに奪われてiframe側の
+        ハンバーガーボタンを押せなくなる不具合があったため、ヘッダー内
+        配置に変更した。
       */
       #cms-device-toolbar {
         display: none;
@@ -282,16 +302,23 @@
         display: flex;
       }
       #cms-device-toolbar button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
         border: none;
         background: transparent;
         color: #4b5468;
         font-size: 11px;
         font-weight: 700;
-        padding: 6px 10px;
+        padding: 6px 9px;
         border-radius: 6px;
         cursor: pointer;
         line-height: 1;
         white-space: nowrap;
+      }
+      #cms-device-toolbar button svg {
+        flex: none;
+        stroke: currentColor;
       }
       #cms-device-toolbar button.active {
         background: #eef2ff;
@@ -506,6 +533,13 @@
       本体スクリプトの読み込み直後・かつCMSの初期化前にこの位置で読み込む。
     -->
     <script src="./preview.js"></script>
+    <!--
+      本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
+      補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
+      テキスト配置の追加ツール（CMS.registerEditorComponent）。
+      preview.js と同じ理由でCMS初期化前のこの位置に置く。
+    -->
+    <script src="./editor-components.js"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -1304,17 +1338,23 @@
 
         // ==================================================================
         // 7.5) プレビュー領域のデバイス幅切替（PC／タブレット／スマホ）ボタン。
-        //    <style>内の #cms-device-toolbar / .Pane2[data-cms-device] と対に
-        //    なる実装。ボタン自体はDecap（React）管理下のノードには一切
-        //    追加せず、document.bodyへの独立した要素として追加し、
-        //    position:fixedで.Pane2の右上に重ねて表示する
-        //    （7)節のViewControls移設と同じ理由。React管理ノードへの
-        //    物理的な子要素追加・親付け替えは、アンマウント時の
-        //    removeChildエラー等につながるおそれがあるため避ける）。
-        //    .Pane2自体の幅・高さ・overflow設定は変更せず、内部のiframeにだけ
-        //    固定幅を指定して.Pane2側の横スクロールに任せる方式のため、
-        //    切替を繰り返してもスクロール不能や管理画面のフリーズは起きない。
+        //    <style>内の #cms-device-toolbar / .SplitPane[data-cms-device] と
+        //    対になる実装。ボタン自体はDecap（React）管理下のノードには
+        //    一切追加せず、document.bodyへの独立した要素として追加し、
+        //    position:fixedでViewControls（7)節で算出済みの位置）の
+        //    すぐ左に並べて表示する（プレビューiframeには一切重ねない＝
+        //    サイト側のハンバーガーボタン等のクリックを奪わないため）。
+        //    幅の変更自体は.SplitPane側のCSS（data-cms-device属性）が
+        //    Pane1/Pane2の実際の分割幅を書き換える方式のため、切替を
+        //    繰り返してもスクロール不能や管理画面のフリーズは起きない。
         // ==================================================================
+        var DEVICE_ICONS = {
+          pc: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"></rect><path d="M8 20h8M12 16v4"></path></svg>',
+          tablet:
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="1.8"></rect><path d="M11.5 18.5h1"></path></svg>',
+          mobile:
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="1.8"></rect><path d="M11.5 18h1"></path></svg>',
+        };
         var currentPreviewDevice = 'pc';
         var deviceToolbar = document.createElement('div');
         deviceToolbar.id = 'cms-device-toolbar';
@@ -1326,7 +1366,7 @@
         DEVICE_OPTIONS.forEach(function (opt) {
           var btn = document.createElement('button');
           btn.type = 'button';
-          btn.textContent = opt.label;
+          btn.innerHTML = DEVICE_ICONS[opt.device] + '<span>' + opt.label + '</span>';
           btn.dataset.device = opt.device;
           btn.addEventListener('click', function () {
             applyPreviewDevice(opt.device);
@@ -1337,27 +1377,62 @@
 
         function applyPreviewDevice(device) {
           currentPreviewDevice = device;
-          var pane2 = document.querySelector('.Pane2');
-          if (pane2) {
-            if (device === 'pc') pane2.removeAttribute('data-cms-device');
-            else pane2.setAttribute('data-cms-device', device);
+          var splitPane = document.querySelector('.SplitPane');
+          if (splitPane) {
+            if (device === 'pc') splitPane.removeAttribute('data-cms-device');
+            else splitPane.setAttribute('data-cms-device', device);
           }
           Array.prototype.forEach.call(deviceToolbar.querySelectorAll('button'), function (btn) {
             btn.classList.toggle('active', btn.dataset.device === device);
           });
+          // Pane1の実際の幅が変わるため、それに連動するクイックナビ
+          // ボタンの位置（updateNavButtonPosition、2)節）も再計算する。
+          if (typeof updateNavButtonPosition === 'function') updateNavButtonPosition();
         }
         applyPreviewDevice('pc');
 
+        // 幅を強制している最中に手動でResizerをドラッグしても、!important
+        // 指定が常に勝ってしまい見た目が一切動かず「壊れた」ように見える
+        // ため、ドラッグ開始を検知した時点でPCへ戻し、react-split-pane
+        // 自身のドラッグ処理に幅の制御を返す。
+        document.addEventListener(
+          'mousedown',
+          function (e) {
+            if (e.target && e.target.classList && e.target.classList.contains('Resizer') && currentPreviewDevice !== 'pc') {
+              applyPreviewDevice('pc');
+            }
+          },
+          true
+        );
+        document.addEventListener(
+          'touchstart',
+          function (e) {
+            if (e.target && e.target.classList && e.target.classList.contains('Resizer') && currentPreviewDevice !== 'pc') {
+              applyPreviewDevice('pc');
+            }
+          },
+          true
+        );
+
         function relocateDeviceToolbar() {
           var pane2 = document.querySelector('.Pane2');
-          var visible = !!pane2 && getComputedStyle(pane2).display !== 'none' && pane2.getBoundingClientRect().width > 0;
+          // [class*="ViewControls"] は「ToolbarSubSectionLast」内にピン留め
+          // される前は幅0または画面全幅のままの不安定な状態を取り得る
+          // （実測で確認済み）ため位置の基準にしない。ヘッダー右側の
+          // 「本番URLリンク＋アカウントアイコン」を包む
+          // [class*="ToolbarSectionMeta"] は常に実寸を持つ安定した目印
+          // のため、これを基準にその左隣へ配置する。
+          var acctSection = document.querySelector('[class*="ToolbarSectionMeta"]');
+          var visible =
+            !!pane2 && !!acctSection && getComputedStyle(pane2).display !== 'none' && pane2.getBoundingClientRect().width > 0;
           deviceToolbar.classList.toggle('visible', visible);
           if (!visible) return;
-          var rect = pane2.getBoundingClientRect();
+          var acctRect = acctSection.getBoundingClientRect();
           var toolbarRect = deviceToolbar.getBoundingClientRect();
-          var left = Math.min(Math.max(8, rect.right - toolbarRect.width - 8), window.innerWidth - toolbarRect.width - 8);
-          deviceToolbar.style.top = Math.max(8, rect.top + 8) + 'px';
-          deviceToolbar.style.left = left + 'px';
+          var left = acctRect.left - toolbarRect.width - 10;
+          var top = acctRect.top + (acctRect.height - toolbarRect.height) / 2;
+          deviceToolbar.style.left = Math.max(8, left) + 'px';
+          deviceToolbar.style.top = Math.max(8, top) + 'px';
         }
 
         var deviceToolbarObserver = new MutationObserver(relocateDeviceToolbar);

@@ -56,7 +56,10 @@ const works = defineCollection({
       // コメント（本ファイル内 news 定義）を参照。
       urlSlug: z.string().optional(),
       price: cmsNumberOptional,
-      mainImage: image().optional(),
+      // フィールド名は Decap CMS のコレクション一覧「カード」表示が
+      // サムネイルを自動表示するために内部で認識する名前（image等）に
+      // 合わせている（"mainImage"のような任意の名前では認識されない）。
+      image: image().optional(),
       summary: z.string().optional(),
       specs: z.array(z.string()).default([]),
       order: cmsNumberWithDefault(0),
@@ -85,8 +88,10 @@ const news = defineCollection({
       // 食い違う（例: ファイル名 `2026-09-10-greeting.md` なのにURLが `/news/greeting/`
       // になる）。そのため `urlSlug` という別名にしている。
       urlSlug: z.string().optional(),
-      eyecatch: image().optional(),
-      eyecatchAlt: z.string().optional(),
+      // フィールド名はworksと同じ理由でDecap CMSのカード表示サムネイル
+      // 自動認識のため"image"にしている（旧"eyecatch"）。
+      image: image().optional(),
+      imageAlt: z.string().optional(),
       publishedAt: cmsDateOptional,
       category: z.enum(['info', 'blog', 'event', 'works']).optional(),
       summary: z.string().optional(),

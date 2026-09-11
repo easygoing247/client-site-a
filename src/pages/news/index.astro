@@ -107,10 +107,10 @@ const viewInactive = 'text-secondary';
                   <li class="news-item" data-category={post.data.category ?? ''}>
                     {/* カード形式 */}
                     <a href={href} class="news-card group flex flex-col h-full border border-surface-border rounded-card overflow-hidden bg-white hover:border-primary transition-colors">
-                      {post.data.eyecatch && (
+                      {post.data.image && (
                         <Image
-                          src={post.data.eyecatch}
-                          alt={post.data.eyecatchAlt || post.data.title || ''}
+                          src={post.data.image}
+                          alt={post.data.imageAlt || post.data.title || ''}
                           class="w-full md:w-2/3 md:mx-auto h-[180px] object-cover block"
                           width={450}
                           height={253}

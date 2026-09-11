@@ -338,17 +338,17 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 
 `public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」を
 保持したまま、以下を追加している。コレクションの並び順（＝CMSサイドバーの表示順）は
-サイト設定 → **商品作成** → **実績・活用事例作成** → 下層ページ → お知らせ。
+サイト設定 → **商品作成** → **実績・活用事例作成** → 下層ページ編集 → お知らせ投稿。
 
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
 | 商品作成（`name: productsCatalog`、file名 `products`） | files（単一ファイル） | `src/data/products.yml` | 商品カタログの可変リスト（§4参照） |
 | 実績・活用事例作成（`name: works`） | folder（型化ページ） | `src/content/works/*.md` | タイトル・価格・メイン画像・概要・仕様・本文（§4参照） |
-| 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
-| 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
-| 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
-| 下層ページ ＞ お知らせ一覧ページ（`name: newsPage`） | file | `src/data/newsPage.yml` | `/news` のページ見出し・リード文・一覧セクション見出し（記事自体は下の`news`コレクション） |
-| お知らせ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
+| 下層ページ編集 ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
+| 下層ページ編集 ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
+| 下層ページ編集 ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
+| 下層ページ編集 ＞ お知らせ一覧ページ（`name: newsPage`） | file | `src/data/newsPage.yml` | `/news` のページ見出し・リード文・一覧セクション見出し（記事自体は下の`news`コレクション）。この`heading`はヘッダー／フッターナビの「お知らせ」表示名にも動的反映される（`src/lib/site.ts`の`navHrefToPageHeading`、2026-09追加。services/about/contactも同様） |
+| お知らせ投稿（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ（`image`/`imageAlt`）・本文・公開日・カテゴリ |
 
 - 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
   パーサは **`src/lib/pages.ts`**（`servicesPage` / `aboutPage` / `contactPage`、
@@ -1379,3 +1379,116 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - 住所・郵便番号・最寄り駅・営業時間・定休日・駐車場は、この
   どちらにも属さず別オブジェクト`site.access.store`（CMS「アクセス」）
   が持つ。「連絡先」＝電話・メールのみという原則を崩さないこと。
+
+### 9.21 管理画面プレビューのデバイス幅切替・本文リッチテキスト拡張（2026-09）
+
+- **画像フィールド名を`image`に統一（カード表示サムネイル対応）**：
+  Decap CMSのコレクション一覧「カード（グリッド）」表示は、`widget: image`の
+  フィールドを内部的に**フィールド名で自動推定**してサムネイルに使う
+  仕組みで、任意の名前では認識されないことを実機検証で確認した
+  （`mainImage`/`eyecatch`ではサムネイルが表示されず、`image`に
+  リネームした途端に表示されるようになった＝公式ドキュメント化されて
+  いない挙動だが再現性を確認済み）。そのため`works`の`mainImage`→
+  `image`、`news`の`eyecatch`/`eyecatchAlt`→`image`/`imageAlt`に
+  改名した（`config.yml`・`src/content/config.ts`・全`.astro`参照・
+  既存コンテンツのfrontmatterを含め全箇所を更新済み）。新しい
+  folderコレクションに画像フィールドを追加する際、コレクション一覧の
+  カード表示でサムネイルを出したい場合は`image`という名前にすること。
+- **下層ページの「ページ見出し」がナビに動的反映**：`src/lib/site.ts`の
+  `visibleNavItems()`に`navHrefToPageHeading`（`/services`→
+  `servicesPage.heading`等）を追加。`heading`フィールドは元々
+  各ページの`<title>`・`PageHeader`にも使われているため、CMSで
+  ページ見出しを変更するとヘッダー／フッターのナビ表示名にも
+  自動反映される（未入力ならnav側の設定値のままにフォールバック）。
+  「サイト設定」プレビュー（`preview.js`のNAV_HREF_TO_FLAG／
+  `filterVisibleNavForPreview`）は別CMSエントリの`heading`を
+  参照できないため、この動的反映はプレビューでは再現されない
+  （他の別エントリ参照と同じ既知の制約、9.4/9.11参照）。
+- **Decap CMS管理画面プレビューのデバイス幅切替（PC/タブレット/スマホ）**：
+  `public/admin/index.html`にツールバー（ヘッダー右側、ViewControls
+  ではなく`[class*="ToolbarSectionMeta"]`＝本番URLリンク＋アカウント
+  アイコンの左隣を基準に位置決め。ViewControls自体は
+  `[class*="ToolbarSubSectionLast"]`にピン留めされるまで幅0または
+  画面全幅の不安定な状態を取り得ることを実機確認したため基準にしない）
+  を追加。切替は`.SplitPane[data-cms-device]`属性経由でPane1/Pane2の
+  実際の分割幅（`flex-basis`/`width`）を`!important`で上書きする方式
+  （Resizer自体の位置が動く＝境界線がデバイス幅ちょうどの位置まで
+  移動する）。手動でResizerをドラッグした場合は自動的にPCへ戻す
+  （`!important`による強制幅とドラッグ操作が競合して「動かない」ように
+  見えるのを防ぐため）。プレビューiframeの右上に直接ボタンを重ねる
+  初期実装は、サイト側のハンバーガーボタンと座標が重なりクリックを
+  奪ってしまう不具合があったため、ヘッダー内配置に変更した。
+- **「サイト設定」プレビューへのハンバーガーメニュー実装**：
+  デバイス幅切替でスマホ幅を確認できるようにするため、`renderHeader()`
+  （`preview.js`）に本物同様の開閉ボタン＋ドロワーを追加し、
+  `SiteInfoPreview`（`createClass`のstate）で開閉状態を管理する
+  実装にした。`services`/`about`/`contact`/`news`等の下層ページ
+  プレビューは`publishedHeaderHtml`（生HTML文字列）を流用する方式
+  のため、埋め込まれた`<script>`は実行されず、これらのプレビューでは
+  ハンバーガーは今回もクリック不可のまま（アーキテクチャ上の既知の
+  制約。7章参照）。
+- **画面下部固定バーのプレビュー追加**：`stickyContactBar`は元々
+  どのプレビューにも実装されていなかった（`<footer>`の外の独立した
+  `<div>`のため`publishedFooterHtml`にも含まれない）。`SiteInfoPreview`
+  にのみ`renderStickyContactBarPreview()`を追加（`stickyContactBar`
+  フィールドを編集できるのはこのエントリのみのため）。
+- **「画面下部固定バー」を左右2ボタン構成に再編**：`stickyContactBar`を
+  フラットな`phoneLabel`/`lineLabel`等から`leftButton`/`rightButton`
+  （各`widget: object`）に構造変更。左ボタンにのみ`color`
+  （`primary`＝テーマカラー連動グラデーション／`accent`＝LINE風
+  グリーン）を追加。`StickyContactBar.astro`の`resolveHref()`は
+  変更なし（対象が`leftButton`/`rightButton`オブジェクト経由に
+  なっただけ）。
+- **本文リッチテキストエディタ（`works`/`news`の`body`）の拡張**：
+  `public/admin/editor-components.js`（新規）に集約。
+  - **日本語化**：`CMS.registerLocale('ja', {...})`は`ks.locales.ja`への
+    **単純代入**（マージではない）であることをバンドル本体のソースで
+    確認済み。部分オブジェクトをそのまま渡すと本体バンドルが起動時に
+    登録した`ja`ロケール全体が消えUIの大半が英語に戻る重大な不具合を
+    実機で確認したため、`CMS.getLocale('ja')`で完全な辞書を取得し、
+    不足キー（`editorWidgets.markdown.strikethrough`/`toggleMode`。
+    `en`以外の大半のロケールで同様に欠落している本体側の既知の翻訳漏れ）
+    だけを追記してから同じ参照を再登録する方式にした。**今後
+    `registerLocale`を追加する際は必ずこの`getLocale`→追記→再登録の
+    手順を踏むこと（直接`registerLocale('ja', {部分オブジェクト})`を
+    呼ばない）**。
+  - **`buttons:`/`editor_components:`**（`config.yml`、YAMLアンカー
+    `&richTextButtons`/`&richTextComponents`で`works.body`/`news.body`
+    が共有）：ツールバーは太字系→見出し→引用→リストの意味順に整理し、
+    見出しはH1〜H3のみに絞った。「+」ボタンから挿入できるコンポーネントを
+    6種に限定。
+  - **`CMS.registerEditorComponent()`で実装した6種**（すべて`toBlock()`が
+    生のHTMLを出力し、`src/styles/global.css`の`.prose-content .cms-*`が
+    実サイト側の見た目を担当。エディタ内のライブプレビュー
+    （`toPreview()`）は登録済みCSSを参照できないため、同じ配色を
+    インラインstyleで別途再現している＝2箇所を一致させること）：
+    動画（YouTube URL埋め込み）／動画（ファイルアップロード。
+    astro:assetsの最適化対象外のため`media_folder: /public/uploads/editor`
+    ＋`public_folder: /uploads/editor`を個別指定し、本文中の
+    `<video src>`がビルド後もそのまま配信可能な絶対パスになるようにして
+    いる）／マーカー（蛍光ペン、5色）／囲い枠（5色・見出しバッジ付き）／
+    吹き出し（アイコン画像付き）／テキスト配置（左・中央・右）。
+    囲い枠・吹き出しは複数フィールドを持つため、`pattern`/`fromBlock`に
+    正規表現で直接パースさせる代わりに、`<!--cms-box:{URIエンコードした
+    JSON}-->`という非表示コメントを`toBlock()`の出力に前置し、
+    `fromBlock`はそのコメントだけを読み戻す方式にした（本文中に任意の
+    Markdown記法を含み得るネストしたフィールドを正規表現で直接
+    キャプチャすると壊れやすいため）。
+  - **意図的に実装しなかった機能とその理由**：Decap CMSの`markdown`
+    ウィジェットが公式に公開している拡張点は「`buttons:`による固定
+    ボタン一覧の絞り込み・並び替え」と「`registerEditorComponent`に
+    よるブロック単位の挿入」の2つのみで、これ以外の拡張手段は無い
+    （実機・バンドルソースの両方で確認済み）。そのため以下は未実装：
+    (1) 既存の文章の一部を選択して後から着色する「本物のインライン
+    ハイライト」→ 上記の「マーカー」はテキストを専用フィールドに
+    書き直して挿入する**ブロック単位**の疑似ハイライトとして実装。
+    (2) テキスト整列のツールバーボタン → 同様に「テキスト配置」
+    コンポーネントとして実装（text-alignは本来ブロック＝段落単位の
+    CSSプロパティのため、これは実質的に妥協ではない）。
+    (3) 検索・置換（Find & Replace）→ Decap内部はSlate（contentEditable）
+    で文書を管理しており、DOM文字列を外部から直接書き換えると
+    Slateの内部状態と食い違い保存内容が壊れるおそれが高く、安全に
+    実装する公式なフックも無いため未実装（動くふりをする実装は
+    行わなかった）。将来的に本当に必要な場合は、`widget: markdown`を
+    やめて独自のリッチテキストウィジェットに全面的に置き換える
+    規模の作業になる。

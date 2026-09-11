@@ -1,19 +1,23 @@
 ---
 // ============================================================================
-// StickyContactBar.astro — スマホ専用：画面下部固定の「電話・LINE」問い合わせバー
-// md以上（PC表示）では非表示になる。
-// 表示トグル・ボタン文言は管理画面「サイト全体設定 ＞ 画面下部固定バー」
-// （site.stickyContactBar）、電話番号・LINEのURL自体は「連絡先」
-// （site.contact）・「SNS設定」（snsUrl('line')）を参照する。
-// 各ボタンのリンク先は、管理画面で「個別リンク先」（phoneCustomLink /
-// lineCustomLink）が入力されていればそれを最優先（アクション種別に応じて
-// tel:を付与するかURLとしてそのまま使うかを解釈）し、未入力の場合のみ
-// 共通の「連絡先」／「SNS設定」にフォールバックする（resolveHref()）。
-// 各ボタンは表示トグル（showPhoneButton/showLineButton）と、解決後の
-// リンク先が実際に存在するかの両方で表示制御する。
+// StickyContactBar.astro — スマホ専用：画面下部固定の「左ボタン・右ボタン」
+// 問い合わせバー。md以上（PC表示）では非表示になる。
+// 表示トグル・ボタン文言・色は管理画面「サイト全体設定 ＞ 画面下部固定バー」
+// （site.stickyContactBar.leftButton / .rightButton）、既定の電話番号・
+// LINEのURL自体は「連絡先」（site.contact）・「SNS設定」（snsUrl('line')）を
+// 参照する。
+// 各ボタンのリンク先は、管理画面で「個別リンク先」（customLink）が
+// 入力されていればそれを最優先（アクション種別に応じてtel:を付与するか
+// URLとしてそのまま使うかを解釈）し、未入力の場合のみ共通の
+// 「連絡先」／「SNS設定」にフォールバックする（resolveHref()）。
+// 各ボタンは表示トグル（show）と、解決後のリンク先が実際に存在するかの
+// 両方で表示制御する。
 //   ・両方表示 → 50% / 50%
 //   ・片方のみ → 100%
 //   ・両方非表示 → バー自体を描画しない
+// 左ボタンの背景色（leftButton.color）は "primary"（デザインテーマ設定の
+// テーマカラーに連動するグラデーション）／"accent"（LINE公式ブランド
+// カラーに準じたグリーン。右ボタンと同じ配色）から選べる。
 // ============================================================================
 import { site } from '../lib/site';
 import { snsUrl } from '../lib/sns';
@@ -28,10 +32,13 @@ function resolveHref(actionType: 'tel' | 'url' | 'form' | undefined, customLink:
   return customLink;
 }
 
-const phoneHref = resolveHref(site.stickyContactBar.phoneActionType, site.stickyContactBar.phoneCustomLink, site.contact.phoneHref);
-const lineHref = resolveHref(site.stickyContactBar.lineActionType, site.stickyContactBar.lineCustomLink, snsUrl('line') ?? '');
-const showPhone = site.stickyContactBar.showPhoneButton && !!phoneHref;
-const showLine = site.stickyContactBar.showLineButton && !!lineHref;
+const left = site.stickyContactBar.leftButton;
+const right = site.stickyContactBar.rightButton;
+const phoneHref = resolveHref(left.actionType, left.customLink, site.contact.phoneHref);
+const lineHref = resolveHref(right.actionType, right.customLink, snsUrl('line') ?? '');
+const showPhone = left.show && !!phoneHref;
+const showLine = right.show && !!lineHref;
+const phoneIsAccent = left.color === 'accent';
 ---
 
 {(showPhone || showLine) && (
@@ -44,7 +51,12 @@ const showLine = site.stickyContactBar.showLineButton && !!lineHref;
       {showPhone && (
         <a
           href={phoneHref}
-          class="flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4 bg-gradient-to-br from-primary to-primary-dark"
+          class:list={[
+            'flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4',
+            phoneIsAccent
+              ? 'bg-accent tracking-wide [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]'
+              : 'bg-gradient-to-br from-primary to-primary-dark',
+          ]}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
@@ -52,7 +64,7 @@ const showLine = site.stickyContactBar.showLineButton && !!lineHref;
               fill="#fff"
             />
           </svg>
-          <span>{site.stickyContactBar.phoneLabel}</span>
+          <span>{left.label}</span>
         </a>
       )}
       {showLine && (
@@ -73,7 +85,7 @@ const showLine = site.stickyContactBar.showLineButton && !!lineHref;
               fill="#ffffff"
             />
           </svg>
-          <span class="text-white">{site.stickyContactBar.lineLabel}</span>
+          <span class="text-white">{right.label}</span>
         </a>
       )}
     </div>

@@ -93,9 +93,9 @@ const isSlider = works.length > 1;
                 href={`/works/${work.slug}/`}
                 class="works-card flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
               >
-                {work.data.mainImage && (
+                {work.data.image && (
                   <Image
-                    src={work.data.mainImage}
+                    src={work.data.image}
                     alt={work.data.title ? `${work.data.title}の実績イメージ` : ''}
                     class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
                     width={450}

@@ -8,6 +8,7 @@ import yaml from 'js-yaml';
 // fs.readFileSync + import.meta.url ベースのパス解決は、ビルド後に
 // ファイル配置が変わり ENOENT になるため使用しない。
 import raw from '../data/siteInfo.yml?raw';
+import { servicesPage, aboutPage, contactPage, newsPage } from './pages';
 
 export interface SiteInfo {
   company: {
@@ -192,17 +193,23 @@ export interface SiteInfo {
    * 電話番号・LINEのURL自体は `contact` / `sns` を参照する（このオブジェクトは
    * 文言・表示トグルのみを持つ）。 */
   stickyContactBar: {
-    phoneLabel: string;
-    showPhoneButton: boolean;
-    /** 未入力（既定 "tel"）時の解釈は StickyContactBar.astro 側の既定値に委ねる */
-    phoneActionType?: 'tel' | 'url' | 'form';
-    /** 入力があれば「連絡先」の電話番号より優先される個別リンク先 */
-    phoneCustomLink?: string;
-    lineLabel: string;
-    showLineButton: boolean;
-    lineActionType?: 'tel' | 'url' | 'form';
-    /** 入力があれば「SNS設定」のLINE URLより優先される個別リンク先 */
-    lineCustomLink?: string;
+    leftButton: {
+      label: string;
+      show: boolean;
+      /** "primary"=デザインテーマ設定のテーマカラーに連動／"accent"=LINE風グリーン */
+      color?: 'primary' | 'accent';
+      /** 未入力（既定 "tel"）時の解釈は StickyContactBar.astro 側の既定値に委ねる */
+      actionType?: 'tel' | 'url' | 'form';
+      /** 入力があれば「連絡先」の電話番号より優先される個別リンク先 */
+      customLink?: string;
+    };
+    rightButton: {
+      label: string;
+      show: boolean;
+      actionType?: 'tel' | 'url' | 'form';
+      /** 入力があれば「SNS設定」のLINE URLより優先される個別リンク先 */
+      customLink?: string;
+    };
   };
   copyright: string;
 }
@@ -240,12 +247,30 @@ const navHrefToFeatureFlag: Partial<Record<string, keyof SiteInfo['features']>> 
   '/#contact': 'enableContact',
 };
 
+// 「下層ページ編集」の4ページ（services/about/contact/news）は、CMS上で
+// 各ページ自身の「ページ見出し」を編集できる（PageHeader・<title>にも
+// 使われている、同じ `heading` フィールド）。ヘッダー／フッターのナビ表示名を
+// 都度手動で二重管理しなくて済むよう、これらのURLへ向くナビ項目は表示名を
+// 対応ページの `heading` で上書きする（未入力ならnav側の設定値のままにする
+// フォールバック）。
+const navHrefToPageHeading: Partial<Record<string, string | undefined>> = {
+  '/services': servicesPage.heading,
+  '/about': aboutPage.heading,
+  '/contact': contactPage.heading,
+  '/news': newsPage.heading,
+};
+
 export function visibleNavItems<T extends { href: string; label: string }>(items: T[]): T[] {
-  return (items ?? []).filter((item) => {
-    // 表示名・リンク先のどちらかが未入力の項目は表示しない
-    if (!item.label || !item.href) return false;
-    const flag = navHrefToFeatureFlag[item.href];
-    // 対応するセクションフラグが無いリンク（外部リンク等）は常に表示する
-    return flag === undefined || site.features[flag];
-  });
+  return (items ?? [])
+    .filter((item) => {
+      // 表示名・リンク先のどちらかが未入力の項目は表示しない
+      if (!item.label || !item.href) return false;
+      const flag = navHrefToFeatureFlag[item.href];
+      // 対応するセクションフラグが無いリンク（外部リンク等）は常に表示する
+      return flag === undefined || site.features[flag];
+    })
+    .map((item) => {
+      const pageHeading = navHrefToPageHeading[item.href];
+      return pageHeading ? { ...item, label: pageHeading } : item;
+    });
 }

@@ -28,7 +28,7 @@ const { Content } = await work.render();
 <Layout
   title={work.data.title ? `${work.data.title} | ${site.company.siteName}` : site.company.siteName}
   description={work.data.summary}
-  image={work.data.mainImage}
+  image={work.data.image}
 >
   <Header />
   <main>
@@ -38,10 +38,10 @@ const { Content } = await work.render();
           <a href="/" class="hover:text-primary">{site.productPage.breadcrumbHome}</a> <span aria-hidden="true">›</span> {work.data.title}
         </nav>
 
-        {work.data.mainImage && (
+        {work.data.image && (
           <div class="rounded-2xl overflow-hidden border border-surface-border mb-8">
             <Image
-              src={work.data.mainImage}
+              src={work.data.image}
               alt={work.data.title ?? ''}
               class="w-full h-auto object-cover block"
               width={820}

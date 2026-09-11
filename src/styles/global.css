@@ -330,3 +330,157 @@
     transform: none;
   }
 }
+
+/*
+  本文リッチテキストエディタ（works / news の `body`）拡張ツールが出力する
+  HTMLブロックの見た目。挿入元は public/admin/editor-components.js の
+  各 registerEditorComponent の toBlock()（管理画面プレビューは同ファイルの
+  toPreview() が別途インラインstyleで再現しており、ここのCSSとは独立）。
+  markdown本文はComma Collections の <Content /> でそのままHTML化されるため、
+  works/[slug].astro・news/[slug].astro の .prose-content 配下にこれらの
+  クラスがそのまま出現する。
+*/
+@layer components {
+  .prose-content .cms-video-embed {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    margin: 1.5em 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .prose-content .cms-video-embed iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .prose-content .cms-video-file {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 1.5em 0;
+    border-radius: 12px;
+  }
+
+  .prose-content .cms-mark {
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .prose-content .cms-mark--yellow {
+    background: #fff3a3;
+  }
+  .prose-content .cms-mark--pink {
+    background: #ffd1e3;
+  }
+  .prose-content .cms-mark--green {
+    background: #c8f2d4;
+  }
+  .prose-content .cms-mark--blue {
+    background: #cfe4ff;
+  }
+  .prose-content .cms-mark--orange {
+    background: #ffe0bd;
+  }
+
+  .prose-content .cms-box {
+    position: relative;
+    margin: 1.8em 0 1.5em;
+    padding: 18px;
+    border: 2px solid;
+    border-radius: 12px;
+  }
+  .prose-content .cms-box-badge {
+    position: absolute;
+    top: -13px;
+    left: 14px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 12px;
+    border-radius: 999px;
+  }
+  .prose-content .cms-box-body > :first-child {
+    margin-top: 0;
+  }
+  .prose-content .cms-box-body > :last-child {
+    margin-bottom: 0;
+  }
+  .prose-content .cms-box--blue {
+    border-color: #2563eb;
+  }
+  .prose-content .cms-box--blue .cms-box-badge {
+    background: #2563eb;
+  }
+  .prose-content .cms-box--red {
+    border-color: #dc2626;
+  }
+  .prose-content .cms-box--red .cms-box-badge {
+    background: #dc2626;
+  }
+  .prose-content .cms-box--green {
+    border-color: #16a34a;
+  }
+  .prose-content .cms-box--green .cms-box-badge {
+    background: #16a34a;
+  }
+  .prose-content .cms-box--purple {
+    border-color: #7c3aed;
+  }
+  .prose-content .cms-box--purple .cms-box-badge {
+    background: #7c3aed;
+  }
+  .prose-content .cms-box--orange {
+    border-color: #ea580c;
+  }
+  .prose-content .cms-box--orange .cms-box-badge {
+    background: #ea580c;
+  }
+
+  .prose-content .cms-speech {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin: 1.5em 0;
+  }
+  .prose-content .cms-speech--right {
+    flex-direction: row-reverse;
+  }
+  .prose-content .cms-speech-avatar-col {
+    flex: none;
+    width: 56px;
+    text-align: center;
+  }
+  .prose-content .cms-speech-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    object-fit: cover;
+    display: inline-block;
+  }
+  .prose-content .cms-speech-name {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--color-ink-soft, #6b7280);
+  }
+  .prose-content .cms-speech-bubble {
+    position: relative;
+    background: #f2f4f8;
+    border-radius: 14px;
+    padding: 12px 16px;
+  }
+  .prose-content .cms-speech-bubble > :first-child {
+    margin-top: 0;
+  }
+  .prose-content .cms-speech-bubble > :last-child {
+    margin-bottom: 0;
+  }
+
+  .prose-content .cms-align--center {
+    text-align: center;
+  }
+  .prose-content .cms-align--right {
+    text-align: right;
+  }
+}

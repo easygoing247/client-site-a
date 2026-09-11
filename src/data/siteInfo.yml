@@ -236,14 +236,17 @@ footerNav:
   - label: お問い合わせ
     href: /contact
 stickyContactBar:
-  phoneLabel: お電話
-  showPhoneButton: true
-  phoneActionType: tel
-  phoneCustomLink: ""
-  lineLabel: LINEで相談
-  showLineButton: true
-  lineActionType: url
-  lineCustomLink: ""
+  leftButton:
+    label: お電話
+    show: true
+    color: primary
+    actionType: tel
+    customLink: ""
+  rightButton:
+    label: LINEで相談
+    show: true
+    actionType: url
+    customLink: ""
 copyright: © 2026 LOGO. All Rights Reserved.
 features:
   enableFeatures: true

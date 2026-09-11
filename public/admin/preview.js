@@ -225,13 +225,24 @@
   // ヘッダー（簡易版：ロゴ＋PCナビのみ。ハンバーガーメニューの開閉は
   // プレビューの目的上不要なため省略）
   // ==========================================================================
-  function renderHeader(h, data, getAsset) {
+  // mobileNav（省略可）: { open: boolean, onToggle: function } を渡すと、
+  // 実サイト（Header.astro + MobileMenuButton.astro + MobileNavDrawer.astro）
+  // と同じ見た目のハンバーガーボタン＋開閉ドロワーを描画し、クリックで
+  // 実際に開閉できるようにする（デバイス幅切替でスマホ幅にした時に
+  // 動作確認できるようにするための実装。渡さない呼び出し元（現状は
+  // SiteInfoPreviewのみが対応）では従来どおりハンバーガー無しの
+  // 簡易表示のまま）。
+  function renderHeader(h, data, getAsset, mobileNav) {
     var company = data.company || {};
     var nav = filterVisibleNavForPreview(data, data.nav);
     var navCta = data.navCta || {};
     var logoUrl = assetUrl(getAsset, company.logo);
     var showTextLogo = !logoUrl || company.useTextLogo === true;
     var textLogo = company.textLogo || company.name || 'LOGO';
+    var navOpen = !!(mobileNav && mobileNav.open);
+    var closeNav = function () {
+      if (mobileNav && mobileNav.onClose) mobileNav.onClose();
+    };
 
     return h(
       'header',
@@ -259,7 +270,112 @@
                 navCta.label
               )
             : null
+        ),
+        mobileNav &&
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'md:hidden p-2 bg-transparent border-none cursor-pointer flex flex-col justify-center flex-none',
+              'aria-label': navOpen ? 'メニューを閉じる' : 'メニューを開く',
+              'aria-expanded': navOpen ? 'true' : 'false',
+              onClick: mobileNav.onToggle,
+            },
+            h('span', { className: 'block w-6 h-0.5 bg-secondary mb-1.5', style: styleObj(navOpen ? 'transform:translateY(8px) rotate(45deg);' : '') }),
+            h('span', { className: 'block w-6 h-0.5 bg-secondary mb-1.5', style: styleObj(navOpen ? 'opacity:0;' : '') }),
+            h('span', { className: 'block w-6 h-0.5 bg-secondary', style: styleObj(navOpen ? 'transform:translateY(-8px) rotate(-45deg);' : '') })
+          )
+      ),
+      mobileNav &&
+        h(
+          'nav',
+          {
+            className: 'md:hidden overflow-hidden',
+            style: styleObj('max-height:' + (navOpen ? '600px' : '0px') + ';transition:max-height 0.25s ease;'),
+          },
+          nav.map(function (item, i) {
+            return h(
+              'a',
+              { key: i, href: item.href, onClick: closeNav, className: 'block px-5 py-[14px] text-[15px] font-bold text-secondary border-b border-surface-border' },
+              item.label
+            );
+          }),
+          navCta.label && navCta.href
+            ? h('a', { href: navCta.href, onClick: closeNav, className: 'block px-5 py-[14px] text-[15px] font-bold text-primary' }, navCta.label)
+            : null
         )
+    );
+  }
+
+  // 画面下部固定バー（スマホのみ・StickyContactBar.astro相当）のプレビュー。
+  // 「サイト全体設定」プレビューだけが stickyContactBar / contact / sns の
+  // 全フィールドに同時アクセスできるため、このプレビューにのみ実装する
+  // （実サイトの StickyContactBar.astro の resolveHref() と同じロジック。
+  // 2箇所の実装が乖離しないよう、ロジックを変更した場合は両方を
+  // 追従修正すること）。
+  function resolveStickyHrefForPreview(actionType, customLink, fallbackHref) {
+    if (!customLink) return fallbackHref;
+    if (actionType === 'tel') {
+      return customLink.indexOf('tel:') === 0 ? customLink : 'tel:' + customLink.replace(/[^0-9+]/g, '');
+    }
+    return customLink;
+  }
+
+  function renderStickyContactBarPreview(h, data) {
+    var bar = data.stickyContactBar || {};
+    var left = bar.leftButton || {};
+    var right = bar.rightButton || {};
+    var contact = data.contact || {};
+    var lineUrl = orderedSnsForPreview(data).reduce(function (acc, link) {
+      return link.id === 'line' ? link.href : acc;
+    }, '');
+    var phoneHref = resolveStickyHrefForPreview(left.actionType, left.customLink, contact.phoneHref || '');
+    var lineHref = resolveStickyHrefForPreview(right.actionType, right.customLink, lineUrl || '');
+    var showPhone = left.show && !!phoneHref;
+    var showLine = right.show && !!lineHref;
+    if (!showPhone && !showLine) return null;
+    var phoneIsAccent = left.color === 'accent';
+
+    return h(
+      'div',
+      { className: 'fixed left-0 right-0 bottom-0 z-[60] md:hidden' },
+      h(
+        'div',
+        { className: cx('grid', showPhone && showLine ? 'grid-cols-2' : 'grid-cols-1') },
+        showPhone &&
+          h(
+            'a',
+            {
+              href: phoneHref,
+              className: cx(
+                'flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4',
+                phoneIsAccent ? 'bg-accent [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]' : 'bg-gradient-to-br from-primary to-primary-dark'
+              ),
+            },
+            h(
+              'svg',
+              { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none' },
+              h('path', {
+                d: 'M6.62 10.79a15.09 15.09 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z',
+                fill: '#fff',
+              })
+            ),
+            h('span', {}, left.label || 'お電話')
+          ),
+        showLine &&
+          h(
+            'a',
+            { href: lineHref, className: 'flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] tracking-wide py-4' },
+            h(
+              'svg',
+              { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none' },
+              h('path', {
+                d: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
+                fill: '#fff',
+              })
+            ),
+            h('span', {}, right.label || 'LINEで相談')
+          )
       )
     );
   }
@@ -1148,7 +1264,7 @@
   // ==========================================================================
   var SiteInfoPreview = createClass({
     getInitialState: function () {
-      return { stylesLoaded: false };
+      return { stylesLoaded: false, mobileNavOpen: false };
     },
     componentDidMount: function () {
       var self = this;
@@ -1162,6 +1278,12 @@
     componentWillUnmount: function () {
       this._unmounted = true;
     },
+    toggleMobileNav: function () {
+      this.setState({ mobileNavOpen: !this.state.mobileNavOpen });
+    },
+    closeMobileNav: function () {
+      this.setState({ mobileNavOpen: false });
+    },
     render: function () {
       var entry = this.props.entry;
       var getAsset = this.props.getAsset;
@@ -1171,7 +1293,11 @@
       return h(
         'div',
         { 'data-theme': currentTheme, className: 'font-sans bg-surface text-ink' },
-        renderHeader(h, data, getAsset),
+        renderHeader(h, data, getAsset, {
+          open: this.state.mobileNavOpen,
+          onToggle: this.toggleMobileNav,
+          onClose: this.closeMobileNav,
+        }),
         h(
           'main',
           {},
@@ -1181,7 +1307,8 @@
             return h('div', { key: s.id }, renderSection(h, s.id, data, getAsset, s.muted));
           })
         ),
-        renderFooter(h, data, getAsset)
+        renderFooter(h, data, getAsset),
+        renderStickyContactBarPreview(h, data)
       );
     },
   });
@@ -1288,7 +1415,7 @@
       var getAsset = this.props.getAsset;
       var widgetFor = this.props.widgetFor;
       var data = getData(entry);
-      var imageUrl = assetUrl(getAsset, data.mainImage);
+      var imageUrl = assetUrl(getAsset, data.image);
       var specs = (data.specs || []).filter(Boolean);
 
       return h(
@@ -2109,7 +2236,7 @@
   var NewsPreview = makePagePreview(function (h, data, getAsset, widgetFor) {
     var category = data.category ? NEWS_CATEGORY_LABELS[data.category] || data.category : '';
     var dateText = formatNewsDateForPreview(data.publishedAt);
-    var eyecatchUrl = assetUrl(getAsset, data.eyecatch);
+    var eyecatchUrl = assetUrl(getAsset, data.image);
     return h(
       'article',
       { className: 'py-12 px-5' },
@@ -2136,8 +2263,8 @@
         eyecatchUrl &&
           h(
             'div',
-            { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8' },
-            h('img', { src: eyecatchUrl, alt: data.eyecatchAlt || data.title || '', className: 'w-full h-auto object-cover block' })
+            { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8 md:max-w-[67%] md:mx-auto' },
+            h('img', { src: eyecatchUrl, alt: data.imageAlt || data.title || '', className: 'w-full h-auto object-cover block' })
           ),
         h(
           'div',

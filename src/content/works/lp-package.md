@@ -1,7 +1,7 @@
 ---
 title: "成果重視LP制作パック"
 price: 200000
-mainImage: "../../assets/works-lp.jpg"
+image: "../../assets/works-lp.jpg"
 summary: "商品・サービスの魅力を最短距離で伝え、コンバージョンにつなげる1ページ完結型のランディングページです。"
 specs:
   - "1ページ完結型デザイン"
