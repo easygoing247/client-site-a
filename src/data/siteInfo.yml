@@ -237,7 +237,7 @@ footerNav:
     href: /contact
 stickyContactBar:
   phoneLabel: お電話
-  lineLabel: LINEで相談？
+  lineLabel: LINEで相談
   showPhoneButton: true
   showLineButton: true
 icons:
