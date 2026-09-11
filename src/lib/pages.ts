@@ -12,6 +12,18 @@ import servicesRaw from '../data/services.yml?raw';
 import aboutRaw from '../data/about.yml?raw';
 import contactPageRaw from '../data/contactPage.yml?raw';
 import productsRaw from '../data/products.yml?raw';
+import newsPageRaw from '../data/newsPage.yml?raw';
+
+/** 「お知らせ」一覧ページ（src/pages/news/index.astro）の見出し・リード文設定。
+ * 個々の記事データ（src/content/news/*.md）とは別の設定ファイル。 */
+export interface NewsPage {
+  /** ページ最上部の見出し（PageHeaderのtitle。既定：「お知らせ」） */
+  heading?: string;
+  /** 見出し直下のリード文 */
+  lead?: string;
+  /** カテゴリ絞り込み・記事一覧の直前に表示する見出し（既定：「お知らせ一覧」） */
+  listHeading?: string;
+}
 
 export interface ServicesPage {
   heading?: string;
@@ -231,6 +243,7 @@ export const servicesPage = (yaml.load(servicesRaw) ?? {}) as ServicesPage;
 export const aboutPage = (yaml.load(aboutRaw) ?? {}) as AboutPage;
 export const contactPage = (yaml.load(contactPageRaw) ?? {}) as ContactPage;
 export const productsPage = (yaml.load(productsRaw) ?? {}) as ProductsPage;
+export const newsPage = (yaml.load(newsPageRaw) ?? {}) as NewsPage;
 
 // ============================================================================
 // プレーンテキスト（text ウィジェット）を簡易的にブロック配列へ変換する。

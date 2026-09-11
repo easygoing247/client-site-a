@@ -7,8 +7,13 @@
 // ・並び順は site.works.order（CMS「表示順序」リストのドラッグ&ドロップ）を
 //   優先し、未掲載の実績は order（数値フィールド）→ 登録順でその後ろに続く。
 // ・PC表示の並列カード枚数は site.works.columns（既定3、1〜3）。表示件数が
-//   その枚数を超える場合は、両端の矢印クリック／フリックでスライド閲覧する
-//   （外部ライブラリ不使用：CSS scroll-snap のネイティブ機構を使う）。
+//   その枚数を超える場合は、両端の矢印クリック／フリック／下部ドット
+//   インジケーターでスライド閲覧する（外部ライブラリ不使用：CSS
+//   scroll-snap のネイティブ機構を使う）。矢印・ドットのJSロジックは
+//   「サービス内容」「商品一覧」「料金プラン」のスマホスライダーと共通の
+//   src/scripts/cardSlider.ts（data-slider-root/-track/-prev/-next/-dots
+//   の構成）を使う。他の3つと異なり、Worksのスライダーは列数超過時は
+//   PC幅でも有効（sm:hidden 等の幅指定はしていない）。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
@@ -69,9 +74,9 @@ const isSlider = works.length > 1;
           )}
         </div>
 
-        <div class="relative">
+        <div class="relative" data-slider-root>
           <div
-            id="works-track"
+            data-slider-track
             class="works-track"
             style={`--works-cols:${columns};`}
           >
@@ -118,7 +123,7 @@ const isSlider = works.length > 1;
             <>
               <button
                 type="button"
-                id="works-prev"
+                data-slider-prev
                 aria-label="前の実績を表示"
                 class="works-arrow works-arrow-prev absolute top-1/2 -translate-y-1/2 left-0 md:-left-4 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
               >
@@ -128,7 +133,7 @@ const isSlider = works.length > 1;
               </button>
               <button
                 type="button"
-                id="works-next"
+                data-slider-next
                 aria-label="次の実績を表示"
                 class="works-arrow works-arrow-next absolute top-1/2 -translate-y-1/2 right-0 md:-right-4 z-10 w-9 h-9 rounded-full bg-white border border-surface-border shadow flex items-center justify-center disabled:opacity-30 disabled:cursor-default"
               >
@@ -139,51 +144,24 @@ const isSlider = works.length > 1;
             </>
           )}
         </div>
+
+        {isSlider && (
+          <div class="flex justify-center gap-1.5 mt-5" data-slider-dots role="tablist" aria-label="表示中の実績">
+            {works.map((_, i) => (
+              <button
+                type="button"
+                data-slider-dot
+                aria-label={`${i + 1}枚目の実績を表示`}
+                class="w-2 h-2 rounded-full bg-surface-border transition-all"
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
 }
 
 <script>
-  // 実績カードのスライダー（CSS scroll-snap を使ったネイティブ実装。
-  // 外部ライブラリ不使用）。PCでは矢印クリックでカード幅分スクロールし、
-  // スマホでは横フリック操作でネイティブにスクロールできる（scroll-snap
-  // によりカード境界でぴたっと止まる）。
-  const track = document.getElementById('works-track') as HTMLElement | null;
-  const prevBtn = document.getElementById('works-prev') as HTMLButtonElement | null;
-  const nextBtn = document.getElementById('works-next') as HTMLButtonElement | null;
-
-  if (track) {
-    const step = () => {
-      const first = track.querySelector<HTMLElement>(':scope > a');
-      if (!first) return track.clientWidth;
-      const style = getComputedStyle(track);
-      const gap = parseFloat(style.columnGap || style.gap || '0') || 0;
-      return first.getBoundingClientRect().width + gap;
-    };
-
-    const updateArrows = () => {
-      const hasOverflow = track.scrollWidth > track.clientWidth + 4;
-      if (prevBtn) prevBtn.hidden = !hasOverflow;
-      if (nextBtn) nextBtn.hidden = !hasOverflow;
-      if (!hasOverflow) return;
-      if (prevBtn) prevBtn.disabled = track.scrollLeft <= 4;
-      if (nextBtn) nextBtn.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
-    };
-
-    prevBtn?.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
-    nextBtn?.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
-
-    let scrollTicking = false;
-    track.addEventListener('scroll', () => {
-      if (scrollTicking) return;
-      scrollTicking = true;
-      requestAnimationFrame(() => {
-        updateArrows();
-        scrollTicking = false;
-      });
-    });
-    window.addEventListener('resize', updateArrows);
-    updateArrows();
-  }
+  import '../scripts/cardSlider.ts';
 </script>

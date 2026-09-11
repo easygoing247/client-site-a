@@ -109,6 +109,20 @@ const isSlider = items.length > 1;
             </>
           )}
         </div>
+
+        {isSlider && (
+          <div class="flex justify-center gap-1.5 mt-5 sm:hidden" data-slider-dots role="tablist" aria-label="表示中のサービス">
+            {items.map((_, i) => (
+              <button
+                type="button"
+                data-slider-dot
+                aria-label={`${i + 1}枚目のサービスを表示`}
+                class="w-2 h-2 rounded-full bg-surface-border transition-all"
+              />
+            ))}
+          </div>
+        )}
+
         {site.services.linkLabel && site.services.linkHref && (
           <div class="text-center mt-10">
             <Button href={site.services.linkHref} label={site.services.linkLabel} variant="outline" />

@@ -2005,6 +2005,42 @@
   window.CMS.registerPreviewTemplate('contact', ContactPagePreview);
 
   // ==========================================================================
+  // お知らせ一覧ページ（src/pages/news/index.astro）
+  // 個々の記事（news コレクション）はこのエントリとは別データのため取得できず、
+  // productsのプレビュー同様プレースホルダー表示に留める。見出し・リード文・
+  // 一覧セクション見出しはこのエントリ自身のデータなのでそのまま反映する。
+  // ==========================================================================
+  var NewsListPagePreview = makePagePreview(function (h, data) {
+    var heading = data.heading || 'お知らせ';
+    var listHeading = data.listHeading || 'お知らせ一覧';
+    return [
+      renderPagePreviewHeading(h, {
+        key: 'head',
+        eyebrow: 'NEWS',
+        title: heading,
+        lead: data.lead,
+        crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
+      }),
+      h(
+        'section',
+        { key: 'list', className: 'py-14 px-5' },
+        h(
+          'div',
+          { className: 'max-w-[900px] mx-auto' },
+          listHeading && h('h2', { className: 'text-center font-bold mb-10', style: styleObj('font-size:clamp(20px,3vw,26px);') }, listHeading),
+          h(
+            'p',
+            { className: 'text-center text-[13px] text-ink-faint' },
+            '（カテゴリ絞り込み・記事一覧は「お知らせ」コレクションのデータを元に表示されるため、このプレビューでは省略しています）'
+          )
+        )
+      ),
+    ];
+  });
+
+  window.CMS.registerPreviewTemplate('newsPage', NewsListPagePreview);
+
+  // ==========================================================================
   // お知らせ 記事詳細（src/pages/news/[slug].astro）
   // ==========================================================================
   var NEWS_CATEGORY_LABELS = { info: 'お知らせ', blog: 'ブログ', event: 'イベント', works: '実績紹介' };

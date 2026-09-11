@@ -13,6 +13,7 @@ import PageHeader from '../../components/PageHeader.astro';
 import StickyContactBar from '../../components/StickyContactBar.astro';
 import BackToTop from '../../components/BackToTop.astro';
 import { site } from '../../lib/site';
+import { newsPage } from '../../lib/pages';
 import {
   getPublishedNews,
   newsCategoryLabel,
@@ -22,36 +23,44 @@ import {
 
 const posts = await getPublishedNews();
 const categories = collectNewsCategories(posts);
-const heading = 'お知らせ';
+const heading = newsPage.heading || 'お知らせ';
+const listHeading = newsPage.listHeading || 'お知らせ一覧';
 
 // アクティブ／非アクティブで付け外しするクラスは JS 側（ACTIVE_FILTER / INACTIVE_FILTER）と
 // 一致させる。ベースクラスには背景・文字色・枠線色を含めない（競合を避けるため）。
+// アクティブなカテゴリボタンは、テーマカラーの塗り＋うっすらとした発光状の
+// box-shadow（バッジ風の「選ばれている感」）で非アクティブと明確に差をつける。
 const filterBase = 'news-filter text-[12px] font-bold px-3.5 py-1.5 rounded-full border transition-colors';
-const filterActive = 'bg-primary text-white border-primary';
+const filterActive = 'bg-primary text-white border-primary shadow-[0_0_0_3px_rgba(var(--color-primary-rgb),0.18)]';
 const filterInactive = 'bg-white text-secondary border-surface-border';
-const viewBase = 'news-view text-[12px] font-bold px-3 py-1 rounded-full transition-colors';
+const viewBase = 'news-view inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1 rounded-full transition-colors';
 const viewActive = 'bg-primary text-white';
 const viewInactive = 'text-secondary';
 ---
 
-<Layout title={`${heading} | ${site.company.siteName}`} description={`${site.company.name}からのお知らせ一覧です。`}>
+<Layout title={`${heading} | ${site.company.siteName}`} description={newsPage.lead || `${site.company.name}からのお知らせ一覧です。`}>
   <Header />
   <main>
     <PageHeader
       eyebrow="NEWS"
       title={heading}
+      lead={newsPage.lead}
       crumbs={[{ label: site.productPage.breadcrumbHome || 'トップ', href: '/' }, { label: heading }]}
     />
 
     <section class="py-14 px-5">
       <div class="max-w-[900px] mx-auto">
+        {listHeading && (
+          <h2 class="text-center font-bold mb-10" style="font-size:clamp(20px,3vw,26px);">{listHeading}</h2>
+        )}
         {posts.length === 0 ? (
           <p class="text-center text-[14px] text-ink-soft py-10">まだ記事がありません。</p>
         ) : (
           <>
             <div id="news-controls" class="flex flex-wrap items-center justify-between gap-4 mb-8">
               {categories.length > 0 && (
-                <div class="flex flex-wrap gap-2" role="group" aria-label="カテゴリで絞り込み">
+                <div class="flex flex-wrap items-center gap-2" role="group" aria-label="カテゴリで絞り込み">
+                  <span class="text-[12px] font-bold text-secondary-light whitespace-nowrap">カテゴリで絞り込む：</span>
                   <button type="button" class={`${filterBase} ${filterActive}`} data-filter="all" aria-pressed="true">
                     すべて
                   </button>
@@ -64,8 +73,23 @@ const viewInactive = 'text-secondary';
               )}
 
               <div class="flex gap-1 rounded-full border border-surface-border p-1" role="group" aria-label="表示形式の切り替え">
-                <button type="button" class={`${viewBase} ${viewActive}`} data-view="card" aria-pressed="true">カード</button>
-                <button type="button" class={`${viewBase} ${viewInactive}`} data-view="list" aria-pressed="false">リスト</button>
+                <button type="button" class={`${viewBase} ${viewActive}`} data-view="card" aria-pressed="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
+                    <rect x="13" y="3" width="8" height="8" rx="1.5" fill="currentColor" />
+                    <rect x="3" y="13" width="8" height="8" rx="1.5" fill="currentColor" />
+                    <rect x="13" y="13" width="8" height="8" rx="1.5" fill="currentColor" />
+                  </svg>
+                  カード
+                </button>
+                <button type="button" class={`${viewBase} ${viewInactive}`} data-view="list" aria-pressed="false">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="4.5" width="18" height="3" rx="1.2" fill="currentColor" />
+                    <rect x="3" y="10.5" width="18" height="3" rx="1.2" fill="currentColor" />
+                    <rect x="3" y="16.5" width="18" height="3" rx="1.2" fill="currentColor" />
+                  </svg>
+                  リスト
+                </button>
               </div>
             </div>
 
@@ -144,7 +168,12 @@ const viewInactive = 'text-secondary';
 
   if (controls && grid) {
     const items = Array.from(grid.querySelectorAll<HTMLElement>('.news-item'));
-    const FILTER_ACTIVE = ['bg-primary', 'text-white', 'border-primary'];
+    const FILTER_ACTIVE = [
+      'bg-primary',
+      'text-white',
+      'border-primary',
+      'shadow-[0_0_0_3px_rgba(var(--color-primary-rgb),0.18)]',
+    ];
     const FILTER_INACTIVE = ['bg-white', 'text-secondary', 'border-surface-border'];
     const VIEW_ACTIVE = ['bg-primary', 'text-white'];
 

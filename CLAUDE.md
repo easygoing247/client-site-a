@@ -212,8 +212,10 @@ public/
   `resolveContactFormFields`）。下層ページ：`renderPagePreviewHeading`
   （＝`PageHeader.astro`）/ `renderPreviewButton`（＝`Button.astro`）/
   `parseTextBlocksForPreview`（＝`src/lib/pages.ts` の `parseTextBlocks`）/
-  `ServicesPagePreview` / `AboutPagePreview` / `ContactPagePreview` / `NewsPreview`）も
-  必ず追従修正すること。自動同期の仕組みは無いため、変更の都度手動で見比べる必要がある。
+  `ServicesPagePreview` / `AboutPagePreview` / `ContactPagePreview` / `NewsListPagePreview`
+  （お知らせ一覧ページ。見出し・リード文・一覧見出しのみ反映、記事一覧はプレースホルダー
+  ＝9.16） / `NewsPreview`（お知らせ記事詳細））も必ず追従修正すること。自動同期の
+  仕組みは無いため、変更の都度手動で見比べる必要がある。
 - **プレビューへのCSS流し込み**：`loadSiteStylesheetAndTheme()` が本番の `/` を
   fetch し、`<link rel="stylesheet">`（外部CSS）と `<style>`（インラインCSS）の
   両方を `CMS.registerPreviewStyle()` に渡す（`<style>` は `{ raw: true }` 指定）。
@@ -342,6 +344,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 | 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
 | 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
 | 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
+| 下層ページ ＞ お知らせ一覧ページ（`name: newsPage`） | file | `src/data/newsPage.yml` | `/news` のページ見出し・リード文・一覧セクション見出し（記事自体は下の`news`コレクション） |
 | お知らせ（news） | folder（投稿型） | `src/content/news/*.md` | 記事タイトル・アイキャッチ・本文・公開日・カテゴリ |
 
 - 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
@@ -428,7 +431,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 | `/services` | `src/pages/services.astro` | `src/lib/pages.ts` `servicesPage` |
 | `/about` | `src/pages/about.astro` | `src/lib/pages.ts` `aboutPage` |
 | `/contact` | `src/pages/contact.astro` | `contactPage`（`formFields` 含む）＋ `contactFormSettings` ＋ `siteInfo.yml` の `contactSection.form`（送信ボタン・結果メッセージ） |
-| `/news` | `src/pages/news/index.astro` | `news` コレクション（一覧） |
+| `/news` | `src/pages/news/index.astro` | `news` コレクション（一覧）＋ `src/lib/pages.ts` `newsPage`（見出し・リード文・一覧見出し） |
 | `/news/<slug>` | `src/pages/news/[slug].astro` | `news` コレクション（詳細・静的生成） |
 | `/products` | `src/pages/products.astro` | `src/lib/pages.ts` `productsPage`（`src/data/products.yml`。§4参照） |
 | `/works/<slug>` | `src/pages/works/[slug].astro` | `works` コレクション（詳細・静的生成。§4参照） |
@@ -968,3 +971,77 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   確認済み。`preview.js`の`renderPlans`はプレビューiframeが常にPC相当
   幅（`sm:pt-0`が効く）のため実質的に影響しないが、グリッドclassNameの
   厳密な一致のため`pt-6 sm:pt-0`を同様に追加した。
+
+### 9.16 「お知らせ」ページのUI改善・全スライダーへのドットインジケーター追加（2026-09）
+
+- **「お知らせ」ページ（`/news`）の見出し・リード文**：新規データファイル
+  `src/data/newsPage.yml`（`heading` / `lead` / `listHeading`、パーサは
+  `src/lib/pages.ts` の `NewsPage` 型 / `newsPage`）を追加し、CMS「下層ページ
+  ＞ お知らせ一覧ページ」（`config.yml` の `name: "newsPage"`。既存の記事
+  投稿用コレクション`name: "news"`とは別物）で編集できるようにした。
+  `heading`は`PageHeader`の`title`、`lead`はその直下のリード文、
+  `listHeading`（既定「お知らせ一覧」）はカテゴリ絞り込み・記事一覧の
+  直前に表示する`<h2>`（`/services`の`itemsHeading`と同じパターン）。
+  以前は`heading`がコンポーネントに直書きされていた（絶対ルール①違反）ため、
+  今回あわせてCMS化した。プレビューは`NewsListPagePreview`を新規追加
+  （記事一覧自体は別コレクション参照のためプレースホルダー、9.4/7章参照）。
+- **表示切替トグルへのアイコン追加**：「カード」「リスト」の各ボタン文頭に、
+  グリッド4マス／横線3本のインラインSVGアイコンを追加（`currentColor`で
+  テキスト色に追従、外部アイコンライブラリ不使用の既存方針を踏襲）。
+- **カテゴリ絞り込みUIの改善**：ボタン列の先頭に「カテゴリで絞り込む：」
+  ラベルを追加。アクティブなカテゴリボタンには、既存の
+  `bg-primary text-white border-primary`に加えて薄いテーマカラーの
+  発光状box-shadow（`shadow-[0_0_0_3px_rgba(var(--color-primary-rgb),0.18)]`）
+  を追加し、非アクティブとの区別を強化（JS側の`FILTER_ACTIVE`配列にも
+  同じクラス文字列を追加し、クリック時の付け外しに追従）。
+- **全カルーセル／スライダーへのドットインジケーター追加**：
+  「実績・活用事例」「サービス内容」「商品一覧」「料金プラン」の
+  4スライダーすべてに、現在位置を示すドット（アクティブ＝
+  `bg-primary`＋横長`w-5`のピル形状、非アクティブ＝`bg-surface-border`の
+  `w-2`丸）を追加。共通スクリプト`src/scripts/cardSlider.ts`に
+  `updateDots()`を追加し、`[data-slider-dots]`配下の`[data-slider-dot]`
+  ボタン群を、track のスクロール位置（`Math.round(scrollLeft / step())`）
+  に応じて動的にハイライト、クリックで対応するカードへ`scrollTo`する
+  汎用実装にした（1アイテム＝1ドット。複数列表示中のWorksも列数ではなく
+  アイテム数分のドットを表示する仕様）。
+  - **マークアップ規約の変更**：ドットコンテナ（`[data-slider-dots]`）は
+    矢印ボタンとは異なり、`data-slider-root`（`.relative`な矢印用ラッパー）
+    の**中ではなく外の兄弟要素**として置く（`isSlider && (...)` ブロックを
+    `data-slider-root`の`</div>`の後に続けて記述）。矢印の`top-1/2`系の
+    センタリング計算が `data-slider-root` 自身の高さ＝track の高さを
+    前提にしているため（9.14〜9.15でPlansの`pt-6`とセットで調整した
+    `top-[calc(50%+12px)]`等）、ドット行をroot内部に混ぜるとroot自身の
+    高さにドット分の高さが加算されてこの計算が狂う。`cardSlider.ts`側は
+    `root.querySelector('[data-slider-dots]')`で見つからない場合
+    `root.parentElement?.querySelector(...)`にフォールバックする実装に
+    しており、新しいセクションでスライダーを組む際もこの「dotsは
+    root の外」の配置を踏襲すること。
+  - **Works.astroの共通スクリプトへの移行**：これまでWorks.astroだけ
+    `works-track`/`works-prev`/`works-next`という固有IDを使った専用の
+    インラインスクリプトを持っていたが、ドット機構を1箇所に集約する
+    ため、他の3スライダーと同じ`data-slider-root`/`data-slider-track`/
+    `data-slider-prev`/`data-slider-next`/`data-slider-dots`の構成に
+    揃えて`cardSlider.ts`を読み込む方式に統一した（IDベースの専用
+    ロジックは削除）。Works固有の挙動（列数超過時はPC幅でもスライダー
+    のまま＝`sm:hidden`等の幅指定をしない）は、ドット・矢印のCSSクラス
+    側でそのまま維持しており、`cardSlider.ts`のロジック自体は完全に
+    共通のまま変更していない。
+  - 各`renderProductsPlaceholder`/`renderServices`（siteInfo プレビュー）・
+    `ServicesPagePreview`/`ProductsCatalogPreview`（別エントリの実データ
+    グリッド）はいずれもドット・矢印のJSを持たない静的マークアップの
+    ため、ドット追加に伴う`preview.js`側の追従修正は不要だった
+    （`renderPlans`のみグリッドclassNameの厳密一致のため軽微な追随を
+    行っているが、ドット自体は追加していない＝プレビューiframeは常時
+    PC相当幅で`sm:hidden`により最初から不可視のため）。
+  - **検証上の注意**：この環境（Claude Browser pane）では
+    `requestAnimationFrame`のコールバックが実行されないことを実機検証で
+    新たに確認した（タブをフロントにして2秒待っても`window.__rafFired`が
+    `false`のまま）。ドットのアクティブ切り替えは`scroll`イベント→`rAF`
+    でスロットルする実装のため、この環境では見た目の同期を直接確認できない。
+    実装の正しさは、(a) `scrollTo`呼び出しの引数を関数差し替えで
+    フックしクリック時に正しい座標（`step() * index`）が渡っていること、
+    (b) `Math.round(scrollLeft / step())`の計算結果が実際のスクロール位置
+    から正しいインデックスを導出すること、(c) `scroll`イベント自体は
+    正常に発火すること、の3点をDOM操作で個別に確認する形で担保した
+    （スムーズスクロールアニメーション自体が完了しない既知の環境制限
+    ＝本章より前の複数のタスクで既出、と根は同じ）。

@@ -729,6 +729,18 @@ collections:
               - { label: "本文（空行で段落区切り／行頭「## 」で小見出し）", name: "body", widget: text, required: false }
               - { label: "最終改定日", name: "updatedAt", widget: string, required: false }
 
+      # --- お知らせ一覧ページ（/news の見出し・リード文設定。個々の記事は
+      #     下の「お知らせ」（投稿型コレクション）で編集する） -----------------
+      - name: "newsPage"
+        label: "お知らせ一覧ページ"
+        label_singular: "お知らせ一覧ページ"
+        summary: "{{fields.heading}}"
+        file: "src/data/newsPage.yml"
+        fields:
+          - { label: "ページ見出し", name: "heading", widget: string, required: false, default: "お知らせ" }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - { label: "一覧セクションの見出し", name: "listHeading", widget: string, required: false, default: "お知らせ一覧", hint: "カテゴリ絞り込み・記事一覧の直前に表示される見出し。空欄にすると「お知らせ一覧」を表示します。" }
+
   # ==========================================================================
   # ④ 複数ページ版（master-template-multi）専用：お知らせ（投稿型）
   #    1記事 = src/content/news/*.md（frontmatter + Markdown本文）。
