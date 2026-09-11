@@ -6,13 +6,6 @@ featuredHeading: 新商品
 regularHeading: 通年商品
 regularColumns: 3
 items:
-  - image: ../assets/service-support.jpg
-    name: 月額運用サポートプラン
-    description: 公開後の更新代行・保守・改善提案を継続的にサポートするプランです。
-    price: 20000
-    showBadge: false
-    badgeText: ""
-    section: both
   - image: ../assets/works-corporate.jpg
     name: スタンダードWebサイトプラン
     description: コーポレートサイトに最適な、トップページ＋下層ページ一式の制作パッケージです。
@@ -34,3 +27,10 @@ items:
     showBadge: false
     badgeText: ""
     section: regular
+  - image: ../assets/service-support.jpg
+    name: 月額運用サポートプラン
+    description: 公開後の更新代行・保守・改善提案を継続的にサポートするプランです。
+    price: 20000
+    showBadge: false
+    badgeText: ""
+    section: both
