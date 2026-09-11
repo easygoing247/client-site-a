@@ -193,9 +193,16 @@ export interface SiteInfo {
    * 文言・表示トグルのみを持つ）。 */
   stickyContactBar: {
     phoneLabel: string;
-    lineLabel: string;
     showPhoneButton: boolean;
+    /** 未入力（既定 "tel"）時の解釈は StickyContactBar.astro 側の既定値に委ねる */
+    phoneActionType?: 'tel' | 'url' | 'form';
+    /** 入力があれば「連絡先」の電話番号より優先される個別リンク先 */
+    phoneCustomLink?: string;
+    lineLabel: string;
     showLineButton: boolean;
+    lineActionType?: 'tel' | 'url' | 'form';
+    /** 入力があれば「SNS設定」のLINE URLより優先される個別リンク先 */
+    lineCustomLink?: string;
   };
   copyright: string;
 }

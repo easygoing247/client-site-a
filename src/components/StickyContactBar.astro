@@ -5,8 +5,12 @@
 // 表示トグル・ボタン文言は管理画面「サイト全体設定 ＞ 画面下部固定バー」
 // （site.stickyContactBar）、電話番号・LINEのURL自体は「連絡先」
 // （site.contact）・「SNS設定」（snsUrl('line')）を参照する。
-// 各ボタンは表示トグル（showPhoneButton/showLineButton）と、対応する値
-// （電話番号／LINE URL）が入力されているかの両方で表示制御する。
+// 各ボタンのリンク先は、管理画面で「個別リンク先」（phoneCustomLink /
+// lineCustomLink）が入力されていればそれを最優先（アクション種別に応じて
+// tel:を付与するかURLとしてそのまま使うかを解釈）し、未入力の場合のみ
+// 共通の「連絡先」／「SNS設定」にフォールバックする（resolveHref()）。
+// 各ボタンは表示トグル（showPhoneButton/showLineButton）と、解決後の
+// リンク先が実際に存在するかの両方で表示制御する。
 //   ・両方表示 → 50% / 50%
 //   ・片方のみ → 100%
 //   ・両方非表示 → バー自体を描画しない
@@ -14,9 +18,20 @@
 import { site } from '../lib/site';
 import { snsUrl } from '../lib/sns';
 
-const lineUrl = snsUrl('line');
-const showPhone = site.stickyContactBar.showPhoneButton && !!site.contact.phone;
-const showLine = site.stickyContactBar.showLineButton && !!lineUrl;
+function resolveHref(actionType: 'tel' | 'url' | 'form' | undefined, customLink: string | undefined, fallbackHref: string): string {
+  if (!customLink) return fallbackHref;
+  if (actionType === 'tel') {
+    return customLink.startsWith('tel:') ? customLink : `tel:${customLink.replace(/[^0-9+]/g, '')}`;
+  }
+  // 'url' / 'form' はどちらもリンク先をそのまま使う（フォームへの導線は
+  // 通常のURL遷移と実装上区別する必要がないため）。
+  return customLink;
+}
+
+const phoneHref = resolveHref(site.stickyContactBar.phoneActionType, site.stickyContactBar.phoneCustomLink, site.contact.phoneHref);
+const lineHref = resolveHref(site.stickyContactBar.lineActionType, site.stickyContactBar.lineCustomLink, snsUrl('line') ?? '');
+const showPhone = site.stickyContactBar.showPhoneButton && !!phoneHref;
+const showLine = site.stickyContactBar.showLineButton && !!lineHref;
 ---
 
 {(showPhone || showLine) && (
@@ -28,7 +43,7 @@ const showLine = site.stickyContactBar.showLineButton && !!lineUrl;
     <div class:list={['grid', showPhone && showLine ? 'grid-cols-2' : 'grid-cols-1']}>
       {showPhone && (
         <a
-          href={site.contact.phoneHref}
+          href={phoneHref}
           class="flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4 bg-gradient-to-br from-primary to-primary-dark"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -42,7 +57,7 @@ const showLine = site.stickyContactBar.showLineButton && !!lineUrl;
       )}
       {showLine && (
         <a
-          href={lineUrl}
+          href={lineHref}
           class="flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] tracking-wide py-4 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]"
         >
           <svg

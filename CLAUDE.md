@@ -98,8 +98,9 @@ public/
 
 - 1実績 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
   URLスラッグになる（例: `sample.md` → `/works/sample/`）。CMS 上のコレクション名は
-  「実績作成（型化ページ）」（旧「実績・活用事例一覧（型化ページ）」／さらに旧
-  「商品一覧（型化ページ）」／さらに旧「商品・施工事例」）。旧 `src/content/products/` → `src/content/works/`、
+  「実績・活用事例作成」（旧「実績作成（型化ページ）」／さらに旧「実績・活用事例一覧
+  （型化ページ）」／さらに旧「商品一覧（型化ページ）」／さらに旧「商品・施工事例」）。
+  旧 `src/content/products/` → `src/content/works/`、
   旧 `src/pages/products/[slug].astro` → `src/pages/works/[slug].astro` に
   改名済み（trailing slug のみ変更、frontmatterスキーマ自体は不変）。
 - frontmatterのスキーマは `src/content/config.ts` の `works` で定義されている。
@@ -337,12 +338,12 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 
 `public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」を
 保持したまま、以下を追加している。コレクションの並び順（＝CMSサイドバーの表示順）は
-サイト設定 → **商品作成** → **実績作成（型化ページ）** → 下層ページ → お知らせ。
+サイト設定 → **商品作成** → **実績・活用事例作成** → 下層ページ → お知らせ。
 
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
 | 商品作成（`name: productsCatalog`、file名 `products`） | files（単一ファイル） | `src/data/products.yml` | 商品カタログの可変リスト（§4参照） |
-| 実績作成（型化ページ）（`name: works`） | folder（型化ページ） | `src/content/works/*.md` | タイトル・価格・メイン画像・概要・仕様・本文（§4参照） |
+| 実績・活用事例作成（`name: works`） | folder（型化ページ） | `src/content/works/*.md` | タイトル・価格・メイン画像・概要・仕様・本文（§4参照） |
 | 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
 | 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
 | 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
@@ -1369,7 +1370,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 | キー | CMS表示名 | 保持するフィールド | 用途 |
 |---|---|---|---|
 | `contact` | 「連絡先」 | `phone` / `phoneHref` / `email` | 電話番号・メールアドレスそのもの（実データ）。反映先：トップページ「アクセス」、プライバシーポリシー「事業者情報」、`/llms.txt`（9.12でCMSのhintとしても明記） |
-| `stickyContactBar` | 「画面下部固定バー」 | `phoneLabel` / `lineLabel` / `showPhoneButton` / `showLineButton` | スマホ表示時に画面下部へ常時表示される「お電話」「LINEで相談」固定バー（`StickyContactBar.astro`）の文言・表示トグルのみ。電話番号自体は`contact.phone`／LINEのURLは`sns`（SNS設定）を参照し、このオブジェクトは持たない |
+| `stickyContactBar` | 「画面下部固定バー」 | `phoneLabel` / `lineLabel` / `showPhoneButton` / `showLineButton` / `phoneActionType` / `phoneCustomLink` / `lineActionType` / `lineCustomLink` | スマホ表示時に画面下部へ常時表示される「お電話」「LINEで相談」固定バー（`StickyContactBar.astro`）の文言・表示トグルに加え、各ボタンのアクション種別（`tel`/`url`/`form`）と個別リンク先（`*CustomLink`）を持つ（2026-09追加）。`*CustomLink`が入力されていれば`StickyContactBar.astro`の`resolveHref()`がそれを最優先（`actionType`が`tel`なら`tel:`を付与、それ以外はURLとしてそのまま使用）し、未入力の場合のみ`contact.phone`／`sns`（SNS設定のLINE URL）へフォールバックする |
 
 - `config.yml`・`siteInfo.yml`とも、`stickyContactBar`は
   `footerNav`（フッターナビゲーション）の直後、`copyright`

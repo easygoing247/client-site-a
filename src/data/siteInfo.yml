@@ -237,9 +237,13 @@ footerNav:
     href: /contact
 stickyContactBar:
   phoneLabel: お電話
-  lineLabel: LINEで相談
   showPhoneButton: true
+  phoneActionType: tel
+  phoneCustomLink: ""
+  lineLabel: LINEで相談
   showLineButton: true
+  lineActionType: url
+  lineCustomLink: ""
 copyright: © 2026 LOGO. All Rights Reserved.
 features:
   enableFeatures: true

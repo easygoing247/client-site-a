@@ -226,6 +226,78 @@
         padding-bottom: 90px !important;
       }
 
+      /*
+        プレビュー領域のデバイス幅切替（PC／タブレット／スマホ）。
+        .Pane2 自体は react-split-pane の柔軟幅コンテナのため、内部の
+        iframeにだけ固定幅を指定し、はみ出す場合は .Pane2 側の
+        overflow-x:auto で横スクロールさせる（Pane2自身の幅・高さは
+        変更しない＝スクロール不能やフリーズを避けるため）。
+        react-split-pane の Pane は inline style で display:flex を
+        持つため、iframe側の margin:0 auto はフレックスの主軸（横方向）の
+        オートマージンとして機能し、幅が.Pane2より狭いときに中央寄せされる
+        （flexコンテナでのmargin:auto中央寄せは仕様上の標準的な挙動）。
+      */
+      .Pane2 {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+      }
+      .Pane2 iframe {
+        height: 100% !important;
+        flex: none !important;
+        transition: width 0.2s ease;
+      }
+      .Pane2[data-cms-device='tablet'] iframe {
+        width: 768px !important;
+        max-width: none !important;
+        margin: 0 auto !important;
+      }
+      .Pane2[data-cms-device='mobile'] iframe {
+        width: 375px !important;
+        max-width: none !important;
+        margin: 0 auto !important;
+      }
+
+      /*
+        デバイス幅切替ボタン（PC／タブレット／スマホ）。Decap本体（React）が
+        管理するノードの中には一切追加せず、独立した要素として
+        document.bodyへ追加し、position:fixedで.Pane2の右上に重ねて表示する
+        （9)節のViewControls移設と同じ理由＝React管理下のノードへの
+        物理的な子要素追加・親付け替えを避けるため）。
+        表示位置はJS側（relocateDeviceToolbar）が.Pane2のgetBoundingClientRect()
+        を基に算出する。プレビューペイン自体が非表示のスマホ・タブレット幅
+        （@media (max-width: 799px)）では.visibleクラスが付かず非表示のまま。
+      */
+      #cms-device-toolbar {
+        display: none;
+        position: fixed;
+        z-index: 9000;
+        gap: 2px;
+        padding: 4px;
+        background: #fff;
+        border: 1px solid #d8dbe2;
+        border-radius: 8px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+      }
+      #cms-device-toolbar.visible {
+        display: flex;
+      }
+      #cms-device-toolbar button {
+        border: none;
+        background: transparent;
+        color: #4b5468;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      #cms-device-toolbar button.active {
+        background: #eef2ff;
+        color: #1e40af;
+      }
+
       @media (max-width: 799px) {
         /*
           html/body は overflow-x のみ隠しており、overflow-y は既定（visible）
@@ -1229,6 +1301,76 @@
         viewControlsObserver.observe(document.body, { childList: true, subtree: true });
         window.addEventListener('resize', relocateViewControls);
         relocateViewControls();
+
+        // ==================================================================
+        // 7.5) プレビュー領域のデバイス幅切替（PC／タブレット／スマホ）ボタン。
+        //    <style>内の #cms-device-toolbar / .Pane2[data-cms-device] と対に
+        //    なる実装。ボタン自体はDecap（React）管理下のノードには一切
+        //    追加せず、document.bodyへの独立した要素として追加し、
+        //    position:fixedで.Pane2の右上に重ねて表示する
+        //    （7)節のViewControls移設と同じ理由。React管理ノードへの
+        //    物理的な子要素追加・親付け替えは、アンマウント時の
+        //    removeChildエラー等につながるおそれがあるため避ける）。
+        //    .Pane2自体の幅・高さ・overflow設定は変更せず、内部のiframeにだけ
+        //    固定幅を指定して.Pane2側の横スクロールに任せる方式のため、
+        //    切替を繰り返してもスクロール不能や管理画面のフリーズは起きない。
+        // ==================================================================
+        var currentPreviewDevice = 'pc';
+        var deviceToolbar = document.createElement('div');
+        deviceToolbar.id = 'cms-device-toolbar';
+        var DEVICE_OPTIONS = [
+          { device: 'pc', label: 'PC' },
+          { device: 'tablet', label: 'タブレット' },
+          { device: 'mobile', label: 'スマホ' },
+        ];
+        DEVICE_OPTIONS.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = opt.label;
+          btn.dataset.device = opt.device;
+          btn.addEventListener('click', function () {
+            applyPreviewDevice(opt.device);
+          });
+          deviceToolbar.appendChild(btn);
+        });
+        document.body.appendChild(deviceToolbar);
+
+        function applyPreviewDevice(device) {
+          currentPreviewDevice = device;
+          var pane2 = document.querySelector('.Pane2');
+          if (pane2) {
+            if (device === 'pc') pane2.removeAttribute('data-cms-device');
+            else pane2.setAttribute('data-cms-device', device);
+          }
+          Array.prototype.forEach.call(deviceToolbar.querySelectorAll('button'), function (btn) {
+            btn.classList.toggle('active', btn.dataset.device === device);
+          });
+        }
+        applyPreviewDevice('pc');
+
+        function relocateDeviceToolbar() {
+          var pane2 = document.querySelector('.Pane2');
+          var visible = !!pane2 && getComputedStyle(pane2).display !== 'none' && pane2.getBoundingClientRect().width > 0;
+          deviceToolbar.classList.toggle('visible', visible);
+          if (!visible) return;
+          var rect = pane2.getBoundingClientRect();
+          var toolbarRect = deviceToolbar.getBoundingClientRect();
+          var left = Math.min(Math.max(8, rect.right - toolbarRect.width - 8), window.innerWidth - toolbarRect.width - 8);
+          deviceToolbar.style.top = Math.max(8, rect.top + 8) + 'px';
+          deviceToolbar.style.left = left + 'px';
+        }
+
+        var deviceToolbarObserver = new MutationObserver(relocateDeviceToolbar);
+        deviceToolbarObserver.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('resize', relocateDeviceToolbar);
+        relocateDeviceToolbar();
+
+        // エントリを切り替えた際、直前のデバイス幅選択を持ち越して
+        // 「なぜかスマホ幅のまま」と混乱させないよう、都度PCへ戻す。
+        window.addEventListener('hashchange', function () {
+          applyPreviewDevice('pc');
+          relocateDeviceToolbar();
+        });
 
         // ==================================================================
         // 8) スクロール同期（Scroll Sync）機能の実装。

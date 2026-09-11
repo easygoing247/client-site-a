@@ -103,6 +103,16 @@ function initSlider(track: HTMLElement): void {
     });
   });
   window.addEventListener('resize', updateArrows);
+
+  // 初期表示位置の指定（例：「料金プラン」で人気プランを最初から表示）。
+  // スマホ幅のスライダーでのみ視覚的な意味を持つが、PC幅（グリッド表示）で
+  // scrollLeftを動かしても見た目に影響しないため、幅を判定せず常に適用する。
+  const initialIndexAttr = track.dataset.sliderInitialIndex;
+  const initialIndex = initialIndexAttr ? parseInt(initialIndexAttr, 10) : NaN;
+  if (!Number.isNaN(initialIndex) && initialIndex > 0) {
+    track.scrollTo({ left: step() * initialIndex, behavior: 'auto' });
+  }
+
   updateArrows();
 }
 

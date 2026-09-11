@@ -138,7 +138,7 @@ collections:
           - label: "実績"
             name: "works"
             widget: object
-            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績作成（型化ページ）」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数・並び順・列数のみを設定します。"
+            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績・活用事例作成」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数・並び順・列数のみを設定します。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
@@ -363,12 +363,32 @@ collections:
           - label: "画面下部固定バー"
             name: "stickyContactBar"
             widget: object
-            hint: "スマホ表示時、画面下部に常時表示される「お電話」「LINEで相談」の固定バーの設定です（PC表示では非表示）。電話番号・LINEのURL自体は上の「連絡先」「SNS設定」で管理します。"
+            hint: "スマホ表示時、画面下部に常時表示される「お電話」「LINEで相談」の固定バーの設定です（PC表示では非表示）。個別リンク先を入力した場合はそちらが最優先で使われ、未入力の場合のみ上の「連絡先」「SNS設定」の共通情報にフォールバックします。"
             fields:
               - { label: "「お電話」ボタン文言", name: "phoneLabel", widget: string, required: false }
+              - { label: "「お電話」ボタンを表示する", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応するリンク先（個別設定または共通の連絡先／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
+              - label: "「お電話」ボタンのアクション種別"
+                name: "phoneActionType"
+                widget: select
+                default: "tel"
+                required: false
+                options:
+                  - { label: "電話発信", value: "tel" }
+                  - { label: "URLへ遷移", value: "url" }
+                  - { label: "フォームへ遷移", value: "form" }
+              - { label: "「お電話」ボタンの個別リンク先", name: "phoneCustomLink", widget: string, required: false, hint: "入力すると上の「連絡先」の電話番号より優先されます。アクション種別が「電話発信」の場合は電話番号（例: 09012345678）、それ以外はURL（例: /contact や https://...）を入力してください。未入力の場合は共通の連絡先の電話番号を使用します。" }
               - { label: "「LINEで相談」ボタン文言", name: "lineLabel", widget: string, required: false }
-              - { label: "「お電話」ボタンを表示する", name: "showPhoneButton", widget: boolean, default: true, hint: "「お電話」「LINEで相談」の2つのボタンは、このスイッチと対応する値（電話番号／LINEのURL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。LINEのURLは「SNS設定」で管理します。" }
               - { label: "「LINEで相談」ボタンを表示する", name: "showLineButton", widget: boolean, default: true }
+              - label: "「LINEで相談」ボタンのアクション種別"
+                name: "lineActionType"
+                widget: select
+                default: "url"
+                required: false
+                options:
+                  - { label: "電話発信", value: "tel" }
+                  - { label: "URLへ遷移", value: "url" }
+                  - { label: "フォームへ遷移", value: "form" }
+              - { label: "「LINEで相談」ボタンの個別リンク先", name: "lineCustomLink", widget: string, required: false, hint: "入力すると「SNS設定」のLINE URLより優先されます。アクション種別が「電話発信」の場合は電話番号、それ以外はURL（例: /contact や https://line.me/...）を入力してください。未入力の場合は共通のLINE URLを使用します。" }
 
           # --- 7. コピーライト表記 -------------------------------------------
           - { label: "コピーライト表記", name: "copyright", widget: string, required: false }
@@ -481,7 +501,7 @@ collections:
   # ②b フォルダコレクション：型化ページ（works）＝実績・活用事例を追加・編集・削除
   # ==========================================================================
   - name: "works"
-    label: "実績作成（型化ページ）"
+    label: "実績・活用事例作成"
     folder: "src/content/works"
     create: true
     delete: true

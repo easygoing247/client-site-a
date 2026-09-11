@@ -22,6 +22,11 @@ interface Props {
 const { muted = false } = Astro.props;
 const planButton = site.plans.buttonLabel && site.plans.buttonHref;
 const isSlider = (site.plans.items?.length ?? 0) > 1;
+// スマホ表示のスライダー初期表示は、人気プラン（popular: true）を優先し、
+// 無ければ2番目（スタンダードプラン相当の位置）、1枚しか無ければ先頭にする。
+const popularIndex = site.plans.items?.findIndex((plan) => plan.popular) ?? -1;
+const initialSlideIndex =
+  popularIndex >= 0 ? popularIndex : Math.min(1, (site.plans.items?.length ?? 1) - 1);
 ---
 
 {
@@ -53,7 +58,11 @@ const isSlider = (site.plans.items?.length ?? 0) > 1;
             pt-0 に戻す）を足し、バッジのはみ出し分をコンテナの
             パディング領域内に収めることでクリップを回避する。
           -->
-          <div data-slider-track class="card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch pt-6 sm:pt-0">
+          <div
+            data-slider-track
+            data-slider-initial-index={isSlider ? initialSlideIndex : undefined}
+            class="card-slider-mobile grid lg:grid-cols-3 gap-6 items-stretch pt-6 sm:pt-0"
+          >
             {site.plans.items.map((plan) => (
               <div
                 class:list={[
