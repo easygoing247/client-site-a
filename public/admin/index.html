@@ -368,7 +368,19 @@
   </head>
   <body>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <!--
+      バージョンは意図的に固定（キャレット範囲 ^3.0.0 にしない）。unpkg は
+      semver 範囲をリクエスト毎に解決するため、範囲指定のままだと配信される
+      実体バージョンが無告知で変わり得る（再現性が無く、退行版に当たっても
+      気付けない）。実際に「公開して新規作成／公開して複製する」を実行しても
+      フォームが新規作成画面へ遷移せず旧エントリの画面に留まる不具合が
+      発生したため、スラッグ生成まわりの改善（フルネームでの特殊文字対応・
+      テンプレート文字列でのフィルタ対応等）を含む最新安定版へ明示的に
+      固定した。更新時は https://github.com/decaporg/decap-cms/releases を
+      確認し、この行のバージョンとコメントの日付を両方更新すること。
+      （固定日: 2026-09。当時の最新安定版 3.16.2）
+    -->
+    <script src="https://unpkg.com/decap-cms@3.16.2/dist/decap-cms.js"></script>
     <!--
       「サイト全体設定」「デザインテーマ設定」のリアルタイムプレビュー
       テンプレート（CMS.registerPreviewTemplate）。decap-cms.js が公開する

@@ -49,6 +49,12 @@ const works = defineCollection({
       // 未入力を許容する。表示側（Works.astro / works/[slug].astro）
       // で値が無い項目は非表示にする。
       title: z.string().optional(),
+      // URL用識別子（半角英数字・ハイフン）。config.yml の collection slug:
+      // "{{fields.urlSlug}}" の組み立てにのみ使う入力用フィールドで、
+      // フロントエンドの表示・ロジックでは参照しない。フィールド名を敢えて
+      // `slug` にしていない理由は news コレクションの同名フィールドの
+      // コメント（本ファイル内 news 定義）を参照。
+      urlSlug: z.string().optional(),
       price: cmsNumberOptional,
       mainImage: image().optional(),
       summary: z.string().optional(),

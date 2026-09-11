@@ -36,22 +36,36 @@
   if (!h || !createClass || !window.CMS) return;
 
   // ==========================================================================
-  // 「お知らせ」記事のURLスラッグに日本語（非ASCII）が紛れ込むのを防ぐ。
-  // config.yml の news コレクションは
-  // slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}" とし、記事タイトルでは
-  // なくフォームの「URL用識別子（半角英数字）」フィールド（news.urlSlug、
-  // pattern: ^[a-z0-9-]+$）からファイル名を組み立てる（フィールド名を敢えて
-  // "slug" にしていない理由は src/content/config.ts のコメント参照）。
-  // とはいえ同フィールドは任意入力（required: false）のため、未入力のまま
-  // 保存されるとファイル名の該当部分が空になってしまう。それを防ぐため、
-  // 保存直前（preSave）に空欄ならランダムな識別子を自動採番する。
+  // 「お知らせ」「実績・活用事例」記事のURLスラッグに日本語（非ASCII）が
+  // 紛れ込むのを防ぐ。config.yml の news / works コレクションは、記事
+  // タイトルからではなくフォームの「URL用識別子（半角英数字）」フィールド
+  // （`urlSlug`、pattern: ^[a-z0-9-]+$）からファイル名を組み立てる
+  // （news: `{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}` / works:
+  // `{{fields.urlSlug}}`。フィールド名を敢えて "slug" にしていない理由は
+  // src/content/config.ts のコメント参照）。とはいえ同フィールドは任意入力
+  // （required: false）のため、未入力のまま保存されるとファイル名が壊れる。
+  // それを防ぐため、保存直前（preSave）に空欄ならランダムな識別子を
+  // 自動採番する。
+  //
+  // 実装上の注意（Decap既知の落とし穴）：
+  // ・handler の引数 entry は Immutable.js の Map。ネイティブの Map/Object
+  //   と混同して `.data` 等でアクセスしないこと（`entry.get('data')` を使う）。
+  // ・戻り値は必ず「元の data（Immutable Map）」または `.set()` で更新した
+  //   ものを返すこと。`undefined` を返すと identifier_field が欠落した扱いに
+  //   なり、後続の保存・画面遷移処理まで巻き込んで壊れる原因になる
+  //   （decaporg/decap-cms#6775）。そのため対象外の場合も必ず `data` を
+  //   そのまま返し、`entry` や `data` が想定外の形（undefined 等）のときは
+  //   何も返さずそのまま Decap のデフォルト挙動に委ねる。
+  // ・対象コレクションをハードコードせず、`urlSlug` フィールドを持つ
+  //   コレクションかどうか（`data.has('urlSlug')`）で判定する。将来
+  //   同じ仕組みを他のコレクションに追加した場合も自動的に適用される。
   // ==========================================================================
   window.CMS.registerEventListener({
     name: 'preSave',
     handler: function (args) {
       var entry = args && args.entry;
-      var data = entry && entry.get && entry.get('data');
-      if (!entry || !data || entry.get('collection') !== 'news') return data;
+      var data = entry && typeof entry.get === 'function' ? entry.get('data') : undefined;
+      if (!data || typeof data.has !== 'function' || !data.has('urlSlug')) return data;
       var urlSlug = data.get('urlSlug');
       if (typeof urlSlug === 'string' && urlSlug.trim()) return data;
       var random = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);

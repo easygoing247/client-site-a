@@ -355,21 +355,35 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   **`src/lib/news.ts`** の `getPublishedNews()`（`draft: true` を除外し公開日降順）を経由する。
   カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で
   `../../assets/` からの相対パスで指定する（絶対ルール②）。
-- **URLスラッグに日本語を含めない**：`news` の記事タイトルは日本語前提のため、
-  ファイル名（＝URL）をタイトルからの自動生成（Decap既定の `{{slug}}`）に
-  任せると非ASCII文字入りのURLになってしまう。そのため config.yml で
-  `slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"` とし、フォームの
-  「URL用識別子（半角英数字）」フィールド（`urlSlug`、`pattern: ^[a-z0-9-]+$`）
-  から明示的にファイル名を組み立てる。**フィールド名は `slug` ではなく
-  `urlSlug`** にしていることに注意：Astro の Content Collections は
-  frontmatter の `slug` キーを「エントリの slug を上書きする予約語」として
-  特別扱いするため、`src/content/config.ts` のスキーマに含めると
-  `ContentSchemaContainsSlugError` でビルドが落ち、仮にスキーマから外して
-  残しても「年月日を含まないその値だけ」が実際のURLになってしまい
-  ファイル名と食い違う（詳細は同ファイルのコメント参照）。`urlSlug` が
-  空欄のまま保存された場合に備え、`preview.js` に `CMS.registerEventListener
-  ({ name: 'preSave', ... })` を登録し、空欄ならランダムな識別子を自動採番して
+- **URLスラッグに日本語を含めない**：`news` / `works` の記事・実績タイトルは
+  日本語前提のため、ファイル名（＝URL）をタイトルからの自動生成（Decap既定の
+  `{{slug}}`）に任せると非ASCII文字入りのURLになってしまう。そのため
+  config.yml で `news`: `slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"`、
+  `works`: `slug: "{{fields.urlSlug}}"` とし、フォームの「URL用識別子
+  （半角英数字）」フィールド（`urlSlug`、`pattern: ^[a-z0-9-]+$`）から明示的に
+  ファイル名を組み立てる。**フィールド名は `slug` ではなく `urlSlug`**
+  にしていることに注意：Astro の Content Collections は frontmatter の
+  `slug` キーを「エントリの slug を上書きする予約語」として特別扱いするため、
+  `src/content/config.ts` のスキーマに含めると `ContentSchemaContainsSlugError`
+  でビルドが落ち、仮にスキーマから外して残しても「年月日を含まないその値だけ」
+  が実際のURLになってしまいファイル名と食い違う（詳細は同ファイルのコメント
+  参照）。`urlSlug` が空欄のまま保存された場合に備え、`preview.js` に
+  `CMS.registerEventListener({ name: 'preSave', ... })` を登録し、`urlSlug`
+  フィールドを持つコレクション（コレクション名をハードコードせず
+  `data.has('urlSlug')` で判定＝将来同じ仕組みを他のコレクションに
+  足しても自動適用される）で空欄ならランダムな識別子を自動採番して
   ファイル名が壊れないようにしている。
+  - **既知の落とし穴**：`preSave` ハンドラは Immutable.js の `Map` を
+    受け取り、必ず「元の `data`」または `.set()` で更新したものを返す
+    こと。`undefined` を返すと `identifier_field` が欠落した扱いになり、
+    保存後の画面遷移（「公開して新規作成」「公開して複製する」等）まで
+    巻き込んで動かなくなることがある（[decaporg/decap-cms#6775](https://github.com/decaporg/decap-cms/issues/6775)）。
+- **Decap CMS のCDNバージョンは明示的に固定**（`public/admin/index.html`
+  の `<script src="https://unpkg.com/decap-cms@X.Y.Z/...">`）。unpkg は
+  semver 範囲（`^3.0.0` 等）をリクエスト毎に解決するため、範囲指定のままだと
+  配信される実体バージョンが無告知で変わり得て再現性が無い。バージョンを
+  上げる際は https://github.com/decaporg/decap-cms/releases を確認し、
+  この行のバージョンと隣接コメントの日付を両方更新すること。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
 - **公式SNS**：siteInfo.yml トップレベルの `sns` リスト（CMS「SNS設定」、`{id, url, enabled}`、
   id は `line`/`instagram`/`x`/`facebook`/`youtube`/`tiktok`）に一元化。アイコン定義（SVG パス・
