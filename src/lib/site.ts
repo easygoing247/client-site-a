@@ -114,7 +114,11 @@ export interface SiteInfo {
   works: {
     eyebrow: string;
     heading: string;
-    items: { title: string; industry: string; tag: string; image: string }[];
+    // カード個別項目は siteInfo.yml では持たない。型化ページ（Content
+    // Collections: works）を src/components/Works.astro が直接参照する
+    // （二重管理防止。/works/[slug] と表示内容・並び順が常に一致する）。
+    /** トップページに表示する件数 */
+    count: number;
   };
   plans: {
     eyebrow: string;
@@ -155,10 +159,18 @@ export interface SiteInfo {
       errorMessage: string;
     };
   };
+  /** トップページ「商品一覧」セクション（データ本体は src/lib/pages.ts の productsPage） */
   productsSection: {
     eyebrow: string;
     heading: string;
+    /** トップページに表示する件数 */
+    count: number;
+    /** 「/products」への誘導リンク文言（未入力なら非表示） */
+    linkLabel: string;
+    linkHref: string;
   };
+  /** 実績詳細（/works/[slug]）の共通文言。breadcrumbHome は全ページ共通の
+   * パンくず「トップ」表示名としても使われる（about/services/contact/news 等）。 */
   productPage: {
     breadcrumbHome: string;
     specsHeading: string;

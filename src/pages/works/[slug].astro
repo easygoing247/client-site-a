@@ -1,7 +1,8 @@
 ---
 // ============================================================================
-// src/pages/products/[slug].astro
-// Content Collections（products）から型化ページを自動生成する動的ルート。
+// src/pages/works/[slug].astro
+// Content Collections（works）から「実績・活用事例」の型化ページを
+// 自動生成する動的ルート（旧 src/pages/products/[slug].astro）。
 // ============================================================================
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
@@ -13,35 +14,35 @@ import BackToTop from '../../components/BackToTop.astro';
 import { site } from '../../lib/site';
 
 export async function getStaticPaths() {
-  const products = await getCollection('products');
-  return products.map((product) => ({
-    params: { slug: product.slug },
-    props: { product },
+  const works = await getCollection('works');
+  return works.map((work) => ({
+    params: { slug: work.slug },
+    props: { work },
   }));
 }
 
-const { product } = Astro.props;
-const { Content } = await product.render();
+const { work } = Astro.props;
+const { Content } = await work.render();
 ---
 
 <Layout
-  title={product.data.title ? `${product.data.title} | ${site.company.siteName}` : site.company.siteName}
-  description={product.data.summary}
-  image={product.data.mainImage}
+  title={work.data.title ? `${work.data.title} | ${site.company.siteName}` : site.company.siteName}
+  description={work.data.summary}
+  image={work.data.mainImage}
 >
   <Header />
   <main>
     <article class="py-12 px-5">
       <div class="max-w-[820px] mx-auto">
         <nav class="text-[12px] text-ink-faint mb-6" aria-label="パンくずリスト">
-          <a href="/" class="hover:text-primary">{site.productPage.breadcrumbHome}</a> <span aria-hidden="true">›</span> {product.data.title}
+          <a href="/" class="hover:text-primary">{site.productPage.breadcrumbHome}</a> <span aria-hidden="true">›</span> {work.data.title}
         </nav>
 
-        {product.data.mainImage && (
+        {work.data.mainImage && (
           <div class="rounded-2xl overflow-hidden border border-surface-border mb-8">
             <Image
-              src={product.data.mainImage}
-              alt={product.data.title ?? ''}
+              src={work.data.mainImage}
+              alt={work.data.title ?? ''}
               class="w-full h-auto object-cover block"
               width={820}
               height={480}
@@ -52,24 +53,24 @@ const { Content } = await product.render();
           </div>
         )}
 
-        {product.data.title && (
-          <h1 class="font-bold mb-3" style="font-size:clamp(24px,3.6vw,34px);">{product.data.title}</h1>
+        {work.data.title && (
+          <h1 class="font-bold mb-3" style="font-size:clamp(24px,3.6vw,34px);">{work.data.title}</h1>
         )}
-        {!!product.data.price && (
+        {!!work.data.price && (
           <div class="text-[26px] font-bold text-primary mb-6">
-            ¥{product.data.price.toLocaleString('ja-JP')}<span class="text-[14px] font-normal text-ink-soft">〜</span>
+            ¥{work.data.price.toLocaleString('ja-JP')}<span class="text-[14px] font-normal text-ink-soft">〜</span>
           </div>
         )}
 
-        {product.data.summary && (
-          <p class="text-[14px] leading-[1.9] text-secondary-light mb-8 whitespace-pre-line">{product.data.summary}</p>
+        {work.data.summary && (
+          <p class="text-[14px] leading-[1.9] text-secondary-light mb-8 whitespace-pre-line">{work.data.summary}</p>
         )}
 
-        {product.data.specs.length > 0 && (
+        {work.data.specs.length > 0 && (
           <div class="mb-10 bg-surface-muted rounded-2xl p-6">
             {site.productPage.specsHeading && <h2 class="text-[14px] font-bold mb-4">{site.productPage.specsHeading}</h2>}
             <ul class="list-none m-0 p-0 flex flex-col gap-2.5">
-              {product.data.specs.map((spec) => (
+              {work.data.specs.map((spec) => (
                 <li class="flex gap-2 items-start text-[13px] text-secondary-light">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="flex-none mt-0.5">
                     <path

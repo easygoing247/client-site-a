@@ -11,6 +11,7 @@ import yaml from 'js-yaml';
 import servicesRaw from '../data/services.yml?raw';
 import aboutRaw from '../data/about.yml?raw';
 import contactPageRaw from '../data/contactPage.yml?raw';
+import productsRaw from '../data/products.yml?raw';
 
 export interface ServicesPage {
   heading?: string;
@@ -117,9 +118,115 @@ export interface ContactPage {
   };
 }
 
+// ============================================================================
+// 「商品作成（型化ページ）」— src/data/products.yml
+// 型化ページ（1件=1ファイル）ではなく、単一ファイル内の可変リスト
+// （widget: list）で管理する軽量な商品カタログ。CMS でドラッグ&ドロップして
+// 並び替え・追加・削除できる。トップページ「商品一覧」セクション（先頭N件）と
+// /products ページ（表示区分ごとの2セクション）の両方がこのデータを参照する
+// （単一データソース）。js-yaml でパースするのみで Zod 検証は行わないため、
+// 各テンプレートは `typeof x.price === 'number'` 等のガードで
+// 空文字（CMS で数値欄を空にした場合の書き出され方）を吸収すること。
+// ============================================================================
+export type ProductSectionPlacement = 'featured' | 'regular' | 'both';
+
+export interface ProductItemConfig {
+  image?: string;
+  name?: string;
+  description?: string;
+  price?: number | string;
+  showBadge?: boolean;
+  badgeText?: string;
+  /** 表示区分：featured=目立たせたい商品／regular=そうではない商品／both=両方 */
+  section?: ProductSectionPlacement;
+}
+
+export interface ProductsPage {
+  /** /products ページの見出し（既定「商品一覧」） */
+  heading?: string;
+  lead?: string;
+  /** 「目立たせたい商品」セクションの見出し（既定「新商品」） */
+  featuredHeading?: string;
+  /** 「そうではない商品」セクションの見出し（既定「通年商品」） */
+  regularHeading?: string;
+  /** 「そうではない商品」セクションのPC表示時のグリッド列数の目安（既定 3） */
+  regularColumns?: number;
+  items?: ProductItemConfig[];
+}
+
+export interface ResolvedProductItem {
+  image?: string;
+  name: string;
+  description?: string;
+  price?: number;
+  showBadge: boolean;
+  badgeText: string;
+}
+
+/** CMS の number ウィジェットが空欄を書き出した際の `""` 等を吸収する。 */
+function toFiniteNumberOrUndefined(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value.replace(/,/g, '').trim());
+    if (!Number.isNaN(n)) return n;
+  }
+  return undefined;
+}
+
+/**
+ * 「商品作成」の項目一覧から、指定の表示区分（featured／regular）に該当し、
+ * 商品名が入力済みの項目だけを、登録順（配列インデックス）のまま返す。
+ * 画像・説明・価格・バッジはそれぞれ未入力なら省き、表示側で
+ * `{field && ...}` により自動的に非表示にできる形へ正規化する。
+ */
+export function resolveProductItems(
+  items: ProductItemConfig[] | undefined,
+  placement: 'featured' | 'regular',
+): ResolvedProductItem[] {
+  return (items ?? [])
+    .filter((item): item is ProductItemConfig => !!item && !!(item.name && String(item.name).trim()))
+    .filter((item) => {
+      const section = item.section || 'regular';
+      return section === placement || section === 'both';
+    })
+    .map((item) => ({
+      image: item.image || undefined,
+      name: String(item.name).trim(),
+      description: item.description || undefined,
+      price: toFiniteNumberOrUndefined(item.price),
+      showBadge: item.showBadge === true,
+      badgeText: (item.badgeText || '').trim(),
+    }));
+}
+
+/**
+ * 表示区分を問わず、商品名が入力済みの項目を登録順のまま返す
+ * （トップページ「商品一覧」セクション：先頭N件表示に使用）。
+ */
+export function resolveAllProductItems(items: ProductItemConfig[] | undefined): ResolvedProductItem[] {
+  return (items ?? [])
+    .filter((item): item is ProductItemConfig => !!item && !!(item.name && String(item.name).trim()))
+    .map((item) => ({
+      image: item.image || undefined,
+      name: String(item.name).trim(),
+      description: item.description || undefined,
+      price: toFiniteNumberOrUndefined(item.price),
+      showBadge: item.showBadge === true,
+      badgeText: (item.badgeText || '').trim(),
+    }));
+}
+
+/** 「そうではない商品」セクションのグリッド列数を安全な範囲（2〜4）に丸める。 */
+export function resolveProductColumns(value: number | undefined): number {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 2) return 3;
+  return Math.min(n, 4);
+}
+
 export const servicesPage = (yaml.load(servicesRaw) ?? {}) as ServicesPage;
 export const aboutPage = (yaml.load(aboutRaw) ?? {}) as AboutPage;
 export const contactPage = (yaml.load(contactPageRaw) ?? {}) as ContactPage;
+export const productsPage = (yaml.load(productsRaw) ?? {}) as ProductsPage;
 
 // ============================================================================
 // プレーンテキスト（text ウィジェット）を簡易的にブロック配列へ変換する。

@@ -24,6 +24,7 @@ import Footer from '../components/Footer.astro';
 import StickyContactBar from '../components/StickyContactBar.astro';
 import BackToTop from '../components/BackToTop.astro';
 import { site } from '../lib/site';
+import { productsPage, resolveAllProductItems } from '../lib/pages';
 
 const sectionComponents = {
   features: Features,
@@ -39,14 +40,15 @@ const sectionComponents = {
 
 type SectionId = keyof typeof sectionComponents;
 
-const productCount = site.features.enableProducts ? (await getCollection('products')).length : 0;
+const productCount = site.features.enableProducts ? resolveAllProductItems(productsPage.items).length : 0;
+const workCount = site.features.enableWorks ? (await getCollection('works')).length : 0;
 
 const sectionEnabled: Record<SectionId, boolean> = {
   features: site.features.enableFeatures,
   services: site.features.enableServices,
   flow: site.features.enableFlow,
   products: site.features.enableProducts && productCount > 0,
-  works: site.features.enableWorks,
+  works: site.features.enableWorks && workCount > 0,
   plans: site.features.enablePlans,
   faq: site.features.enableFaq,
   access: site.features.enableAccess,

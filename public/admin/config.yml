@@ -123,28 +123,25 @@ collections:
                   - { label: "タイトル", name: "title", widget: string, required: false }
                   - { label: "本文（Enterキーで改行可）", name: "text", widget: text, required: false }
 
-          - label: "商品一覧（竹/松プラン）"
+          - label: "商品一覧"
             name: "productsSection"
             widget: object
+            hint: "個別の商品（画像・商品名・概要・価格・バッジ）は「商品作成」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数・「/products」への誘導リンクのみを設定します。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "トップページに表示する件数", name: "count", widget: number, value_type: int, default: 4, min: 1, max: 12, required: false }
+              - { label: "「/products」への誘導リンク文言（例：さらに商品を見る）", name: "linkLabel", widget: string, required: false, hint: "未入力の場合、セクション下部のリンクボタンは表示されません。" }
+              - { label: "リンク先", name: "linkHref", widget: string, required: false, default: "/products" }
 
           - label: "実績"
             name: "works"
             widget: object
+            hint: "個別の実績項目（画像・タイトル・概要・本文）は「実績・活用事例一覧（型化ページ）」コレクションで一元管理します。ここではトップページのセクション見出し・表示件数のみを設定します。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
-              - label: "実績項目"
-                name: "items"
-                widget: list
-                required: false
-                fields:
-                  - { label: "タイトル", name: "title", widget: string, required: false }
-                  - { label: "本文（Enterキーで改行可）", name: "industry", widget: text, required: false }
-                  - { label: "タグ", name: "tag", widget: string, required: false }
-                  - { label: "画像", name: "image", widget: image, required: false }
+              - { label: "トップページに表示する件数", name: "count", widget: number, value_type: int, default: 3, min: 1, max: 12, required: false }
 
           - label: "料金プラン"
             name: "plans"
@@ -318,7 +315,7 @@ collections:
                   - { label: "選ばれる3つの理由", value: "features" }
                   - { label: "サービス・事業内容", value: "services" }
                   - { label: "ご相談から納品までの流れ", value: "flow" }
-                  - { label: "商品・プラン一覧（型化ページ）", value: "products" }
+                  - { label: "商品一覧", value: "products" }
                   - { label: "実績・活用事例", value: "works" }
                   - { label: "料金プラン", value: "plans" }
                   - { label: "よくある質問", value: "faq" }
@@ -367,21 +364,22 @@ collections:
               - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true }
               - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true }
               - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true }
-              - { label: "商品・型化ページを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false }
+              - { label: "「商品一覧」セクションを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false }
               - { label: "「実績・活用事例」セクションを表示する", name: "enableWorks", widget: boolean, default: true }
               - { label: "「料金プラン」セクションを表示する", name: "enablePlans", widget: boolean, default: true }
               - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true }
               - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
               - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
 
-          # --- 9. 商品一覧ページ（共通文言）（一番最下部） -------------
-          - label: "商品一覧ページ（共通文言）"
+          # --- 9. 共通文言・実績詳細ページ（一番最下部） -------------
+          - label: "共通文言・実績詳細ページ"
             name: "productPage"
             widget: object
+            hint: "「パンくずリストの「トップ」表示名」はサイト全体（会社概要・サービス内容・お問い合わせ・お知らせ・実績詳細）のパンくずで共通利用します。それ以外の2項目は「実績・活用事例」の個別詳細ページ（/works/xxx）専用です。"
             fields:
               - { label: "パンくずリストの「トップ」表示名", name: "breadcrumbHome", widget: string, required: false }
-              - { label: "「仕様・含まれる内容」見出し", name: "specsHeading", widget: string, required: false }
-              - { label: "相談CTAボタン文言", name: "ctaLabel", widget: string, required: false }
+              - { label: "「仕様・含まれる内容」見出し（実績詳細ページ）", name: "specsHeading", widget: string, required: false }
+              - { label: "相談CTAボタン文言（実績詳細ページ）", name: "ctaLabel", widget: string, required: false }
 
       - name: "siteSettings"
         label: "デザインテーマ設定（site-settings.json）"
@@ -417,14 +415,58 @@ collections:
           - { label: "通知メールの送信者名", name: "contact_email_from_name", widget: string, required: false }
 
   # ==========================================================================
-  # ② フォルダコレクション：型化ページ（products）を追加・編集・削除
+  # ②a 単一ファイルコレクション：「商品作成」（商品一覧・/products の元データ）
+  #    型化ページ（1件=1ファイル）ではなく、1ファイル内の可変リスト（widget:
+  #    list）構造。ドラッグ&ドロップで直感的に並び替え・追加・削除できる。
+  #    トップページ「商品一覧」セクションと /products ページの両方が
+  #    このデータを参照する（src/lib/pages.ts の productsPage / resolveProductItems）。
   # ==========================================================================
-  - name: "products"
-    label: "商品一覧（型化ページ）"
-    folder: "src/content/products"
+  - name: "productsCatalog"
+    label: "商品作成（型化ページ）"
+    files:
+      - name: "products"
+        label: "商品一覧設定"
+        file: "src/data/products.yml"
+        summary: "{{fields.heading}}"
+        fields:
+          - { label: "ページ見出し（/products）", name: "heading", widget: string, required: false }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - { label: "「目立たせたい商品」セクションの見出し", name: "featuredHeading", widget: string, required: false, default: "新商品", hint: "横長カードで表示するセクションの見出しです。空欄にすると「新商品」を表示します。" }
+          - { label: "「そうではない商品」セクションの見出し", name: "regularHeading", widget: string, required: false, default: "通年商品", hint: "縦型カードで表示するセクションの見出しです。空欄にすると「通年商品」を表示します。" }
+          - { label: "「そうではない商品」のグリッド列数（PC表示時の目安）", name: "regularColumns", widget: number, value_type: int, default: 3, min: 2, max: 4, required: false, hint: "※PC表示時の目安列数です。スマホでは常に1列、タブレット幅では自動調整されます。" }
+          - label: "商品項目"
+            name: "items"
+            widget: list
+            required: false
+            summary: "{{fields.name}}"
+            hint: "画像・商品名・概要・価格のうち、空欄の項目はサイト上で自動的に非表示になります（商品名が空欄の項目はカードごと非表示）。"
+            fields:
+              - { label: "商品画像", name: "image", widget: image, required: false }
+              - { label: "商品名", name: "name", widget: string, required: false }
+              - { label: "概要（説明文。Enterキーで改行可）", name: "description", widget: text, required: false }
+              - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+              - { label: "バッジを表示する", name: "showBadge", widget: boolean, default: false, required: false, hint: "ONにして下の「バッジ文言」を入力すると、商品名の上にテーマカラーのバッジが表示されます。" }
+              - { label: "バッジ文言（例：新商品／おすすめ／限定）", name: "badgeText", widget: string, default: "", required: false }
+              - label: "表示セクション区分"
+                name: "section"
+                widget: select
+                default: "regular"
+                required: false
+                hint: "この商品をどちらのセクションに表示するかを選びます。"
+                options:
+                  - { label: "目立たせたい商品（新商品等）", value: "featured" }
+                  - { label: "そうではない商品（通年商品等）", value: "regular" }
+                  - { label: "両方に表示", value: "both" }
+
+  # ==========================================================================
+  # ②b フォルダコレクション：型化ページ（works）＝実績・活用事例を追加・編集・削除
+  # ==========================================================================
+  - name: "works"
+    label: "実績・活用事例一覧（型化ページ）"
+    folder: "src/content/works"
     create: true
     delete: true
-    # このコレクションは src/content/products/*.md（リポジトリ直下から2階層）に
+    # このコレクションは src/content/works/*.md（リポジトリ直下から2階層）に
     # 保存される。画像は全コレクション共通の src/assets/ に保存しつつ、
     # frontmatter・本文には .md から見た相対パス（../../assets/xxx）で記録する。
     # グローバル設定（public_folder: /src/assets）のままだと、frontmatter の

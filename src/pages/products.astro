@@ -1,0 +1,199 @@
+---
+// ============================================================================
+// src/pages/products.astro — 「商品一覧」下層ページ
+// データソースは src/data/products.yml（src/lib/pages.ts の productsPage）。
+// トップページ「商品一覧」セクション（Products.astro）と同じデータを
+// 単一の情報源として共有する。
+// ・「目立たせたい商品」（section: featured/both）＝横長カード
+// ・「そうではない商品」（section: regular/both）＝縦型カード（列数はCMS設定）
+// ・個別詳細ページへは遷移させず、カードクリックで画像をモーダル拡大表示する
+//   （src/pages/works/[slug].astro とは異なる方針。下部 <script> 参照）。
+// ============================================================================
+import { Image, getImage } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import PageHeader from '../components/PageHeader.astro';
+import StickyContactBar from '../components/StickyContactBar.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { site } from '../lib/site';
+import { productsPage, resolveProductItems, resolveProductColumns } from '../lib/pages';
+import { resolveImageOrNull } from '../lib/images';
+
+const heading = productsPage.heading || '商品一覧';
+const featuredHeading = productsPage.featuredHeading || '新商品';
+const regularHeading = productsPage.regularHeading || '通年商品';
+const regularColumns = resolveProductColumns(productsPage.regularColumns);
+
+// 各項目の画像を <Image> 用の ImageMetadata と、ライトボックス用の大きめの
+// 最適化画像URL（getImage()）の両方に解決しておく。
+async function withResolvedImage<T extends { image?: string }>(item: T) {
+  const resolvedImage = resolveImageOrNull(item.image);
+  const lightbox = resolvedImage
+    ? await getImage({ src: resolvedImage, width: 1200, format: 'webp' })
+    : null;
+  return { ...item, resolvedImage, lightboxSrc: lightbox?.src };
+}
+
+const featuredItems = await Promise.all(
+  resolveProductItems(productsPage.items, 'featured').map(withResolvedImage)
+);
+const regularItems = await Promise.all(
+  resolveProductItems(productsPage.items, 'regular').map(withResolvedImage)
+);
+---
+
+<Layout
+  title={`${heading} | ${site.company.siteName}`}
+  description={productsPage.lead || site.company.description}
+>
+  <Header />
+  <main>
+    <PageHeader
+      eyebrow="PRODUCTS"
+      title={heading}
+      lead={productsPage.lead}
+      crumbs={[{ label: site.productPage.breadcrumbHome || 'トップ', href: '/' }, { label: heading }]}
+    />
+
+    {featuredItems.length > 0 && (
+      <section class="py-14 px-5">
+        <div class="max-w-[900px] mx-auto">
+          {featuredHeading && (
+            <h2 class="text-center font-bold mb-10" style="font-size:clamp(20px,3vw,26px);">{featuredHeading}</h2>
+          )}
+          <div class="flex flex-col gap-8">
+            {featuredItems.map((item) => {
+              const Tag = item.lightboxSrc ? 'button' : 'div';
+              return (
+                <Tag
+                  type={item.lightboxSrc ? 'button' : undefined}
+                  data-lightbox-src={item.lightboxSrc}
+                  data-lightbox-alt={item.name}
+                  class:list={[
+                    'w-full text-left grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center rounded-2xl border border-surface-border bg-white p-5 md:p-6 appearance-none',
+                    item.lightboxSrc && 'cursor-zoom-in hover:border-primary transition-colors',
+                  ]}
+                >
+                  {item.resolvedImage && (
+                    <div class="rounded-2xl overflow-hidden border border-surface-border">
+                      <Image
+                        src={item.resolvedImage}
+                        alt={`${item.name}のイメージ`}
+                        class="w-full h-[220px] sm:h-[260px] object-cover block"
+                        width={600}
+                        height={360}
+                        format="webp"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    {item.showBadge && item.badgeText && (
+                      <span class="inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 mb-3 whitespace-nowrap">
+                        {item.badgeText}
+                      </span>
+                    )}
+                    <h3 class="text-[19px] font-bold mb-2">{item.name}</h3>
+                    {item.description && (
+                      <p class="text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-3">{item.description}</p>
+                    )}
+                    {typeof item.price === 'number' && (
+                      <div class="text-[22px] font-bold text-primary">
+                        ¥{item.price.toLocaleString('ja-JP')}<span class="text-[13px] font-normal text-ink-soft">〜</span>
+                      </div>
+                    )}
+                  </div>
+                </Tag>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+
+    {regularItems.length > 0 && (
+      <section class="py-14 px-5 bg-surface-muted">
+        <div class="max-w-[1100px] mx-auto">
+          {regularHeading && (
+            <h2 class="text-center font-bold mb-3" style="font-size:clamp(20px,3vw,26px);">{regularHeading}</h2>
+          )}
+          <p class="text-center text-[11px] text-ink-faint mb-10">※PC表示時の目安列数です。表示は画面幅により自動調整されます。</p>
+          <div class="products-grid gap-5" style={`--products-cols:${regularColumns};`}>
+            {regularItems.map((item) => {
+              const Tag = item.lightboxSrc ? 'button' : 'div';
+              return (
+                <Tag
+                  type={item.lightboxSrc ? 'button' : undefined}
+                  data-lightbox-src={item.lightboxSrc}
+                  data-lightbox-alt={item.name}
+                  class:list={[
+                    'relative w-full text-left flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border appearance-none',
+                    item.lightboxSrc && 'cursor-zoom-in hover:border-primary transition-colors',
+                  ]}
+                >
+                  {item.showBadge && item.badgeText && (
+                    <span class="absolute top-3 left-3 z-10 inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 whitespace-nowrap">
+                      {item.badgeText}
+                    </span>
+                  )}
+                  {item.resolvedImage && (
+                    <Image
+                      src={item.resolvedImage}
+                      alt={`${item.name}のイメージ`}
+                      class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
+                      width={450}
+                      height={253}
+                      format="webp"
+                      loading="lazy"
+                    />
+                  )}
+                  <div class="flex-1 px-4 py-4 md:py-5">
+                    <h3 class="font-bold text-[15px] mb-1">{item.name}</h3>
+                    {item.description && (
+                      <p class="text-[12px] leading-[1.7] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line">{item.description}</p>
+                    )}
+                    {typeof item.price === 'number' && (
+                      <div class="text-[15px] font-bold text-primary">¥{item.price.toLocaleString('ja-JP')}〜</div>
+                    )}
+                  </div>
+                </Tag>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+  </main>
+  <Footer />
+  <StickyContactBar />
+  <BackToTop />
+
+  <!-- 画像拡大用ライトボックス（個別ページへは遷移させず、画像だけを拡大表示する） -->
+  <dialog id="product-lightbox" aria-label="商品画像の拡大表示">
+    <img src="" alt="" />
+  </dialog>
+</Layout>
+
+<script>
+  const dialog = document.getElementById('product-lightbox') as HTMLDialogElement | null;
+  const dialogImg = dialog?.querySelector('img');
+
+  document.querySelectorAll<HTMLElement>('[data-lightbox-src]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const src = el.getAttribute('data-lightbox-src');
+      if (!src || !dialog || !dialogImg) return;
+      dialogImg.setAttribute('src', src);
+      dialogImg.setAttribute('alt', el.getAttribute('data-lightbox-alt') || '');
+      dialog.showModal();
+    });
+  });
+
+  // 背景（::backdrop）クリックで閉じる：dialog自身がクリックターゲットになるのは
+  // padding領域＝実質backdrop部分をクリックした場合のみ（中の<img>はイベントを
+  // 消費するため、これだけで「枠外クリックで閉じる」を実現できる）。
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+  // Escキーでの close は <dialog> の標準動作（cancel イベント）に任せる。
+</script>

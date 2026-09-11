@@ -23,7 +23,11 @@ export const GET: APIRoute = ({ site: siteURL }) => {
   lines.push(`- [プライバシーポリシー](${base}/privacy/): 個人情報の取り扱いについて`);
 
   if (site.features.enableProducts) {
-    lines.push(`- [商品・プラン一覧](${base}/#products): ${site.productsSection.heading}`);
+    lines.push(`- [商品一覧](${base}/products/): ${site.productsSection.heading}`);
+  }
+
+  if (site.features.enableWorks) {
+    lines.push(`- [実績・活用事例](${base}/#works): ${site.works.heading}`);
   }
 
   lines.push('');

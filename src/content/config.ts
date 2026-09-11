@@ -1,8 +1,13 @@
 // ============================================================================
 // src/content/config.ts — Content Collections スキーマ定義
-// 竹/松プラン（型化ページ）用の products コレクション。
-// siteInfo.yml の features.enableProducts が true のときのみ
-// トップページの商品セクションおよび /products/[slug] への導線が有効になる。
+// 型化ページ（1件=1ファイル）用の works コレクション＝「実績・活用事例」。
+// features.enableWorks が true の間、トップページ「実績・活用事例」セクション
+// （src/components/Works.astro）に一覧表示され、各カードは /works/[slug] の
+// 個別ページへリンクする。
+// ※「商品一覧」トップセクション・/products ページは型化ページではなく、
+//   単一ファイル（src/data/products.yml、CMS「商品作成」）のリスト構造。
+//   スキーマ検証は無く（js-yaml のみ）、テンプレート側の
+//   `typeof x === 'number'` 等のガードで空文字を吸収する（src/lib/pages.ts 参照）。
 // ============================================================================
 import { defineCollection, z } from 'astro:content';
 
@@ -36,12 +41,12 @@ const cmsDateOptional = z.preprocess(
   z.coerce.date().optional(),
 );
 
-const products = defineCollection({
+const works = defineCollection({
   type: 'content',
   schema: ({ image }) =>
     z.object({
       // CMS側（config.yml）で全項目を任意入力にしているため、スキーマ側も
-      // 未入力を許容する。表示側（Products.astro / products/[slug].astro）
+      // 未入力を許容する。表示側（Works.astro / works/[slug].astro）
       // で値が無い項目は非表示にする。
       title: z.string().optional(),
       price: cmsNumberOptional,
@@ -71,4 +76,4 @@ const news = defineCollection({
     }),
 });
 
-export const collections = { products, news };
+export const collections = { works, news };

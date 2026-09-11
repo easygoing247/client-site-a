@@ -1,17 +1,18 @@
 /* ============================================================================
  * public/admin/preview.js
  * Decap CMS の「サイト全体設定（siteInfo.yml）」「デザインテーマ設定
- * （site-settings.json）」「商品一覧（型化ページ／products）」に
- * 対するリアルタイムプレビューテンプレート。
+ * （site-settings.json）」「実績・活用事例一覧（型化ページ／works）」
+ * 「商品作成（src/data/products.yml）」に対するリアルタイムプレビュー
+ * テンプレート。
  *
  * Astroコンポーネント（.astro）はビルド時にHTMLへ変換されるサーバー
  * サイド専用の仕組みのため、CMSの編集画面内でそのまま動かすことはできない。
  * そのため、本番の各コンポーネント（Hero/Features/Service/Flow/Works/
- * Plans/Access/Faq/Contact/Header/Footer、および商品詳細ページ
- * products/[slug].astro）のマークアップ・Tailwindクラスをこのファイル内で
- * React要素として再現し、フォームの入力値（entry）を直接バインドする
- * ことで、保存・ビルドを待たずに実際のサイトに近い見た目でリアルタイムに
- * プレビューする。
+ * Products/Plans/Access/Faq/Contact/Header/Footer、および実績詳細ページ
+ * works/[slug].astro、商品一覧ページ products.astro）のマークアップ・
+ * Tailwindクラスをこのファイル内でReact要素として再現し、フォームの
+ * 入力値（entry）を直接バインドすることで、保存・ビルドを待たずに
+ * 実際のサイトに近い見た目でリアルタイムにプレビューする。
  *
  * スタイルは、実際にビルドされたサイトが読み込んでいるCSS（Tailwindの
  * コンパイル済みスタイルシート）をトップページのHTMLから動的に見つけ出し、
@@ -20,12 +21,14 @@
  * CSSファイルを使う（このファイル側で独自にスタイルを再定義しない）。
  * 同じトップページのHTMLから実際の<header>・<footer>（ロゴ・ナビ・
  * SNSアイコン等、siteInfo.yml側の最新公開データを反映したもの）もそのまま
- * 抜き出し、商品詳細ページのプレビューにも本物のヘッダー・フッターとして
- * 使い回す（productsコレクションのプレビューは別エントリのため、
+ * 抜き出し、実績詳細ページのプレビューにも本物のヘッダー・フッターとして
+ * 使い回す（works コレクションのプレビューは別エントリのため、
  * siteInfo.yml側の"未保存の編集中の値"までは参照できない＝直近に公開
  * 済みの内容が表示される）。
- * トップページの「商品・プラン一覧」セクションのみ、ビルド時にしか
- * 取得できないデータのためプレビュー対象外（プレースホルダー表示）。
+ * トップページの「実績・活用事例」「商品一覧」の各セクションは、カード本体が
+ * ビルド時にしか取得できない別エントリのデータのためプレビュー対象外
+ * （プレースホルダー表示。カード自体は works／products.yml 側の
+ * プレビューテンプレートで確認する）。
  * ============================================================================ */
 (function () {
   var h = window.h;
@@ -473,11 +476,12 @@
   }
 
   // ==========================================================================
-  // 実績・活用事例
+  // 実績・活用事例 — カード本体は型化ページ（Content Collections: works、
+  // 別のCMSエントリ）のデータで、ビルド時にしか取得できないため、
+  // このプレビューでは見出しのみ反映し案内を表示する。
   // ==========================================================================
-  function renderWorks(h, data, getAsset, muted) {
+  function renderWorksPlaceholder(h, data, muted) {
     var section = data.works || {};
-    var items = section.items || [];
     return h(
       'section',
       { id: 'works', className: cx('py-16 px-5', muted && 'bg-surface-muted') },
@@ -486,38 +490,17 @@
         { className: 'max-w-[1100px] mx-auto' },
         renderSectionHeading(h, section.eyebrow, section.heading),
         h(
-          'div',
-          { className: 'grid grid-cols-1 sm:grid-cols-3 gap-6' },
-          items.map(function (item, i) {
-            var imageUrl = assetUrl(getAsset, item.image);
-            return h(
-              'article',
-              { key: i, className: 'flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border' },
-              imageUrl &&
-                h('img', {
-                  src: imageUrl,
-                  alt: item.title ? item.title + 'の実績イメージ' : '',
-                  className: 'w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block',
-                }),
-              h(
-                'div',
-                { className: 'flex-1 px-4 py-4 md:py-6' },
-                item.title && h('h3', { className: 'font-bold text-[15px] mb-1' }, item.title),
-                item.industry &&
-                  h('p', { className: 'text-[12px] text-ink-soft mb-[10px]', style: { whiteSpace: 'pre-wrap' } }, item.industry),
-                item.tag &&
-                  h('span', { className: 'inline-block text-[11px] font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full' }, item.tag)
-              )
-            );
-          })
+          'p',
+          { className: 'text-center text-[13px] text-ink-faint' },
+          '（実績カードは「実績・活用事例一覧（型化ページ）」コレクションのデータを元に表示されるため、このプレビューでは省略しています）'
         )
       )
     );
   }
 
   // ==========================================================================
-  // 商品・プラン一覧（型化ページ）— Content Collectionsのデータはビルド時
-  // にしか取得できないため、プレビューでは案内のみ表示する。
+  // 商品一覧 — カード本体は「商品作成」コレクション（別のCMSエントリ）の
+  // データのため、このプレビューでは見出しのみ反映し案内を表示する。
   // ==========================================================================
   function renderProductsPlaceholder(h, data, muted) {
     var section = data.productsSection || {};
@@ -531,7 +514,7 @@
         h(
           'p',
           { className: 'text-center text-[13px] text-ink-faint' },
-          '（商品一覧は、別途登録された型化ページのデータを元に表示されるため、このプレビューでは省略しています）'
+          '（商品カードは「商品作成」コレクションのデータを元に表示されるため、このプレビューでは省略しています）'
         )
       )
     );
@@ -1088,7 +1071,7 @@
       case 'products':
         return renderProductsPlaceholder(h, data, muted);
       case 'works':
-        return renderWorks(h, data, getAsset, muted);
+        return renderWorksPlaceholder(h, data, muted);
       case 'plans':
         return renderPlans(h, data, muted);
       case 'access':
@@ -1182,11 +1165,11 @@
   window.CMS.registerPreviewTemplate('siteSettings', SiteSettingsPreview);
 
   // ==========================================================================
-  // 「商品一覧（型化ページ）」プレビュー本体
-  // src/pages/products/[slug].astro の構造をそのまま再現する。
+  // 「実績・活用事例一覧（型化ページ）」プレビュー本体
+  // src/pages/works/[slug].astro の構造をそのまま再現する（旧: products）。
   // パンくずリストの「トップ」表示名・「仕様・含まれる内容」見出し・
   // 相談CTAボタン文言は siteInfo.yml 側の productPage フィールドの値だが、
-  // productsコレクションのプレビューからは別エントリであるsiteInfo.yml
+  // works コレクションのプレビューからは別エントリである siteInfo.yml
   // の“編集中の値”を参照する手段がないため、現時点でのデフォルト文言を
   // 固定値としてここに用意している（siteInfo.yml側でこれらの文言自体を
   // 変更した場合、このプレビュー表示だけは追従しない）。
@@ -1197,7 +1180,7 @@
     ctaLabel: 'このプランで相談する',
   };
 
-  var ProductPreview = createClass({
+  var WorkPreview = createClass({
     componentDidMount: function () {
       var self = this;
       this._unmounted = false;
@@ -1291,7 +1274,141 @@
     },
   });
 
-  window.CMS.registerPreviewTemplate('products', ProductPreview);
+  window.CMS.registerPreviewTemplate('works', WorkPreview);
+
+  // ==========================================================================
+  // 「商品一覧設定」（src/data/products.yml、CMS「商品作成」）プレビュー本体
+  // src/pages/products.astro の2セクション（横長カード／縦型カード）を
+  // そのまま再現する。ヘッダー・フッターは公開済みの実HTMLを流用する
+  // （下層ページプレビューと同じ方針）。画像拡大（ライトボックス）は
+  // プレビュー上では省略し、通常のカード表示のみ行う。
+  // ==========================================================================
+  function resolveProductItemsForPreview(items, placement) {
+    return (items || [])
+      .filter(function (item) {
+        return item && item.name && String(item.name).trim();
+      })
+      .filter(function (item) {
+        var section = item.section || 'regular';
+        return section === placement || section === 'both';
+      });
+  }
+
+  function renderProductCardPreview(h, item, getAsset, variant) {
+    var imageUrl = assetUrl(getAsset, item.image);
+    var badge =
+      item.showBadge &&
+      item.badgeText &&
+      h(
+        'span',
+        {
+          className: cx(
+            'inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 whitespace-nowrap',
+            variant === 'regular' ? 'absolute top-3 left-3 z-10' : 'mb-3'
+          ),
+        },
+        item.badgeText
+      );
+    var price =
+      typeof item.price === 'number' &&
+      h(
+        'div',
+        { className: variant === 'featured' ? 'text-[22px] font-bold text-primary' : 'text-[15px] font-bold text-primary' },
+        '￥' + Number(item.price).toLocaleString('ja-JP'),
+        h('span', { className: 'text-[13px] font-normal text-ink-soft' }, '〜')
+      );
+
+    if (variant === 'featured') {
+      return h(
+        'div',
+        { key: item.name, className: 'grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center rounded-2xl border border-surface-border bg-white p-5 md:p-6' },
+        imageUrl &&
+          h(
+            'div',
+            { className: 'rounded-2xl overflow-hidden border border-surface-border' },
+            h('img', { src: imageUrl, alt: item.name + 'のイメージ', className: 'w-full h-[220px] sm:h-[260px] object-cover block' })
+          ),
+        h(
+          'div',
+          {},
+          badge,
+          h('h3', { className: 'text-[19px] font-bold mb-2' }, item.name),
+          item.description && h('p', { className: 'text-[14px] leading-[1.9] text-secondary-light whitespace-pre-line mb-3' }, item.description),
+          price
+        )
+      );
+    }
+
+    return h(
+      'div',
+      { key: item.name, className: 'relative flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border' },
+      badge,
+      imageUrl &&
+        h('img', { src: imageUrl, alt: item.name + 'のイメージ', className: 'w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block' }),
+      h(
+        'div',
+        { className: 'flex-1 px-4 py-4 md:py-5' },
+        h('h3', { className: 'font-bold text-[15px] mb-1' }, item.name),
+        item.description && h('p', { className: 'text-[12px] leading-[1.7] text-ink-soft mb-2 line-clamp-2 whitespace-pre-line' }, item.description),
+        price
+      )
+    );
+  }
+
+  var ProductsCatalogPreview = makePagePreview(function (h, data, getAsset) {
+    var heading = data.heading || '商品一覧';
+    var featuredHeading = data.featuredHeading || '新商品';
+    var regularHeading = data.regularHeading || '通年商品';
+    var featuredItems = resolveProductItemsForPreview(data.items, 'featured');
+    var regularItems = resolveProductItemsForPreview(data.items, 'regular');
+
+    return [
+      renderPagePreviewHeading(h, {
+        key: 'head',
+        eyebrow: 'PRODUCTS',
+        title: heading,
+        lead: data.lead,
+        crumbs: [{ label: 'トップ', href: '#' }, { label: heading }],
+      }),
+      featuredItems.length > 0 &&
+        h(
+          'section',
+          { key: 'featured', className: 'py-14 px-5' },
+          h(
+            'div',
+            { className: 'max-w-[900px] mx-auto' },
+            featuredHeading && h('h2', { className: 'text-center font-bold mb-10', style: styleObj('font-size:clamp(20px,3vw,26px);') }, featuredHeading),
+            h(
+              'div',
+              { className: 'flex flex-col gap-8' },
+              featuredItems.map(function (item) {
+                return renderProductCardPreview(h, item, getAsset, 'featured');
+              })
+            )
+          )
+        ),
+      regularItems.length > 0 &&
+        h(
+          'section',
+          { key: 'regular', className: 'py-14 px-5 bg-surface-muted' },
+          h(
+            'div',
+            { className: 'max-w-[1100px] mx-auto' },
+            regularHeading && h('h2', { className: 'text-center font-bold mb-3', style: styleObj('font-size:clamp(20px,3vw,26px);') }, regularHeading),
+            h('p', { className: 'text-center text-[11px] text-ink-faint mb-10' }, '※PC表示時の目安列数です。表示は画面幅により自動調整されます。'),
+            h(
+              'div',
+              { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' },
+              regularItems.map(function (item) {
+                return renderProductCardPreview(h, item, getAsset, 'regular');
+              })
+            )
+          )
+        ),
+    ];
+  });
+
+  window.CMS.registerPreviewTemplate('products', ProductsCatalogPreview);
 
   // ==========================================================================
   // 複数ページ版（master-template-multi）専用：下層ページのプレビュー

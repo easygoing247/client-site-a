@@ -59,22 +59,13 @@ flow:
 productsSection:
   eyebrow: PRODUCTS
   heading: 商品一覧
+  count: 4
+  linkLabel: さらに商品を見る
+  linkHref: /products
 works:
   eyebrow: WORKS
   heading: 実績・活用事例
-  items:
-    - title: コーポレートサイト制作
-      industry: 業種：IT・システム開発
-      tag: "#ブランディング強化"
-      image: ../assets/works-corporate.jpg
-    - title: サービスサイト制作
-      industry: 業種：インテリア・寝具
-      tag: "#集客数向上"
-      image: ../assets/works-service.jpg
-    - title: LP制作
-      industry: 業種：美容サロン
-      tag: "#CVR改善"
-      image: ../assets/works-lp.jpg
+  count: 3
 plans:
   eyebrow: PLAN
   heading: 料金プラン

@@ -1,0 +1,46 @@
+# ============================================================================
+# src/data/products.yml — 「商品作成（型化ページ）」
+# CMS の「商品作成」コレクションで管理する単一ファイル。items はドラッグ&ドロップで
+# 並び替え・追加・削除できる可変リスト（型化ページ＝1ファイル1ページ、ではなく、
+# 1ファイル内のリスト構造）。
+# トップページ「商品一覧」セクション（先頭 N 件。N は siteInfo.yml の
+# productsSection.count）と /products ページ（section で仕分けた2セクション）の
+# 両方がこのデータを単一の情報源として参照する（src/lib/pages.ts の
+# resolveProductItems() 経由）。
+# ============================================================================
+heading: 商品一覧
+lead: |-
+  すぐにご利用いただけるパッケージ商品をご用意しています。
+  詳しい内容はお気軽にお問い合わせください。
+featuredHeading: 新商品
+regularHeading: 通年商品
+regularColumns: 3
+items:
+  - image: ../assets/works-corporate.jpg
+    name: スタンダードWebサイトプラン
+    description: コーポレートサイトに最適な、トップページ＋下層ページ一式の制作パッケージです。
+    price: 300000
+    showBadge: true
+    badgeText: 新商品
+    section: featured
+  - image: ../assets/service-seo.jpg
+    name: ライトプラン
+    description: 小規模サイト・LPに最適な、必要最小限の構成に絞った制作パッケージです。
+    price: 150000
+    showBadge: false
+    badgeText: ""
+    section: regular
+  - image: ../assets/works-lp.jpg
+    name: プレミアムプラン
+    description: SEO対策・CMS導入まで含めた、集客を強化したい方向けの制作パッケージです。
+    price: 500000
+    showBadge: true
+    badgeText: 人気
+    section: regular
+  - image: ../assets/service-support.jpg
+    name: 月額運用サポートプラン
+    description: 公開後の更新代行・保守・改善提案を継続的にサポートするプランです。
+    price: 20000
+    showBadge: false
+    badgeText: ""
+    section: both

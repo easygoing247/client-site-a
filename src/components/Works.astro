@@ -1,20 +1,28 @@
 ---
 // ============================================================================
 // Works.astro — 「実績・活用事例」（features.enableWorks で表示制御）
+// カードは型化ページ（Content Collections: works）から取得する。個別ページ
+// （/works/[slug]）が実在するため、旧バージョン（siteInfo.yml の固定リスト・
+// リンク無し）と異なり、カード自体が /works/[slug] へのリンクになる。
+// トップページに表示する件数は site.works.count（既定値は resolveWorksCount 側）。
 // ============================================================================
 import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import { site } from '../lib/site';
-import { resolveImageOrNull } from '../lib/images';
 
 interface Props {
   muted?: boolean;
 }
 
 const { muted = false } = Astro.props;
+const count = Number(site.works.count) > 0 ? Math.floor(Number(site.works.count)) : 3;
+const works = (await getCollection('works'))
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, count);
 ---
 
 {
-  site.features.enableWorks && (
+  site.features.enableWorks && works.length > 0 && (
     <section id="works" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="works-heading">
       <div class="max-w-[1100px] mx-auto">
         <div class="text-center mb-10">
@@ -30,44 +38,38 @@ const { muted = false } = Astro.props;
           )}
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {site.works.items.map((item) => {
-            const image = resolveImageOrNull(item.image);
-            return (
-              <!--
-                スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
-                含めたカード全体」のシルエットが正方形に近くなるよう、
-                カードを flex flex-col aspect-square のコンテナ化する。
-                画像自体は横長（aspect-video）のまま保ち、残りの高さを
-                テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
-                解除し、画像は元の固定高さ（170px）に戻る。
-                overflow-hiddenはテキスト側には付けない：aspect-squareは
-                あくまで「目安の比率」であり、内容が見切れて隠れてしまう
-                ことがないようにする。
-              -->
-              <article class="flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border">
-                {image && (
-                  <Image
-                    src={image}
-                    alt={item.title ? `${item.title}の実績イメージ` : ''}
-                    class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
-                    width={450}
-                    height={253}
-                    format="webp"
-                    loading="lazy"
-                  />
+          {works.map((work) => (
+            <!--
+              スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
+              含めたカード全体」のシルエットが正方形に近くなるよう、
+              カードを flex flex-col aspect-square のコンテナ化する。
+              画像自体は横長（aspect-video）のまま保ち、残りの高さを
+              テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
+              解除し、画像は元の固定高さ（170px）に戻る。
+            -->
+            <a
+              href={`/works/${work.slug}/`}
+              class="flex flex-col aspect-square md:aspect-auto bg-white rounded-card overflow-hidden border border-surface-border hover:shadow-lg transition-shadow"
+            >
+              {work.data.mainImage && (
+                <Image
+                  src={work.data.mainImage}
+                  alt={work.data.title ? `${work.data.title}の実績イメージ` : ''}
+                  class="w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block"
+                  width={450}
+                  height={253}
+                  format="webp"
+                  loading="lazy"
+                />
+              )}
+              <div class="flex-1 px-4 py-4 md:py-6">
+                {work.data.title && <h3 class="font-bold text-[15px] mb-1">{work.data.title}</h3>}
+                {work.data.summary && (
+                  <p class="text-[12px] text-ink-soft m-0 line-clamp-2 whitespace-pre-line">{work.data.summary}</p>
                 )}
-                <div class="flex-1 px-4 py-4 md:py-6">
-                  {item.title && <h3 class="font-bold text-[15px] mb-1">{item.title}</h3>}
-                  {item.industry && <p class="text-[12px] text-ink-soft mb-[10px] whitespace-pre-wrap">{item.industry}</p>}
-                  {item.tag && (
-                    <span class="inline-block text-[11px] font-bold text-primary bg-primary-light px-[10px] py-1 rounded-full">
-                      {item.tag}
-                    </span>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </section>

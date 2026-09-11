@@ -131,6 +131,49 @@
     background: rgba(15, 23, 42, 0.55);
   }
 
+  /*
+    /products ページ「そうではない商品」セクションのグリッド列数（CMS の
+    「商品作成」＞ regularColumns、既定3）。Tailwind の JIT はテンプレート
+    文字列で組み立てたクラス名（例: `lg:grid-cols-${n}`）を検出できないため、
+    列数は CSS変数 --products-cols 経由のインラインstyleで渡し、この
+    コンポーネントクラス側で md 以上にのみ適用する（モバイルは常に1列）。
+  */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  @media (min-width: 768px) {
+    .products-grid {
+      grid-template-columns: repeat(var(--products-cols, 3), minmax(0, 1fr));
+    }
+  }
+
+  /*
+    /products ページのカード画像クリックで開く拡大表示（ライトボックス）。
+    個別詳細ページへは遷移させず、画像だけを拡大表示する用途のため、
+    ネイティブ <dialog> ＋ showModal() を使う（外部ライブラリ不使用）。
+    背景（::backdrop）クリック・Escキーでの閉じるはブラウザ標準動作に
+    任せる（src/pages/products.astro のインラインscript参照）。
+  */
+  dialog#product-lightbox {
+    border: none;
+    background: transparent;
+    padding: 0;
+    max-width: min(90vw, 900px);
+    max-height: 90vh;
+  }
+  dialog#product-lightbox::backdrop {
+    background: rgba(15, 23, 42, 0.8);
+  }
+  dialog#product-lightbox img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: theme('borderRadius.card');
+  }
+
   /* モバイルドロワー：高さ・透明度・スライドを組み合わせた滑らかな開閉 */
   #mobile-nav {
     max-height: 0;

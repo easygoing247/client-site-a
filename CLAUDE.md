@@ -82,15 +82,27 @@ public/
   GitHub OAuth Appのクライアントシークレット等は、GitHub側・OAuth仲介サーバー側の
   設定として管理し、このリポジトリには一切含めない。
 
-## 4. 型化ページの管理ルールと 梅／竹／松 プラン運用
+## 4. 型化ページ（実績・活用事例）と「商品一覧」カタログの管理ルール
 
-### 型化ページ（`src/content/products/`）
+複数ページ版には、性質の異なる2つの「複数アイテムを並べる」仕組みがある。
+新しい一覧・カード機能を追加する際は、どちらのパターンに合うか先に見極めること。
 
-- 1商品 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
-  URLスラッグになる（例: `sample.md` → `/products/sample/`）。
-  ※ CMS 上のコレクション名は「商品一覧」（旧「商品・施工事例」）。「お知らせ」
-  （旧「お知らせ・ブログ」）と合わせて表記を統一済み。
-- frontmatterのスキーマは `src/content/config.ts` で定義されている。
+|  | 型化ページ（`works`） | 商品カタログ（`products.yml`） |
+|---|---|---|
+| 実体 | 1件＝1つの `.md` ファイル（Content Collections） | 1ファイル内の可変リスト（`widget: list`） |
+| 個別詳細ページ | あり（`/works/[slug]`） | なし（クリックで画像をライトボックス拡大表示のみ） |
+| CMS上の操作 | ファイルの新規作成／削除 | リスト項目のドラッグ並び替え／追加／削除 |
+| 用途 | 実績・施工事例など「1件ごとに読み物として見せたい」コンテンツ | 商品・パッケージなど「価格と概要を一覧比較させたい」コンテンツ |
+
+### 型化ページ（`src/content/works/`）＝「実績・活用事例」
+
+- 1実績 = 1つの `.md` ファイル。ファイル名（拡張子除く）がそのまま
+  URLスラッグになる（例: `sample.md` → `/works/sample/`）。CMS 上のコレクション名は
+  「実績・活用事例一覧（型化ページ）」（旧「商品一覧（型化ページ）」／さらに旧
+  「商品・施工事例」）。旧 `src/content/products/` → `src/content/works/`、
+  旧 `src/pages/products/[slug].astro` → `src/pages/works/[slug].astro` に
+  改名済み（trailing slug のみ変更、frontmatterスキーマ自体は不変）。
+- frontmatterのスキーマは `src/content/config.ts` の `works` で定義されている。
   必須フィールド：`title`, `price`, `mainImage`, `summary`, `specs`, `order`。
 - **CMS 起因の型ゆれ対策**：Decap の number ウィジェットは値を空欄にすると
   frontmatter に `price: ""`（空文字）を書き出す。素の `z.number()` だと
@@ -98,24 +110,60 @@ public/
   ビルドが落ちるため、`config.ts` の共通ヘルパー `cmsNumberOptional` /
   `cmsNumberWithDefault(fallback)` /  `cmsDateOptional`（`z.preprocess` で
   空文字・null を未入力扱いにし、`"1,000"` のようなカンマ入り文字列も数値化）
-  を通して定義すること。新しい数値・日付フィールドを追加する際も同ヘルパーを使う。
+  を通して定義すること。新しい数値・日付フィールドを追加する際も同ヘルパーを使う
+  （`news` コレクションの `publishedAt` にも同様に適用済み）。
 - 型化ページのファイル自体は、機能フラグの状態に関わらず `npm run build` 時に
   常に静的ページとして生成される（直接URLでのアクセス・先行公開プレビュー用）。
-  トップページからの導線表示のみが機能フラグで制御される。
+  トップページ「実績・活用事例」セクション（`Works.astro`）への導線表示のみが
+  `features.enableWorks`（＋実績が1件以上あるか）で制御される。トップページの
+  カードは `site.works.count`（既定3件）を先頭から表示し、クリックで
+  `/works/[slug]` へ遷移する。
+
+### 商品カタログ（`src/data/products.yml`）＝「商品一覧」
+
+- CMS 上のコレクション名は「商品作成（型化ページ）」（`files` コレクション、
+  ファイル1件のみ）。実体は型化ページではなく `src/data/products.yml` 内の
+  可変リスト `items[]`。パーサ・型は `src/lib/pages.ts` の `productsPage` /
+  `ProductItemConfig`。js-yaml でパースするのみで Zod 検証は行わないため、
+  各項目は `resolveProductItems()` / `resolveAllProductItems()`
+  （`src/lib/pages.ts`）を経由して取得し、商品名が空欄の項目は自動的に除外、
+  画像・説明・価格・バッジはそれぞれ未入力なら描画側で非表示にする
+  （`typeof price === 'number'` 等のガード）。
+- 各項目の `section`（`featured` / `regular` / `both`）で、`/products` ページの
+  どちらのセクションに出すかを選ぶ：
+  - `featuredHeading`（既定「新商品」）＝横長カード（画像左・テキスト右）。
+  - `regularHeading`（既定「通年商品」）＝縦型カード。列数は `regularColumns`
+    （既定3、`resolveProductColumns()` で2〜4に丸める。**PC表示（`md:`以上）のみ**
+    適用され、Tailwind の JIT が動的クラス名を検出できないため
+    `src/styles/global.css` の `.products-grid` ＋ CSS変数 `--products-cols`
+    経由で列数を渡している。モバイルは常に1列）。
+  - `both` は両方のセクションに表示される。
+- **`/products` ページはカードをクリックしても個別ページへ遷移しない**。
+  ネイティブ `<dialog id="product-lightbox">` ＋ `showModal()` で、登録画像を
+  大きく表示するだけのライトボックスを開く（`getImage()` で事前に1200px幅の
+  最適化画像を生成し `data-lightbox-src` に埋め込み、クリック時にJSが
+  `<dialog>` 内の `<img src>` を差し替える方式。外部ライブラリ不使用）。
+  背景クリック・Escで閉じる。
+- トップページ「商品一覧」セクション（`Products.astro`）は `section` を問わず
+  登録順の先頭 `site.productsSection.count`（既定4件）を表示し、下部の
+  「さらに商品を見る ›」ボタン（`productsSection.linkLabel/linkHref`）で
+  `/products` へ誘導する。カード自体はクリックできない（ライトボックスは
+  `/products` ページのみ）。
 
 ### 機能フラグによるプラン切り替え（`src/data/siteInfo.yml` の `features`）
 
 | フラグ | 用途 |
 |---|---|
-| `features.enableProducts` | `false`=梅プラン（1ページLPのみ、商品セクション非表示） / `true`=竹・松プラン（トップページに商品一覧セクションを表示し、`/products/[slug]` への導線を出す） |
-| `features.enableWorks` | 実績セクションの表示/非表示 |
+| `features.enableProducts` | `false`=梅プラン（1ページLPのみ、商品セクション非表示） / `true`=竹・松プラン（トップページに「商品一覧」セクションを表示し、`/products` への導線を出す） |
+| `features.enableWorks` | 「実績・活用事例」セクションの表示/非表示（型化ページが1件も無ければ自動的に非表示） |
 | `features.enableFaq` | FAQセクションの表示/非表示 |
 | `features.enablePlans` | 料金プランセクションの表示/非表示 |
 
-- 梅プランの案件では `enableProducts: false` のまま運用し、`src/content/products/`
-  にファイルを追加しても、トップページの商品セクションは表示されない
-  （ただし個別ページは生成されるため、将来のプラン変更に備えてコンテンツだけ
-  先に用意しておくことも可能）。
+- 梅プランの案件では `enableProducts: false` のまま運用してよい
+  （`products.yml` に項目があってもトップページ・`/products` ページ双方が
+  参照時に非表示判定するため、削除しなくても影響しない…と言いたいところだが
+  `/products` ページ自体は `enableProducts` を見ずに常時静的生成される点に注意。
+  完全に隠したい場合はナビ・リンクから `/products` を外すこと）。
 - 竹・松プランへのアップグレード時は `enableProducts: true` に変更するのみでよい。
   コンポーネントやルーティングの変更は不要。
 
@@ -283,11 +331,14 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 
 ### 9.3 複数ページ版で追加した下層ページ・コレクション
 
-`public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」
-「商品一覧（型化ページ）」を保持したまま、以下を追加している。
+`public/admin/config.yml` に、既存の「サイト設定」「デザインテーマ設定」を
+保持したまま、以下を追加している。コレクションの並び順（＝CMSサイドバーの表示順）は
+サイト設定 → **商品作成** → **実績・活用事例一覧（型化ページ）** → 下層ページ → お知らせ。
 
 | コレクション | 種別 | データファイル | 内容 |
 |---|---|---|---|
+| 商品作成（型化ページ）（`name: productsCatalog`、file名 `products`） | files（単一ファイル） | `src/data/products.yml` | 商品カタログの可変リスト（§4参照） |
+| 実績・活用事例一覧（型化ページ）（`name: works`） | folder（型化ページ） | `src/content/works/*.md` | タイトル・価格・メイン画像・概要・仕様・本文（§4参照） |
 | 下層ページ ＞ サービス内容・料金（`name: services`） | file | `src/data/services.yml` | サービス詳細、料金表、注記 |
 | 下層ページ ＞ 会社概要（`name: about`） | file | `src/data/about.yml` | 会社概要、代表挨拶、アクセス情報（`access.items[]` 可変リスト）、「公式SNS」行ラベル |
 | 下層ページ ＞ お問い合わせ・ご予約（`name: contact`） | file | `src/data/contactPage.yml` | フォーム案内文、注意事項、プライバシーポリシー |
@@ -314,7 +365,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   `SnsIcons.astro`）は必ず `src/lib/sns.ts` の `orderedSnsLinks()` 経由でリンク一覧を取得する。
   スマホ下部バーの LINE ボタンは `snsUrl('line')` を参照。`preview.js` は `orderedSnsForPreview()`
   で `data.sns` を同じ判定で読む。
-- **画像パスの必須設定**：`products` / `news` の各 folder コレクションには
+- **画像パスの必須設定**：`works` / `news` の各 folder コレクションには
   `media_folder: "/src/assets"` ＋ `public_folder: "../../assets"` を個別指定している。
   グローバル設定（`public_folder: /src/assets`）のままだと、CMS が挿入する画像パスが
   `/src/assets/xxx` になり、frontmatter の `image()` は解決できても**本文中の
@@ -332,6 +383,8 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 | `/contact` | `src/pages/contact.astro` | `contactPage`（`formFields` 含む）＋ `contactFormSettings` ＋ `siteInfo.yml` の `contactSection.form`（送信ボタン・結果メッセージ） |
 | `/news` | `src/pages/news/index.astro` | `news` コレクション（一覧） |
 | `/news/<slug>` | `src/pages/news/[slug].astro` | `news` コレクション（詳細・静的生成） |
+| `/products` | `src/pages/products.astro` | `src/lib/pages.ts` `productsPage`（`src/data/products.yml`。§4参照） |
+| `/works/<slug>` | `src/pages/works/[slug].astro` | `works` コレクション（詳細・静的生成。§4参照） |
 
 - 共通パーツ：`Header` / `Footer` / `StickyContactBar` / `BackToTop` に加え、
   下層ページ共通の見出し＋パンくずは **`src/components/PageHeader.astro`**、
@@ -522,13 +575,16 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   - `/about`：代表挨拶の写真
   - `/news`：一覧カードの1枚目（`i === 0`）
   - `/news/<slug>`：アイキャッチ画像
+  - `/works/<slug>`：メイン画像
+  - `/products`：先頭1枚固定の優先読み込みは無し（全カード `loading="lazy"`。
+    横長カード・縦型カードとも複数枚が同時にファーストビュー付近へ並ぶ一覧ページのため）
   - `/contact`：画像なし
 - **Googleマップ**：`about.astro` / `Access.astro` の埋め込み `<iframe>` は
   `loading="lazy"`（ファーストビュー外）。重い外部リソースのため、上部には置かない。
 - 新しい下層ページ・画像を追加する際も、この「先頭1枚 eager / 残り lazy」ルールと
   システムフォント・外部CDN不使用を必ず踏襲すること。
 - 本番URL確定後の PSI 実測は、`https://pagespeed.web.dev/` に各URL
-  （`/` `/services` `/about` `/contact` `/news` `/news/<slug>`）を入力して確認する
+  （`/` `/services` `/about` `/contact` `/news` `/news/<slug>` `/products` `/works/<slug>`）を入力して確認する
   （デプロイ前はローカルの `npm run preview` ＋ Lighthouse で代替検証）。
 
 ### 9.8 最近の仕様変更サマリ（2026-09 複数ページ版バッチ）
@@ -567,3 +623,13 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   直後・「お問い合わせ内容」の直前に挿入。送信成功時はフォーム全体を
   `hidden`＋`display:none` で確実に隠し、`mt-8` の余白を付けた `#contact-success` のみ表示
   （→ 9.7）。
+- **「商品」→「実績」への役割の入れ替え** … 旧・型化ページ `products`
+  （1件=1ファイル、竹/松プラン向け）は `works`（実績・活用事例）へ完全に
+  改名（`src/content/products/` → `src/content/works/`、
+  `/products/[slug]` → `/works/[slug]`）。トップページ「実績・活用事例」
+  セクションも旧来の siteInfo.yml 固定リスト（リンク無し）から `works`
+  コレクション参照＋個別ページへのリンク付きに変更。空いた「商品一覧」の名前・
+  導線は新設の商品カタログ（`src/data/products.yml`、CMS「商品作成」、
+  型化ページではなく可変リスト）に割り当て、`/products` ページ（横長「新商品」＋
+  縦型「通年商品」の2セクション、画像クリックでライトボックス拡大表示）と
+  トップページ「商品一覧」セクションの両方がこれを参照する（→ 4章）。
