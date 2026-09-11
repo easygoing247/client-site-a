@@ -67,6 +67,18 @@ const news = defineCollection({
   schema: ({ image }) =>
     z.object({
       title: z.string().optional(),
+      // URL用識別子（半角英数字・ハイフン）。Decap側で collection の slug:
+      // "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}" の組み立てにのみ使う
+      // 入力用フィールドで、フロントエンドの表示・ロジックでは参照しない
+      // （URLスラッグ自体は Astro の `post.slug`＝実際のファイル名を使う）。
+      // ※ フィールド名はあえて `slug` にしない：Astro の Content Collections は
+      // frontmatter の `slug` キーを「スラッグ上書き用の予約語」として特別扱いし、
+      // スキーマに含めると `ContentSchemaContainsSlugError` でビルドが落ちる上、
+      // 仮にスキーマから外して残しても「年月日を含まないこのフィールドの値だけ」が
+      // 実際のURLスラッグとして上書き適用されてしまい、ファイル名（年月日込み）と
+      // 食い違う（例: ファイル名 `2026-09-10-greeting.md` なのにURLが `/news/greeting/`
+      // になる）。そのため `urlSlug` という別名にしている。
+      urlSlug: z.string().optional(),
       eyecatch: image().optional(),
       eyecatchAlt: z.string().optional(),
       publishedAt: cmsDateOptional,

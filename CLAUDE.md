@@ -355,6 +355,21 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   **`src/lib/news.ts`** の `getPublishedNews()`（`draft: true` を除外し公開日降順）を経由する。
   カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で
   `../../assets/` からの相対パスで指定する（絶対ルール②）。
+- **URLスラッグに日本語を含めない**：`news` の記事タイトルは日本語前提のため、
+  ファイル名（＝URL）をタイトルからの自動生成（Decap既定の `{{slug}}`）に
+  任せると非ASCII文字入りのURLになってしまう。そのため config.yml で
+  `slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"` とし、フォームの
+  「URL用識別子（半角英数字）」フィールド（`urlSlug`、`pattern: ^[a-z0-9-]+$`）
+  から明示的にファイル名を組み立てる。**フィールド名は `slug` ではなく
+  `urlSlug`** にしていることに注意：Astro の Content Collections は
+  frontmatter の `slug` キーを「エントリの slug を上書きする予約語」として
+  特別扱いするため、`src/content/config.ts` のスキーマに含めると
+  `ContentSchemaContainsSlugError` でビルドが落ち、仮にスキーマから外して
+  残しても「年月日を含まないその値だけ」が実際のURLになってしまい
+  ファイル名と食い違う（詳細は同ファイルのコメント参照）。`urlSlug` が
+  空欄のまま保存された場合に備え、`preview.js` に `CMS.registerEventListener
+  ({ name: 'preSave', ... })` を登録し、空欄ならランダムな識別子を自動採番して
+  ファイル名が壊れないようにしている。
 - `src/content/news/2026-09-09-sample.md` はサンプル記事。実案件では削除または差し替える。
 - **公式SNS**：siteInfo.yml トップレベルの `sns` リスト（CMS「SNS設定」、`{id, url, enabled}`、
   id は `line`/`instagram`/`x`/`facebook`/`youtube`/`tiktok`）に一元化。アイコン定義（SVG パス・

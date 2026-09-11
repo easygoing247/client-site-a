@@ -708,12 +708,21 @@ collections:
     # （../../assets/xxx）で記録する（詳細は products コレクションのコメント参照）。
     media_folder: "/src/assets"
     public_folder: "../../assets"
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    # 記事タイトル（日本語）をそのままファイル名・URLスラッグにすると、
+    # 非ASCII文字を含むURL（環境によっては文字化け・リンク切れの原因）に
+    # なるため、Decap既定の {{slug}}（タイトルから自動生成）は使わず、
+    # 半角英数字限定の「URL用識別子」フィールド（下の fields 参照）から
+    # 明示的に組み立てる。
+    # ※ フィールド名は "slug" ではなく "urlSlug" にしている（Astro の Content
+    #   Collections が frontmatter の `slug` キーをURL上書き用の予約語として
+    #   特別扱いするため。詳細は src/content/config.ts のコメント参照）。
+    slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"
     extension: "md"
     format: "frontmatter"
     sortable_fields: ["publishedAt", "title"]
     fields:
       - { label: "記事タイトル", name: "title", widget: string, required: false }
+      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "例: new-product-info。日本語タイトルがそのままURLに使われるのを防ぐための項目です。未入力の場合は保存時に自動でランダムな識別子が割り当てられます。" }
       - { label: "アイキャッチ画像", name: "eyecatch", widget: image, required: false }
       - { label: "アイキャッチ 代替テキスト", name: "eyecatchAlt", widget: string, required: false }
       - { label: "公開日", name: "publishedAt", widget: datetime, required: false }

@@ -36,6 +36,30 @@
   if (!h || !createClass || !window.CMS) return;
 
   // ==========================================================================
+  // 「お知らせ」記事のURLスラッグに日本語（非ASCII）が紛れ込むのを防ぐ。
+  // config.yml の news コレクションは
+  // slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}" とし、記事タイトルでは
+  // なくフォームの「URL用識別子（半角英数字）」フィールド（news.urlSlug、
+  // pattern: ^[a-z0-9-]+$）からファイル名を組み立てる（フィールド名を敢えて
+  // "slug" にしていない理由は src/content/config.ts のコメント参照）。
+  // とはいえ同フィールドは任意入力（required: false）のため、未入力のまま
+  // 保存されるとファイル名の該当部分が空になってしまう。それを防ぐため、
+  // 保存直前（preSave）に空欄ならランダムな識別子を自動採番する。
+  // ==========================================================================
+  window.CMS.registerEventListener({
+    name: 'preSave',
+    handler: function (args) {
+      var entry = args && args.entry;
+      var data = entry && entry.get && entry.get('data');
+      if (!entry || !data || entry.get('collection') !== 'news') return data;
+      var urlSlug = data.get('urlSlug');
+      if (typeof urlSlug === 'string' && urlSlug.trim()) return data;
+      var random = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+      return data.set('urlSlug', random);
+    },
+  });
+
+  // ==========================================================================
   // 0) 本番サイトが実際に読み込んでいるCSSと、現在のテーマカラーを取得する
   // ==========================================================================
   var currentTheme = 'blue';
