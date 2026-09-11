@@ -32,8 +32,8 @@ items:
       - 効果測定・改善提案
     reverseLayout: false
   - reverseLayout: false
-    title: SEO・集客支援
-    description: 検索エンジンに強い構造設計とコンテンツで、集客・成果をサポートします。
+    title: 運用・保守サポート
+    description: 更新作業やセキュリティ対策など、安心して運用できる体制を提供します。
     image: /src/assets/ceo-image.png
 priceTable:
   - name: Webサイト制作（5ページ程度）
