@@ -21,6 +21,17 @@
     --color-primary-hover: #1440b8;
     /* box-shadow等のrgba()で使うためのR,G,B成分（--color-primaryと同じ色） */
     --color-primary-rgb: 25, 84, 224;
+    /*
+      フッター専用の背景色。--color-primary-dark（ボタン・グラデーション等、
+      随所で使う「鮮やかな濃色」）をそのままフッター全面（広い面積）に
+      敷くと、特に赤・オレンジのような彩度の高いテーマで圧迫感が出るため、
+      同じ色相を保ったまま彩度を落とし明度を下げた「シックなダークトーン」
+      （HSL換算で概ね 彩度30%台・明度20%台）を別変数として持たせる。
+      白文字とのコントラスト比は5プリセットいずれも9:1以上（AA基準4.5:1を
+      大きく上回る）を確保済み。Footer.astro の bg-footer-bg
+      （tailwind.config.mjs の colors.footer.bg）から参照する。
+    */
+    --color-footer-bg: #27314f;
   }
 
   [data-theme='red'] {
@@ -29,6 +40,7 @@
     --color-primary-dark: #b91c1c;
     --color-primary-hover: #b91c1c;
     --color-primary-rgb: 220, 38, 38;
+    --color-footer-bg: #4f2727;
   }
 
   [data-theme='green'] {
@@ -37,6 +49,7 @@
     --color-primary-dark: #15803d;
     --color-primary-hover: #15803d;
     --color-primary-rgb: 22, 163, 74;
+    --color-footer-bg: #274f36;
   }
 
   [data-theme='purple'] {
@@ -45,6 +58,7 @@
     --color-primary-dark: #6d28d9;
     --color-primary-hover: #6d28d9;
     --color-primary-rgb: 124, 58, 237;
+    --color-footer-bg: #36274f;
   }
 
   [data-theme='orange'] {
@@ -53,6 +67,7 @@
     --color-primary-dark: #c2410c;
     --color-primary-hover: #c2410c;
     --color-primary-rgb: 234, 88, 12;
+    --color-footer-bg: #4f3227;
   }
 
   html {

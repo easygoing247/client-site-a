@@ -15,8 +15,12 @@
 // 持つ要素をまとめて初期化する汎用実装にしている。
 // ============================================================================
 
-const DOT_ACTIVE = ['bg-primary', 'w-5'];
-const DOT_INACTIVE = ['bg-surface-border', 'w-2'];
+// ドットは常に同じ大きさ（w-2 h-2、マークアップ側に固定で指定）を保ち、
+// JSは背景色（アクティブ＝テーマカラー／非アクティブ＝グレー）だけを
+// 切り替える。以前はアクティブ時にサイズも変える（w-5のピル形状）
+// 実装だったが、要件変更によりサイズ変更は廃止した。
+const DOT_ACTIVE_CLASS = 'bg-primary';
+const DOT_INACTIVE_CLASS = 'bg-surface-border';
 
 function initSlider(track: HTMLElement): void {
   const root = track.closest<HTMLElement>('[data-slider-root]');
@@ -44,13 +48,28 @@ function initSlider(track: HTMLElement): void {
 
   const updateDots = () => {
     if (!dots.length) return;
-    const s = step();
-    const rawIndex = s > 0 ? Math.round(track.scrollLeft / s) : 0;
+    // ドット数（＝アイテム数）と「1回のスクロールで進む量」が一致しない
+    // ケース（例：「実績・活用事例」のPC幅のように1画面に複数枚
+    // 同時表示される場合）では、scrollLeftをstep()でそのまま割ると、
+    // 実際には端（最後のアイテム）まで到達しているのに、算出される
+    // インデックスがドット数の途中（中央寄り）にしかならず、最後の
+    // ドットが永遠にアクティブにならない不具合になる（1画面に3枚見えて
+    // いれば、最後までスクロールしてもscrollLeftはアイテム2個分強にしか
+    // 進まないため）。
+    // そのため「スクロール可能な全区間に対する現在位置の割合
+    // （0〜1）」をドット数の範囲（0〜dots.length-1）に線形マッピングする
+    // 方式にする。1画面に1枚だけ表示されるスライダー（サービス内容／
+    // 商品一覧／料金プラン）では、この計算は従来の
+    // `Math.round(scrollLeft / step())` と数学的に等価（末尾アイテムの
+    // scrollLeftが必ずmaxScrollと一致するため）で、挙動は変わらない。
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    const progress = maxScroll > 0 ? track.scrollLeft / maxScroll : 0;
+    const rawIndex = Math.round(progress * (dots.length - 1));
     const activeIndex = Math.max(0, Math.min(dots.length - 1, rawIndex));
     dots.forEach((dot, i) => {
       const isActive = i === activeIndex;
-      dot.classList.remove(...(isActive ? DOT_INACTIVE : DOT_ACTIVE));
-      dot.classList.add(...(isActive ? DOT_ACTIVE : DOT_INACTIVE));
+      dot.classList.toggle(DOT_ACTIVE_CLASS, isActive);
+      dot.classList.toggle(DOT_INACTIVE_CLASS, !isActive);
       dot.setAttribute('aria-current', isActive ? 'true' : 'false');
     });
   };

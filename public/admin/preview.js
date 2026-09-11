@@ -1016,7 +1016,7 @@
 
     return h(
       'footer',
-      { className: 'bg-primary-dark text-white pt-12 px-5 pb-10 text-[12px]' },
+      { className: 'bg-footer-bg text-white pt-12 px-5 pb-10 text-[12px]' },
       h(
         'div',
         { className: 'max-w-[900px] mx-auto flex flex-col md:flex-row md:justify-between gap-9 mb-9' },

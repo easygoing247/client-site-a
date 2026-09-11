@@ -26,6 +26,12 @@ export default {
           light: '#3d4658',
           dark: '#0f1e3d',
         },
+        // フッター専用の背景色（--color-footer-bg、テーマカラー連動だが
+        // primary.dark とは別の「彩度を落としたシックなダークトーン」。
+        // 詳細は src/styles/global.css の :root コメント参照）。
+        footer: {
+          bg: 'var(--color-footer-bg)',
+        },
         // LINE 公式ブランドカラー（#06C755）。第三者ブランドの色のため、
         // サイトのテーマカラー切り替え（primary）とは独立して固定値のまま。
         // スマホ下部固定バーの「LINEで相談」ボタン・SNSアイコンで使用する。

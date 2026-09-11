@@ -1,12 +1,16 @@
 ---
 // ============================================================================
 // Footer.astro — 共通フッター（ロゴ＋SNS／ヘッダーと同じメニュー2列／プライバシー導線）
-// 背景色は固定のネイビーではなく、デザインテーマ設定のメインカラー
-// （`--color-primary-dark` ＝ tailwind.config.mjs の bg-primary-dark）に連動する。
-// 5プリセットいずれの primary-dark も white と 5:1 以上のコントラストになるよう
-// 選定済みのため、本文・リンク・SNSアイコン・著作権表記はすべて白（text-white）で
-// 統一し、どのテーマ色でも WCAG AA（4.5:1）を安定して満たす（透過白などの中間トーンは
-// 明るいテーマ色＝緑・オレンジで基準未達になりうるため使わない）。
+// 背景色は固定のネイビーではなく、デザインテーマ設定のメインカラーに連動する
+// 専用トーン（`--color-footer-bg` ＝ tailwind.config.mjs の bg-footer-bg）を使う。
+// ボタン・グラデーション等で使う鮮やかな `--color-primary-dark` をそのまま
+// フッターのような広い面積に敷くと、特に赤・オレンジ系のテーマで圧迫感が
+// 出るため、同じ色相を保ちつつ彩度を落とし明度を下げた「シックなダーク
+// トーン」を別変数として持たせている（詳細は global.css の :root コメント
+// 参照）。5プリセットいずれの footer-bg も white と 9:1 以上のコントラストに
+// なるよう選定済みのため、本文・リンク・SNSアイコン・著作権表記はすべて
+// 白（text-white）で統一し、どのテーマ色でも WCAG AA（4.5:1）を安定して
+// 満たす（透過白などの中間トーンは使わない）。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site, visibleNavItems } from '../lib/site';
@@ -26,7 +30,7 @@ const footerNavRows = Math.max(1, Math.ceil(footerNav.length / 2));
 const snsLinks = orderedSnsLinks();
 ---
 
-<footer class="bg-primary-dark text-white pt-12 px-5 pb-24 md:pb-10 text-[12px]">
+<footer class="bg-footer-bg text-white pt-12 px-5 pb-24 md:pb-10 text-[12px]">
   <div class="max-w-[900px] mx-auto flex flex-col md:flex-row md:justify-between gap-9 mb-9">
     <!-- 左：ロゴ＋SNS -->
     <div class="text-center md:text-left">

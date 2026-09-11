@@ -7,11 +7,16 @@
 // して参照する（二重管理防止）。/services ページ（`src/pages/services.astro`）と
 // 完全に同じ項目・並び順を共有する。
 // スマホ幅（640px未満）では横スクロール＋スナップの1枚送りスライダー
-// （矢印クリック／スワイプ対応）、sm以上（PC・タブレット）では従来の
-// CSS Gridをそのまま維持する。実装は「実績・活用事例」（Works.astro）と
-// 同じ考え方だが、PC側の見た目を変えない点が異なるため、スタイルは
-// global.css の `.card-slider-mobile`、JSは共通の src/scripts/cardSlider.ts
-// を使う（Products.astro と共有）。
+// （矢印クリック／スワイプ対応）。スタイルは global.css の
+// `.card-slider-mobile`、JSは共通の src/scripts/cardSlider.ts を使う
+// （Products.astro と共有）。
+// md以上（768px〜）では2列×2行のグリッドに切り替え、各カードは
+// 「左：画像／右：タイトル・バッジ・説明」の横長レイアウトになる
+// （md未満〜sm相当のタブレット幅は、アスペクト比の制約だけ外した
+// 縦積み1カラムの中間表示になる。`.card-slider-mobile`のスライダー
+// 解除自体はsm=640pxで起きるため、カード自体の見た目もアスペクト比
+// だけは同じ640pxで解除し、不自然な正方形の巨大カードにならないように
+// している）。
 // ============================================================================
 import { Image } from 'astro:assets';
 import { site } from '../lib/site';
@@ -45,24 +50,29 @@ const isSlider = items.length > 1;
           )}
         </div>
         <div class="relative" data-slider-root>
-          <div data-slider-track class="card-slider-mobile grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div data-slider-track class="card-slider-mobile grid md:grid-cols-2 gap-5">
             {items.map((item) => {
               const image = resolveImageOrNull(item.image);
               return (
                 <!--
-                  スマホ（md未満）は「画像単体」ではなく「画像＋テキストを
+                  スマホ（sm未満）は「画像単体」ではなく「画像＋テキストを
                   含めたカード全体」のシルエットが正方形に近くなるよう、
                   カードを flex flex-col aspect-square のコンテナ化する。
                   画像自体は横長（aspect-video）のまま保ち、残りの高さを
-                  テキスト領域（flex-1）に割り当てる。md以上はaspect-noneで
-                  解除し、画像は元の固定高さ（150px）に戻る。
+                  テキスト領域（flex-1）に割り当てる。
+                  sm以上（640px〜）はaspect-square/aspect-videoを解除し、
+                  縦積み・画像は幅に応じた自然な高さに戻る（タブレット幅の
+                  中間表示）。md以上（768px〜）はさらに flex-row に切り替え、
+                  画像を左側に幅38%・カード全高で固定し（object-coverで
+                  トリミング）、右側にタイトル・バッジ・説明を縦中央寄せで
+                  配置する「横長カード」レイアウトになる。
                 -->
-                <article class="flex flex-col aspect-square md:aspect-auto border border-surface-border rounded-card overflow-hidden bg-white">
+                <article class="flex flex-col aspect-square sm:aspect-auto md:flex-row border border-surface-border rounded-card overflow-hidden bg-white">
                   {image && (
                     <Image
                       src={image}
                       alt={item.title ? `${item.title}のイメージ` : ''}
-                      class="w-full flex-none aspect-video md:aspect-auto md:h-[150px] object-cover block"
+                      class="w-full flex-none aspect-video md:aspect-auto md:w-[38%] md:h-full object-cover block"
                       width={400}
                       height={225}
                       format="webp"
@@ -75,8 +85,17 @@ const isSlider = items.length > 1;
                     正方形より縦に伸びることを許容し、内容が見切れて
                     隠れてしまわないようにする。
                   */}
-                  <div class="flex-1 px-[18px] py-4 md:py-7">
-                    {item.title && <h3 class="font-bold text-[15px] mb-2">{item.title}</h3>}
+                  <div class="flex-1 px-[18px] py-4 md:py-6 md:px-7 md:flex md:flex-col md:justify-center">
+                    {item.title && (
+                      <h3 class="flex items-center flex-wrap gap-x-2 gap-y-1 font-bold text-[15px] mb-2">
+                        {item.badgeText && (
+                          <span class="inline-flex items-center rounded-full bg-primary text-white text-[10px] font-bold leading-none px-2 py-1 whitespace-nowrap">
+                            {item.badgeText}
+                          </span>
+                        )}
+                        {item.title}
+                      </h3>
+                    )}
                     {item.description && <p class="text-[13px] leading-[1.7] text-ink-soft m-0 whitespace-pre-line">{item.description}</p>}
                   </div>
                 </article>
@@ -117,7 +136,7 @@ const isSlider = items.length > 1;
                 type="button"
                 data-slider-dot
                 aria-label={`${i + 1}枚目のサービスを表示`}
-                class="w-2 h-2 rounded-full bg-surface-border transition-all"
+                class="w-2 h-2 rounded-full bg-surface-border transition-colors"
               />
             ))}
           </div>
