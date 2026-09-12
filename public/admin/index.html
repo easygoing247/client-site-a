@@ -12,6 +12,14 @@
     <title>管理画面 | Decap CMS</title>
     <meta name="robots" content="noindex, nofollow" />
     <!--
+      config.yml を明示的にバージョン付きURLで指定する（cms-config-url）。
+      無指定でもDecapは同じディレクトリのconfig.ymlを自動検出するが、
+      その場合クエリ文字列でのキャッシュバスターを付けられない。
+      設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
+      新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
+    -->
+    <link href="./config.yml?v=20260912" type="text/yaml" rel="cms-config-url" />
+    <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
     -->
@@ -548,15 +556,22 @@
       テンプレート（CMS.registerPreviewTemplate）。decap-cms.js が公開する
       window.h / window.createClass / window.CMS を使うため、
       本体スクリプトの読み込み直後・かつCMSの初期化前にこの位置で読み込む。
+      ⚠️ クエリ文字列のバージョン（?v=YYYYMMDDN）は意図的なキャッシュ
+      バスターで、このファイルを更新するたびに数字を上げること。
+      Cloudflareの静的アセット配信自体は `cache-control: max-age=0,
+      must-revalidate` で毎回検証される設定だが、閲覧者側のブラウザ
+      キャッシュ（特にモバイルSafari等）がこれを無視して古いJSを
+      使い続ける事例が確認できたため、明示的なバージョン付きURLで
+      確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js"></script>
+    <script src="./preview.js?v=20260912"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js"></script>
+    <script src="./editor-components.js?v=20260912"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
