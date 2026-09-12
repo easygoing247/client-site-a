@@ -1480,6 +1480,42 @@
         });
 
         // ==================================================================
+        // 7.6) .SplitPane（＝Pane1・Pane2・プレビューiframeの高さの基準）が
+        //    実際に見えているビューポート高さを超えてしまう既知の不具合の
+        //    修正。実機検証で、.SplitPane自身のgetBoundingClientRect().top
+        //    （画面上端からの実際のオフセット。ヘッダー・公開状態バッジ等の
+        //    構成により可変）と、Decap本体がheight計算に使っている想定
+        //    オフセットがズレるケースを確認した（例：top=118pxなのに
+        //    height=834px、window.innerHeight=900pxだと
+        //    118+834=952 > 900 で下端が52px分あふれる）。
+        //    Pane2・その中のiframeはSplitPaneの高さにflexで追従するため、
+        //    この差分がそのまま「画面下部固定バーのプレビューが、実際の
+        //    ブラウザウィンドウの下端より外側（スクロールしても
+        //    見えない領域）に描画される」不具合として現れていた
+        //    （position:fixedはiframe自身のビューポート＝iframeの高さを
+        //    基準に計算されるため、iframeが必要以上に高くなると、
+        //    その分だけ固定バーの実際の画面上の位置も下にずれる）。
+        //    .SplitPane自身の高さを「実際に見えている残り高さ
+        //    （window.innerHeight - 自身のtop座標）」に強制的に一致させる
+        //    ことで、Pane2・iframeもその高さに収まり、常にウィンドウ内に
+        //    固定バーが表示されるようにする。
+        // ==================================================================
+        function fixSplitPaneHeight() {
+          var splitPane = document.querySelector('.SplitPane');
+          if (!splitPane) return;
+          var top = splitPane.getBoundingClientRect().top;
+          if (top < 0) return; // スクロール等で一時的に負値になる場合は何もしない
+          var available = window.innerHeight - top;
+          if (available <= 0) return;
+          splitPane.style.setProperty('height', available + 'px', 'important');
+          splitPane.style.setProperty('max-height', available + 'px', 'important');
+        }
+        var splitPaneHeightObserver = new MutationObserver(fixSplitPaneHeight);
+        splitPaneHeightObserver.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('resize', fixSplitPaneHeight);
+        fixSplitPaneHeight();
+
+        // ==================================================================
         // 8) スクロール同期（Scroll Sync）機能の実装。
         //    Decap本体のスクロール同期機能は、独自のプレビューテンプレート
         //    （このファイルとpreview.jsで定義しているHTML構造）を想定した

@@ -60,16 +60,54 @@
   //   コレクションかどうか（`data.has('urlSlug')`）で判定する。将来
   //   同じ仕組みを他のコレクションに追加した場合も自動的に適用される。
   // ==========================================================================
+  // ==========================================================================
+  // 本文（body）中の装飾ブロック（マーカー等）の前後にできる空行の削減。
+  // registerEditorComponentで挿入した装飾は、Slateの内部データ構造上
+  // 必ず独立したブロック（＝Markdownへシリアライズする際に前後を空行
+  // "\n\n"で区切られた別段落）になる（CLAUDE.md 9.21/9.22で実証済みの
+  // Decap CMS側の制約で、外部から変更できない）。
+  // ただし実機確認したところ、この「前後の空行」自体は保存後のMarkdown
+  // ソース上の見た目上の区切りに過ぎず、CommonMarkの仕様では
+  // 「空行を挟まない連続した行」は同一段落として扱われる。かつ`<mark>`
+  // タグ（マーカー）はCommonMarkの「HTMLブロック」開始タグ一覧に含まれない
+  // ため、空行さえ無ければ前後の地の文とインラインで同じ<p>にまとまる
+  // （`<div>`ベースの囲い枠・吹き出し・テキスト配置・動画埋め込みは
+  // HTMLブロック開始タグに該当する`div`/`video`を使っているため、空行の
+  // 有無に関わらず常に独立したブロックのままになる＝マーカーのみ有効）。
+  // そのため保存直前（preSave）に本文中の装飾マーカーの前後の空行
+  // （\n\n以上の連続改行）を単一の改行へ圧縮し、公開後のページで
+  // マーカー適用箇所が前後の文章と同じ段落として自然につながるようにする。
+  // Slateの内部contentEditableへ直接手を加えるわけではなく、保存直前の
+  // 文字列（Immutable.jsのMapにセットする値）を書き換えるだけなので、
+  // 9.21/9.22で確認したexecCommand系の手法のようなデータ破損リスクは無い。
+  // ==========================================================================
+  function collapseDecorationBlankLines(body) {
+    if (typeof body !== 'string' || !body) return body;
+    return body
+      .replace(/\n{2,}(?=<mark class="cms-mark|<!--cms-box:|<!--cms-speech:|<div class="cms-align|<div class="cms-video-embed|<video class="cms-video-file)/g, '\n')
+      .replace(/(<\/mark>|<\/div>|<\/video>)\n{2,}/g, '$1\n');
+  }
+
   window.CMS.registerEventListener({
     name: 'preSave',
     handler: function (args) {
       var entry = args && args.entry;
       var data = entry && typeof entry.get === 'function' ? entry.get('data') : undefined;
-      if (!data || typeof data.has !== 'function' || !data.has('urlSlug')) return data;
-      var urlSlug = data.get('urlSlug');
-      if (typeof urlSlug === 'string' && urlSlug.trim()) return data;
-      var random = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
-      return data.set('urlSlug', random);
+      if (!data || typeof data.has !== 'function') return data;
+
+      if (data.has('urlSlug')) {
+        var urlSlug = data.get('urlSlug');
+        if (!(typeof urlSlug === 'string' && urlSlug.trim())) {
+          var random = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+          data = data.set('urlSlug', random);
+        }
+      }
+
+      if (data.has('body') && typeof data.get('body') === 'string') {
+        data = data.set('body', collapseDecorationBlankLines(data.get('body')));
+      }
+
+      return data;
     },
   });
 

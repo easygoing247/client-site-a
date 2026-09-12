@@ -1661,3 +1661,103 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   （Workers Buildsのビルドログ、または上記のように`fetch`で配信
   内容を直接確認する方法）を先に切り分けてから、コード側の調査に
   進むと効率的。
+
+### 9.25 本文装飾の改行を`preSave`で除去／`.SplitPane`高さオーバーフロー修正／`files`コレクションの`summary`制限を確定（2026-09）
+
+- **【1】本文装飾（`<mark>`マーカー等）適用時の前後改行を`preSave`で除去**：
+  `registerEditorComponent`で追加したマーカー等のカスタムブロックは、
+  Slateの仕様上どうしても独立した段落（voidブロック）として挿入され、
+  リッチテキストモードのままでは前後のテキストと同じ段落にできない
+  （9.21で確定済みの制約、変更なし）。一方、ユーザーの「Markdownモードに
+  切り替えると前後に`\n`/`\n\n`が入っており、手動でバックスペース削除
+  すると正常に繋がる」という観察から、**保存時に生成される
+  Markdown文字列そのものを後処理すれば、リッチテキスト編集の体験を
+  変えずに見た目上の分断だけを解消できる**という新しい解法を発見した。
+  `preview.js`の既存`preSave`ハンドラ（9.3・9.20-Bで`urlSlug`空欄補完に
+  使用）に処理を追加し、`body`フィールドの値から、装飾コンポーネントの
+  開始タグ直前・終了タグ直後にある2個以上の改行（空行）を1個の改行に
+  圧縮する（`collapseDecorationBlankLines()`、対象は`<mark class="cms-mark`
+  `<!--cms-box:` `<!--cms-speech:` `<div class="cms-align` `<div
+  class="cms-video-embed` `<video class="cms-video-file`の6種）。
+  - **CommonMarkの仕様上、この方式が効くのは`<mark>`ベースのマーカーのみ**：
+    `<mark>`はCommonMarkの「HTMLブロック開始タグ」一覧に含まれないため、
+    前後に空行が無ければ周囲のテキストと**同じ段落として遅延継続
+    （lazy continuation）**扱いになる。一方`<div>`・`<video>`は
+    HTMLブロック開始タグに該当し、空行の有無にかかわらず**常に
+    独立したブロック**として解釈される（CommonMark仕様）。そのため
+    box／speech-bubble／aligned-text／video-embed（いずれも`<div>`/
+    `<video>`ベース）は改行を消しても別ブロックのままであり、
+    「同じ段落に戻す」効果はマーカーだけに限られる——これは実装上の
+    不備ではなく、CommonMarkの仕様に基づく原理的な限界。
+  - 検証：`src/content/works/-2.md`をテスト用に使い、リッチテキスト
+    モードで「前半」「マーカー装飾」「後半」を入力・保存 →
+    保存後のfrontmatter本文が`前半\n<mark ...>middle</mark>\n後半`
+    （空行なし・単一改行のみ）になることを確認。`npm run build`後の
+    `dist/works/-2/index.html`が`<p>前半\n<mark ...>middle</mark>\n
+    後半</p>`という**単一の`<p>`要素**になっていることも確認し、
+    実際にブラウザ上で前後のテキストと視覚的に同じ行（同じ段落）に
+    連結されることを裏付けた。検証後、テスト内容は
+    `git checkout -- src/content/works/-2.md`で元に戻し、
+    コミットには含めていない。
+- **【2】スマホプレビュー時の画面下部固定バー非表示を修正
+  （`.SplitPane`の高さオーバーフローが真因）**：9.23で修正した
+  「デバイス幅切替時の`flex-basis`が効かない」バグ（`flex: none
+  !important`＋明示的`width`で解決済み、変更なし）とは**別に、
+  もう一つの独立したバグ**が残っていたことが判明した。`.SplitPane`
+  要素の実際の高さ（＋そのDOM上のtopオフセット）が`window.innerHeight`
+  を実測で約52px超過しており、その内部のiframe（プレビュー）に
+  レンダリングされる`position: fixed`のコンテンツ（`StickyContactBar`）
+  が、ビューポートの可視・スクロール可能領域の外側に押し出されて
+  いた。これは横幅方向の計算バグとは無関係に、`.SplitPane`が
+  自身の高さを`window.innerHeight`ぴったりではなく、自身のtop
+  オフセットを考慮しない値で計算していたために発生していた。
+  - 修正：`public/admin/index.html`に`fixSplitPaneHeight()`を追加し、
+    `.SplitPane`の`height`/`max-height`を`window.innerHeight -
+    splitPane.getBoundingClientRect().top`へ`!important`で強制設定
+    する。`MutationObserver`（`document.body`の`childList`/`subtree`）
+    と`resize`イベントの両方をトリガーにして、レイアウト変更の
+    たびに再計算する。
+  - 検証：この環境ではスクリーンショットのキャプチャが
+    エミュレート幅の一部しか写らない既知のツール制約
+    （9.16のrequestAnimationFrame同様、環境固有の制約であり
+    コード側の不具合ではない）があったため、`getBoundingClientRect()`
+    による実測値の比較を正としてPC幅・スマホ幅（デバイス幅切替後）の
+    両方で確認した：修正前は`splitPane.bottom`が`window.innerHeight`を
+    約52px超過していたのに対し、修正後は`splitPane.bottom`・
+    `iframe.bottom`がいずれも`window.innerHeight`と完全に一致
+    （オーバーフロー無し）になることを確認した。
+- **【3】「下層ページ編集」一覧のページ名リアルタイム反映は
+  config.ymlでは解決不可能——Decap CMS `files`コレクションの
+  確定的な仕様上の制限と判明（9.20-Dの前提を修正）**：
+  過去の複数セッションでは`summary: "{{fields.heading}}"`（9.3・
+  9.20-D）を「効いている」ものとして記録していたが、これは
+  **既定値と実際の値がたまたま一致していたことによる誤検知
+  （false positive）だった**ことが、今回の統制実験で判明した。
+  - 検証方法：既存の`productsCatalog`エントリ（`name:
+    productsCatalog`、`summary: "{{fields.heading}}"`設定済み）が、
+    セッション初期の頃から`label`（固定表示名）と実際の`heading`
+    フィールド値が一致しない状態で放置されていたことを利用し、
+    一覧に表示される文字列が`label`（設定上の固定ラベル）と
+    `heading`（フィールド値）のどちらになるかをA/Bで確認した。
+    結果、一覧には常に**`label`の静的な文字列**が表示され、
+    `heading`の値やその変更は一切反映されないことを確認した。
+  - 結論：Decap CMS 3.16.2において、`files:`コレクションの
+    サイドバー・一覧の表示名は**常に`config.yml`の静的な`label:`
+    文字列で決まり、`summary`テンプレートはこのコレクション種別の
+    一覧表示には効果を持たない**（folderコレクションの一覧
+    ラベルには`summary`が効く仕様と混同しないよう注意）。
+  - **`window.CMS`の公開API（`registerPreviewTemplate`／
+    `registerEventListener`等）にはRedux storeへのアクセスが
+    一切含まれておらず**、フォーム側の値をサイドバー表示に
+    安全に反映させるDOM横断的な仕組みを実装する手段が存在しない
+    （危険なDOMパッチ以外に安全な実装経路が無い）。そのため、
+    **これはこのテンプレートのコード側では解決できない、Decap CMS
+    3.16.2自体のプラットフォーム制限**と結論づけ、`config.yml`は
+    変更していない（既存の`summary: "{{fields.heading}}"`設定は
+    実害がないため残しているが、一覧表示への効果は無いことを
+    ここに明記する）。回避したい場合の唯一の現実的な手段は、
+    「下層ページ」を`files`コレクションではなく、複数ファイルを
+    扱う`folder`コレクション（`works`/`news`と同様の構成）に
+    設計変更すること——ただし1コレクション1ファイル固定という
+    現状の設計（services/about/contact/newsPage、9.3参照）を
+    大きく変更することになるため、別途要件として持ち込む必要がある。
