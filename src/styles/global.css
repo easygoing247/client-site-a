@@ -341,6 +341,83 @@
   クラスがそのまま出現する。
 */
 @layer components {
+  /*
+    本文（works/news の `body`）の基本タイポグラフィ。従来ここに段落の
+    margin指定が一切無かったため、Decap CMSのリッチテキストエディタで
+    Enterキーを2回押して意図的に空行を空けても、実際のページでは
+    段落間の行間が完全に詰まって見える不具合があった（<p>タグ自体には
+    ブラウザ既定のmarginがあるが、Tailwindのpreflightがbase layerで
+    全要素のmarginを0にリセットしているため、これを上書きする本文
+    専用のスタイルが無いと段落間が完全に密着する）。
+    Slateは「意図的に空けた行」をリッチテキスト内部では空のブロックとして
+    扱うが、Markdownへシリアライズする際は他のリッチテキストエディタ
+    同様、内容が全く無い行はCommonMarkの仕様上「単なる区切り」として
+    無視され前後の段落と区別が付かなくなる（保存→再読込で消える）ため、
+    ゼロ幅スペース等の見えない文字を持つ空段落として書き出される
+    ことがある。そのため通常の段落marginに加えて、内容が実質的に空の
+    段落（:empty、および中身が<br>のみ）にも最低限の高さを persist させ、
+    意図した空行がページ上でも本当に「空行1つぶんの余白」として
+    見えるようにしている。
+  */
+  .prose-content p {
+    margin: 0 0 1.2em;
+  }
+  .prose-content p:last-child {
+    margin-bottom: 0;
+  }
+  .prose-content p:empty,
+  .prose-content p:has(> br:only-child) {
+    min-height: 1em;
+  }
+  .prose-content h1,
+  .prose-content h2,
+  .prose-content h3,
+  .prose-content h4,
+  .prose-content h5,
+  .prose-content h6 {
+    margin: 1.6em 0 0.8em;
+    font-weight: bold;
+    line-height: 1.5;
+  }
+  .prose-content h1:first-child,
+  .prose-content h2:first-child,
+  .prose-content h3:first-child {
+    margin-top: 0;
+  }
+  .prose-content ul,
+  .prose-content ol {
+    margin: 0 0 1.2em;
+    padding-left: 1.4em;
+  }
+  .prose-content li {
+    margin-bottom: 0.4em;
+  }
+  .prose-content blockquote {
+    margin: 0 0 1.2em;
+    padding-left: 1em;
+    border-left: 3px solid var(--color-surface-border, #e2e5eb);
+    color: var(--color-ink-soft, #6b7280);
+  }
+  .prose-content a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  /*
+    装飾ブロック（マーカー・囲い枠・吹き出し）は registerEditorComponent
+    によるブロック単位の挿入である以上、Markdown/HTML構造上どうしても
+    前後の本文と別の要素（マーカーは独立した<p>、囲い枠・吹き出しは
+    raw HTMLブロックとして扱われる<div>）になる（Decap CMSの公開APIの
+    制約により、既存の文章の途中に本当の意味でインライン展開する手段が
+    無いことを実機で確認済み。CLAUDE.md 9.21/9.22参照）。
+    「余計な改行」に見える主な原因は上記の段落marginと装飾要素自身の
+    marginが二重に積み重なることだったため、装飾要素側のmarginを
+    通常の段落間隔（1.2em）に揃えて隣接する段落とのmarginが自然に
+    相殺（CSSのマージン相殺）されるようにし、体感の余白を抑えている。
+  */
+  .prose-content p:has(> .cms-mark:only-child) {
+    margin: 0 0 1.2em;
+  }
   .prose-content .cms-video-embed {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -385,7 +462,7 @@
 
   .prose-content .cms-box {
     position: relative;
-    margin: 1.8em 0 1.5em;
+    margin: 1.8em 0 1.2em;
     padding: 18px;
     border: 2px solid;
     border-radius: 12px;
@@ -441,7 +518,7 @@
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    margin: 1.5em 0;
+    margin: 1.2em 0;
   }
   .prose-content .cms-speech--right {
     flex-direction: row-reverse;
@@ -477,6 +554,12 @@
     margin-bottom: 0;
   }
 
+  .prose-content .cms-align {
+    margin: 0 0 1.2em;
+  }
+  .prose-content .cms-align:last-child {
+    margin-bottom: 0;
+  }
   .prose-content .cms-align--center {
     text-align: center;
   }

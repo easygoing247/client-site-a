@@ -247,24 +247,41 @@
       .SplitPane[data-cms-device] > .Pane2 {
         transition: flex-basis 0.2s ease, width 0.2s ease;
       }
+      /*
+        ⚠️ 当初 `flex: 0 0 375px !important` のようなショートハンドで
+        flex-basis を直接指定していたが、実機検証で computed width が
+        常に0になる（インラインstyleに !important 付きで同じ値を
+        直接セットしても再現する＝react-split-pane固有の問題ではなく
+        flex-basisショートハンドの解決自体が失敗する）不具合を確認した。
+        `flex: none !important`（flex-basis: auto 相当）で明示的な
+        width指定を有効化し、width/min-width をそれぞれ !important で
+        指定する方式に変更したところ確実に反映されることを確認済み。
+        min-widthも同時に!importantで固定しないと、flexアイテムの既定
+        min-width:auto（内容に応じた自動値）と衝突して縮む場合がある
+        ため、Pane2側は幅と同じ値を指定している。
+      */
       .SplitPane[data-cms-device='tablet'] > .Pane1 {
+        flex: none !important;
         width: calc(100% - 768px) !important;
-        flex: 0 0 calc(100% - 768px) !important;
+        min-width: 0 !important;
         max-width: none !important;
       }
       .SplitPane[data-cms-device='tablet'] > .Pane2 {
+        flex: none !important;
         width: 768px !important;
-        flex: 0 0 768px !important;
+        min-width: 768px !important;
         max-width: none !important;
       }
       .SplitPane[data-cms-device='mobile'] > .Pane1 {
+        flex: none !important;
         width: calc(100% - 375px) !important;
-        flex: 0 0 calc(100% - 375px) !important;
+        min-width: 0 !important;
         max-width: none !important;
       }
       .SplitPane[data-cms-device='mobile'] > .Pane2 {
+        flex: none !important;
         width: 375px !important;
-        flex: 0 0 375px !important;
+        min-width: 375px !important;
         max-width: none !important;
       }
       .Pane2 iframe {
