@@ -17,6 +17,8 @@ import newsPageRaw from '../data/newsPage.yml?raw';
 /** 「お知らせ」一覧ページ（src/pages/news/index.astro）の見出し・リード文設定。
  * 個々の記事データ（src/content/news/*.md）とは別の設定ファイル。 */
 export interface NewsPage {
+  /** 管理画面「下層ページ編集」一覧の表示名（サイト上の見出しとは独立） */
+  pageName?: string;
   /** ページ最上部の見出し（PageHeaderのtitle。既定：「お知らせ」） */
   heading?: string;
   /** 見出し直下のリード文 */
@@ -26,6 +28,8 @@ export interface NewsPage {
 }
 
 export interface ServicesPage {
+  /** 管理画面「下層ページ編集」一覧の表示名（サイト上の見出しとは独立） */
+  pageName?: string;
   heading?: string;
   lead?: string;
   /** サービス詳細セクションの見出し（既定：「サービス内容」） */
@@ -59,6 +63,8 @@ export interface ServicesPage {
 }
 
 export interface AboutPage {
+  /** 管理画面「下層ページ編集」一覧の表示名（サイト上の見出しとは独立） */
+  pageName?: string;
   heading?: string;
   lead?: string;
   /** 各セクションの表示・非表示（false で非表示。未設定は表示） */
@@ -122,6 +128,8 @@ export interface CustomContactFieldConfig {
 }
 
 export interface ContactPage {
+  /** 管理画面「下層ページ編集」一覧の表示名（サイト上の見出しとは独立） */
+  pageName?: string;
   heading?: string;
   intro?: string;
   notes?: string[];

@@ -19,6 +19,24 @@ export function newsCategoryLabel(category: string | undefined): string | undefi
   return NEWS_CATEGORY_LABELS[category] ?? category;
 }
 
+/**
+ * URL・リンク先として使う「日付を含まない」公開用スラッグ。
+ * config.yml の news コレクションは、2026-09の変更で
+ * `slug: "{{fields.urlSlug}}"`（旧: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"）
+ * に変更したため、新規作成される記事のファイル名にはもう日付が付かない。
+ * ただし変更前に作成済みの既存ファイル（`2026-09-09-sample.md` 等）は
+ * リネームしていないため、`entry.slug`（＝ファイル名）には引き続き
+ * 先頭に日付が残っている。新旧どちらの記事も同じ「日付なしURL」で
+ * アクセスできるよう、この関数で先頭の `YYYY-MM-DD-` を正規表現で
+ * 除去してから使う（該当しない場合はそのまま返すため、日付の付いていない
+ * 新規記事にも安全に適用できる）。`getStaticPaths()` のルート生成・
+ * 一覧ページやトップページのリンク先（href）は必ずこの値を経由し、
+ * `entry.slug` を直接URLに使わないこと。
+ */
+export function getPublicSlug(entry: NewsEntry): string {
+  return entry.slug.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+}
+
 /** 日付を「2026年9月9日」形式に整形（未設定なら空文字）。 */
 export function formatNewsDate(date: Date | undefined): string {
   if (!date) return '';

@@ -16,6 +16,7 @@ import { site } from '../../lib/site';
 import { newsPage } from '../../lib/pages';
 import {
   getPublishedNews,
+  getPublicSlug,
   newsCategoryLabel,
   formatNewsDate,
   collectNewsCategories,
@@ -100,7 +101,7 @@ const viewInactive = 'text-secondary';
             <ul id="news-grid" data-view="card" class="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-6">
               {posts.map((post, i) => {
                 const category = newsCategoryLabel(post.data.category);
-                const href = `/news/${post.slug}`;
+                const href = `/news/${getPublicSlug(post)}`;
                 const dateText = post.data.publishedAt ? formatNewsDate(post.data.publishedAt) : '';
                 const dateAttr = post.data.publishedAt ? post.data.publishedAt.toISOString() : undefined;
                 return (

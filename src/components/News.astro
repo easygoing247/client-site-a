@@ -6,7 +6,7 @@
 // 最新記事を newsSection.count 件、コンパクトなリスト形式で表示する。
 // ============================================================================
 import { site } from '../lib/site';
-import { getPublishedNews, newsCategoryLabel, formatNewsDate } from '../lib/news';
+import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate } from '../lib/news';
 import Button from './Button.astro';
 
 interface Props {
@@ -39,7 +39,7 @@ const posts = (await getPublishedNews()).slice(0, count);
             return (
               <li class="border-b border-surface-border">
                 <a
-                  href={`/news/${post.slug}`}
+                  href={`/news/${getPublicSlug(post)}`}
                   class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 py-4 group"
                 >
                   <div class="flex items-center gap-3 flex-none">

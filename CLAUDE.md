@@ -353,10 +353,16 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - 下層ページ用 `.yml` は `src/data/siteInfo.yml` と同じ「唯一のデータソース」原則に従う。
   パーサは **`src/lib/pages.ts`**（`servicesPage` / `aboutPage` / `contactPage`、
   `site.ts` と同じ `?raw` インポート方式）。コンポーネントへのテキスト直書きは禁止（絶対ルール①）。
-- `pages` コレクションの各 file エントリ（`services` / `about` / `contact`）は
-  `summary: "{{fields.heading}}"` を指定し、管理画面の一覧・エディタ上に各 `.yml` の
-  「ページ見出し（`heading`）」を表示する。3ファイルとも先頭フィールドは
-  `heading`（label「ページ見出し」）で統一すること。
+- `pages` コレクションの各 file エントリ（`services` / `about` / `contact` /
+  `newsPage`）は `summary: "{{fields.pageName}}"` を指定し、管理画面の
+  「下層ページ編集」一覧に各`.yml`の**`pageName`**（管理用の識別名。
+  サイト上の見出しとは独立して自由に変更できる）を表示する。4ファイル
+  とも`pageName`（label「ページ名（下層ページ編集の一覧に表示される
+  項目名）」）を先頭フィールドとして統一すること。サイト上の実際の
+  `<title>`・`PageHeader`・パンくず・ナビゲーション表示名に使われるのは
+  この`pageName`ではなく**別フィールドの`heading`**（label「ページ見出し」、
+  2番目のフィールド）であることに注意——2つは意図的に分離されており、
+  管理画面上の識別名を変えてもサイトの表示は変わらない（逆も同様）。
 - `news` コレクションのスキーマは `src/content/config.ts` の `news` で定義。取得は
   **`src/lib/news.ts`** の `getPublishedNews()`（`draft: true` を除外し公開日降順）を経由する。
   カテゴリ表示名・日付整形も同モジュールに集約。画像は `image()` ヘルパー経由で
@@ -364,7 +370,7 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
 - **URLスラッグに日本語を含めない**：`news` / `works` の記事・実績タイトルは
   日本語前提のため、ファイル名（＝URL）をタイトルからの自動生成（Decap既定の
   `{{slug}}`）に任せると非ASCII文字入りのURLになってしまう。そのため
-  config.yml で `news`: `slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"`、
+  config.yml で `news`: `slug: "{{fields.urlSlug}}"`、
   `works`: `slug: "{{fields.urlSlug}}"` とし、フォームの「URL用識別子
   （半角英数字）」フィールド（`urlSlug`、`pattern: ^[a-z0-9-]+$`）から明示的に
   ファイル名を組み立てる。**フィールド名は `slug` ではなく `urlSlug`**
@@ -384,6 +390,19 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
     こと。`undefined` を返すと `identifier_field` が欠落した扱いになり、
     保存後の画面遷移（「公開して新規作成」「公開して複製する」等）まで
     巻き込んで動かなくなることがある（[decaporg/decap-cms#6775](https://github.com/decaporg/decap-cms/issues/6775)）。
+  - **`news` のファイル名から日付プレフィックスを廃止（2026-09）**：
+    当初は`slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"`で
+    ファイル名に投稿日を含めていたが、URLをよりシンプルにするため
+    `works`と同じ`slug: "{{fields.urlSlug}}"`（日付なし）に変更した。
+    既存の記事ファイル（`2026-09-09-sample.md`等）はリネームしていない
+    ため、Astro Content Collectionsが自動導出する`entry.slug`（＝
+    ファイル名）には引き続き日付が残る。新旧どちらの記事も日付なし
+    URLでアクセスできるよう、`src/lib/news.ts`の**`getPublicSlug()`**
+    が`entry.slug`先頭の`YYYY-MM-DD-`を正規表現で除去してから返す
+    （該当しなければそのまま返すため、新規記事にも安全に使える）。
+    `getStaticPaths()`のルート生成・一覧ページ／トップページの
+    リンク先（`href`）は必ずこの関数を経由すること。`entry.slug`を
+    直接URLへ使っている箇所を見つけたら`getPublicSlug()`に置き換える。
 - **Decap CMS のCDNバージョンは明示的に固定**（`public/admin/index.html`
   の `<script src="https://unpkg.com/decap-cms@X.Y.Z/...">`）。unpkg は
   semver 範囲（`^3.0.0` 等）をリクエスト毎に解決するため、範囲指定のままだと
@@ -662,8 +681,9 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   3. お問い合わせフォーム設定（`contact-form.json`）。
   - **SNS設定**は「連絡先」から独立し、`siteInfo.yml` トップレベルの `sns` リスト
     （CMS では「サイト全体設定」内の独立フィールド群）として一括管理（→ 9.3）。
-  - **下層ページ**コレクションの各 file（services / about / contact）は
-    `summary: "{{fields.heading}}"` で「ページ見出し」を管理画面に動的表示（→ 9.3）。
+  - **下層ページ**コレクションの各 file（services / about / contact / newsPage）は
+    `summary: "{{fields.pageName}}"` で管理用の「ページ名」を一覧に動的表示する
+    （サイト上の見出しである`heading`とは独立したフィールド。2026-09追加。→ 9.3）。
   - コレクション名の表記統一：「商品・施工事例」→「**商品一覧**」、
     「お知らせ・ブログ」→「**お知らせ**」（実サイト側の見出し・パンくず、`preview.js`、
     コメントまで一括置換済み）。
@@ -1592,3 +1612,13 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   「本当の意味でのインライン表示」は実現できない。CSSで調整できるのは
   前後の余白の大きさ（間隔を詰めて浮いた印象を抑える）までで、
   「改行が入ること自体」は構造上避けられない制約として残る。
+  2026-09に改めて実機再検証した際、文中（「前半」「後半」という地の文の
+  間）にカーソルを置いた状態で「XXXX」という文字列を選択してから
+  マーカーを挿入したところ、(1)選択していた「XXXX」はマーカーの
+  「テキスト」入力欄に自動転記されず消えてしまう、(2)「前半」「後半」は
+  マーカーを挟んで2つの独立した`<p>`に強制分割される、の両方を確認した。
+  これはregisterEditorComponentが「カーソル位置に新しい空のvoidブロックを
+  挿入する」という決め打ちの動作しか公開していないためで、外部から
+  変更できる余地が無い（`fields`/`pattern`/`fromBlock`/`toBlock`/
+  `toPreview`が公開APIの全体）。今後も同じ要望が来た場合、CSSでの
+  余白調整以上の対応は取れないことを前提に案内すること。

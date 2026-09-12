@@ -11,11 +11,11 @@ import Button from '../../components/Button.astro';
 import StickyContactBar from '../../components/StickyContactBar.astro';
 import BackToTop from '../../components/BackToTop.astro';
 import { site } from '../../lib/site';
-import { getPublishedNews, newsCategoryLabel, formatNewsDate } from '../../lib/news';
+import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate } from '../../lib/news';
 
 export async function getStaticPaths() {
   const posts = await getPublishedNews();
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+  return posts.map((post) => ({ params: { slug: getPublicSlug(post) }, props: { post } }));
 }
 
 const { post } = Astro.props;

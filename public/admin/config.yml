@@ -602,9 +602,10 @@ collections:
       - name: "services"
         label: "サービス内容・料金"
         label_singular: "サービス内容・料金"
-        summary: "{{fields.heading}}"
+        summary: "{{fields.pageName}}"
         file: "src/data/services.yml"
         fields:
+          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "サービス内容・料金", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
           - { label: "ページ見出し", name: "heading", widget: string, required: false }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "「サービス詳細」セクションの見出し", name: "itemsHeading", widget: string, required: false, default: "サービス内容", hint: "サービス詳細（画像＋説明）の一覧の上に表示される見出し。空欄にすると「サービス内容」を表示します。" }
@@ -647,9 +648,10 @@ collections:
       - name: "about"
         label: "会社概要"
         label_singular: "会社概要"
-        summary: "{{fields.heading}}"
+        summary: "{{fields.pageName}}"
         file: "src/data/about.yml"
         fields:
+          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "会社概要", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
           - { label: "ページ見出し", name: "heading", widget: string, required: false }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - label: "セクションの表示・非表示"
@@ -697,9 +699,10 @@ collections:
       - name: "contact"
         label: "お問い合わせ・ご予約"
         label_singular: "お問い合わせ・ご予約"
-        summary: "{{fields.heading}}"
+        summary: "{{fields.pageName}}"
         file: "src/data/contactPage.yml"
         fields:
+          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "お問い合わせ・ご予約", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
           - { label: "ページ見出し", name: "heading", widget: string, required: false }
           - { label: "フォーム上部の案内文（Enterキーで改行可）", name: "intro", widget: text, required: false }
           - label: "ご予約・お問い合わせの注意事項"
@@ -799,9 +802,10 @@ collections:
       - name: "newsPage"
         label: "お知らせ一覧ページ"
         label_singular: "お知らせ一覧ページ"
-        summary: "{{fields.heading}}"
+        summary: "{{fields.pageName}}"
         file: "src/data/newsPage.yml"
         fields:
+          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "お知らせ一覧ページ", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
           - { label: "ページ見出し", name: "heading", widget: string, required: false, default: "お知らせ" }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "一覧セクションの見出し", name: "listHeading", widget: string, required: false, default: "お知らせ一覧", hint: "カテゴリ絞り込み・記事一覧の直前に表示される見出し。空欄にすると「お知らせ一覧」を表示します。" }
@@ -828,7 +832,7 @@ collections:
     # ※ フィールド名は "slug" ではなく "urlSlug" にしている（Astro の Content
     #   Collections が frontmatter の `slug` キーをURL上書き用の予約語として
     #   特別扱いするため。詳細は src/content/config.ts のコメント参照）。
-    slug: "{{year}}-{{month}}-{{day}}-{{fields.urlSlug}}"
+    slug: "{{fields.urlSlug}}"
     extension: "md"
     format: "frontmatter"
     sortable_fields: ["publishedAt", "title"]
