@@ -1516,6 +1516,111 @@
         fixSplitPaneHeight();
 
         // ==================================================================
+        // 7.7) files コレクションの一覧（サイドバーのリスト／カード表示）が
+        //    各ファイルの `summary` テンプレートを無視し、常に config.yml の
+        //    静的な `label` を表示してしまう既知の制限（CLAUDE.md 9.25参照。
+        //    `window.CMS` の公開APIにはこの一覧表示を上書きする手段が
+        //    一切無いことを確認済み）への対処。
+        //    実機調査の結果、Decap CMS本体（React + Redux）のReact Fiberを
+        //    辿ると、公開APIには出てこないReduxストア本体（`store.getState()`）
+        //    に到達できることを確認した。ここから読み取れる
+        //    `entries.entities['<collection>.<slug>'].data`は、各エントリの
+        //    「実際に保存されている最新のフィールド値」そのもの（今まさに
+        //    編集中の未保存値ではない）であり、これを使って一覧の見出し
+        //    テキスト（`<h2>`要素）だけを書き換える。
+        //    安全性：(a) 参照は`store.getState()`のみで、`dispatch`は一切
+        //    行わない（Reduxの状態を変更しない、純粋な読み取り専用アクセス）。
+        //    (b) 書き換え対象は一覧画面の`<h2>`内の「見出しテキストの
+        //    文字ノード」のみで、実際の編集フォーム（Slateのcontent
+        //    editable領域）には一切触れない——過去に確認された
+        //    execCommand経由のcontentEditable直接操作によるデータ破損
+        //    （CLAUDE.md 9.22参照）とは全く異なるリスク特性で、この処理が
+        //    保存データを壊すことは構造上あり得ない。
+        //    (c) 対象フィールド名`pageName`をハードコードで
+        //    決め打ちにせず、`data.has('pageName')`で判定する
+        //    （既存のurlSlug自動採番と同じ、9.3の設計方針を踏襲）ため、
+        //    将来「pageName」フィールドを持つ別のfilesコレクションを
+        //    追加した場合も自動的に適用される。
+        //    ⚠️ React Fiberの内部プロパティ名（`__reactContainer$...`）や
+        //    Reduxストアの内部データ構造はdecap-cms本体・Reactの
+        //    バージョンアップで変わり得る非公開実装詳細のため、
+        //    見つからない場合は静かに諦める（例外を投げない）実装にして
+        //    あり、万一動かなくなっても一覧に静的なlabelが表示される
+        //    （＝今までの挙動に戻るだけ）という安全側に倒れる設計にしている。
+        // ==================================================================
+        function findDecapReduxStore() {
+          if (window.__cmsReduxStore) return window.__cmsReduxStore;
+          try {
+            var root = document.getElementById('nc-root');
+            if (!root) return null;
+            var key = Object.keys(root).find(function (k) {
+              return k.indexOf('__reactContainer') === 0;
+            });
+            if (!key) return null;
+            var found = null;
+            var visited = 0;
+            (function walk(fiber) {
+              if (!fiber || found || visited > 50000) return;
+              visited++;
+              try {
+                if (fiber.memoizedProps && fiber.memoizedProps.store && typeof fiber.memoizedProps.store.getState === 'function') {
+                  found = fiber.memoizedProps.store;
+                  return;
+                }
+              } catch (e) {}
+              walk(fiber.child);
+              if (!found) walk(fiber.sibling);
+            })(root[key]);
+            if (found) window.__cmsReduxStore = found;
+            return found;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function patchFilesCollectionListLabels() {
+          try {
+            var store = findDecapReduxStore();
+            if (!store) return;
+            var state = store.getState();
+            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
+            if (!entities) return;
+            var links = document.querySelectorAll('a[href*="/entries/"]');
+            links.forEach(function (a) {
+              var m = (a.getAttribute('href') || '').match(/#\/collections\/([^/]+)\/entries\/([^/]+)/);
+              if (!m) return;
+              var entry = entities.get(m[1] + '.' + m[2]);
+              if (!entry) return;
+              var data = entry.get ? entry.get('data') : null;
+              if (!data || typeof data.get !== 'function' || !data.has('pageName')) return;
+              var pageName = data.get('pageName');
+              if (typeof pageName !== 'string' || !pageName.trim()) return;
+              var heading = a.querySelector('h2');
+              if (!heading) return;
+              for (var i = 0; i < heading.childNodes.length; i++) {
+                var node = heading.childNodes[i];
+                if (node.nodeType === Node.TEXT_NODE) {
+                  if (node.textContent !== pageName) node.textContent = pageName;
+                  break;
+                }
+              }
+            });
+          } catch (e) {}
+        }
+        var filesListLabelObserver = new MutationObserver(patchFilesCollectionListLabels);
+        filesListLabelObserver.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('hashchange', patchFilesCollectionListLabels);
+        (function watchStoreForListLabels() {
+          var store = findDecapReduxStore();
+          if (store) {
+            store.subscribe(patchFilesCollectionListLabels);
+            patchFilesCollectionListLabels();
+          } else {
+            setTimeout(watchStoreForListLabels, 500);
+          }
+        })();
+
+        // ==================================================================
         // 8) スクロール同期（Scroll Sync）機能の実装。
         //    Decap本体のスクロール同期機能は、独自のプレビューテンプレート
         //    （このファイルとpreview.jsで定義しているHTML構造）を想定した

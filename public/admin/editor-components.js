@@ -225,14 +225,100 @@
   ];
   var MARK_HEX = { yellow: '#fff3a3', pink: '#ffd1e3', green: '#c8f2d4', blue: '#cfe4ff', orange: '#ffe0bd' };
 
+  // `type: 'inline'`のコンポーネント（下記参照）は、本体バンドルの仕様上
+  // フィールドの編集フォームを自動では表示しない——クリック時に呼ばれる
+  // `onEdit(props)`を自分で実装し、新しい値をPromiseで解決した場合のみ
+  // 反映される（未実装だとクリックしても何も起きない）。既存の
+  // ブロック型コンポーネント（囲い枠・吹き出し等）が持つ「クリックで
+  // その場にカラー・テキスト入力欄が展開される」体験とは異なるため、
+  // 同等の操作感を保つために簡易モーダル（オーバーレイ）を自前実装した。
+  // 外部ライブラリは使わず、素のDOM操作のみで完結させている。
+  function editMarkerModal(current) {
+    return new Promise(function (resolve) {
+      var overlay = document.createElement('div');
+      overlay.style.cssText =
+        'position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:99999;' +
+        'display:flex;align-items:center;justify-content:center;';
+      var box = document.createElement('div');
+      box.style.cssText =
+        'background:#fff;border-radius:10px;padding:20px;width:280px;' +
+        'box-shadow:0 10px 30px rgba(0,0,0,0.28);font-family:inherit;';
+      var colorOptions = MARK_COLORS.map(function (c) {
+        return '<option value="' + c.value + '">' + c.label + '</option>';
+      }).join('');
+      box.innerHTML =
+        '<div style="font-weight:bold;font-size:14px;margin-bottom:14px;">マーカー（蛍光ペン）を編集</div>' +
+        '<label style="display:block;font-size:12px;color:#4b5468;margin-bottom:4px;">カラー</label>' +
+        '<select style="width:100%;margin-bottom:14px;padding:6px;border:1px solid #d0d5dd;border-radius:6px;">' +
+        colorOptions +
+        '</select>' +
+        '<label style="display:block;font-size:12px;color:#4b5468;margin-bottom:4px;">テキスト</label>' +
+        '<input type="text" style="width:100%;margin-bottom:18px;padding:6px;border:1px solid #d0d5dd;border-radius:6px;box-sizing:border-box;" />' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+        '<button type="button" data-action="cancel" style="padding:6px 14px;border:1px solid #d0d5dd;border-radius:6px;background:#fff;cursor:pointer;">キャンセル</button>' +
+        '<button type="button" data-action="ok" style="padding:6px 14px;border:none;border-radius:6px;background:#3a69c7;color:#fff;cursor:pointer;">OK</button>' +
+        '</div>';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      var colorSel = box.querySelector('select');
+      var textInput = box.querySelector('input[type="text"]');
+      colorSel.value = (current && current.color) || 'yellow';
+      textInput.value = (current && current.text) || '';
+      textInput.focus();
+      textInput.select();
+
+      function close(result) {
+        document.body.removeChild(overlay);
+        resolve(result);
+      }
+      box.querySelector('[data-action="cancel"]').addEventListener('click', function () {
+        close(null);
+      });
+      box.querySelector('[data-action="ok"]').addEventListener('click', function () {
+        close({ color: colorSel.value, text: textInput.value });
+      });
+      overlay.addEventListener('mousedown', function (e) {
+        if (e.target === overlay) close(null);
+      });
+      textInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          close({ color: colorSel.value, text: textInput.value });
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          close(null);
+        }
+      });
+    });
+  }
+
+  // 【重要】decap-cms@3.16.2のバンドル本体（unpkg配信物）を実機で解析した結果、
+  // registerEditorComponentには公開ドキュメントに明記されていない
+  // `type: 'inline'` オプションが存在することを確認した。これを指定すると、
+  // 生成されるSlateノードが従来の独立ブロック（type:"shortcode"、常に
+  // 大きなカード状の編集フォームとして別行に表示される）ではなく、
+  // 段落中に直接埋め込まれる `type:"inline-shortcode"` になり、
+  // 本体側のレンダラー（`i0`関数）が`toPreview()`の戻り値を
+  // `<span style="display:inline-flex;...">`でラップしてテキストの
+  // 途中にそのまま差し込む。マーカーは実サイト上でも`<mark>`が
+  // 前後のテキストと同じ段落・同じ行に収まる仕様（CLAUDE.md 9.25参照）
+  // のため、これでエディタの見た目と実際の保存結果が完全に一致する
+  // （エディタ上だけ改行されて見える問題の根本解決）。
+  // `type:'inline'`の場合、パターンは行内の任意の位置にマッチする
+  // 必要があるため、`^`（内部で自動付与されるため書かない）はともかく
+  // 末尾の`\s*$`（行末までの一致要求）を外すこと——付けたままだと
+  // 段落末尾に無いと一致しなくなり、後ろに文章が続くケースで
+  // 保存済みMarkdownを読み込んだ際に復元できなくなる。
   window.CMS.registerEditorComponent({
     id: 'highlight-marker',
     label: 'マーカー（蛍光ペン）',
+    type: 'inline',
     fields: [
       { name: 'color', label: 'カラー', widget: 'select', options: MARK_COLORS, default: 'yellow' },
       { name: 'text', label: 'テキスト', widget: 'string' },
     ],
-    pattern: /^<mark class="cms-mark cms-mark--(yellow|pink|green|blue|orange)">([\s\S]*?)<\/mark>\s*$/,
+    pattern: /<mark class="cms-mark cms-mark--(yellow|pink|green|blue|orange)">([\s\S]*?)<\/mark>/,
     fromBlock: function (match) {
       return { color: match[1], text: match[2] };
     },
@@ -240,7 +326,29 @@
       return '<mark class="cms-mark cms-mark--' + (obj.color || 'yellow') + '">' + escapeHtml(obj.text) + '</mark>';
     },
     toPreview: function (obj) {
-      return h('mark', { style: { background: MARK_HEX[obj.color] || MARK_HEX.yellow, padding: '0 3px', borderRadius: '2px' } }, obj.text);
+      var hasText = obj && obj.text;
+      return h(
+        'mark',
+        {
+          style: hasText
+            ? { background: MARK_HEX[obj.color] || MARK_HEX.yellow, padding: '0 3px', borderRadius: '2px' }
+            : {
+                background: 'transparent',
+                border: '1px dashed #b9c0cc',
+                borderRadius: '4px',
+                padding: '0 6px',
+                color: '#8a93a6',
+                fontSize: '12px',
+              },
+        },
+        hasText ? obj.text : 'クリックしてテキストを入力'
+      );
+    },
+    // クリック時にフィールド編集モーダルを開く（上記editMarkerModal参照。
+    // `type:'inline'`のコンポーネントは本体側が自動でフィールドフォームを
+    // 表示しないため、これを実装しないと挿入後に一切編集できなくなる）。
+    onEdit: function (props) {
+      return editMarkerModal((props && props.data) || {});
     },
   });
 
