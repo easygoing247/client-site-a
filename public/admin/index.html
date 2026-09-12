@@ -728,6 +728,29 @@
           // フォーム操作要素・ドラッグ並び替えハンドル・クイックナビUI・
           // プルダウンの選択肢・モーダル内は、それぞれ本来の操作を優先し、
           // 自前スクロールの対象外とする。
+          // ⚠️【重要な既知の落とし穴】`[contenteditable]` という属性セレクタは
+          // 値を問わず（`contenteditable="true"` だけでなく
+          // `contenteditable="false"` にも）マッチする。本文（markdown
+          // ウィジェット）内の囲い枠・吹き出し等（registerEditorComponentの
+          // 既定`type:"shortcode"`）が挿入するSlateのvoidブロックは、
+          // 編集不可を示すために`contenteditable="false"`を持つが、これは
+          // 実際には「ユーザーが指でスワイプしてスクロールしたい、ただの
+          // 非編集領域」であり、内部にreact-selectのドロップダウンや
+          // textareaを含むとはいえ、ブロックの背景・余白部分に対する
+          // タッチは自前スクロールに処理させるべきだった。誤って
+          // `[contenteditable]`（値を問わない）でこれも除外対象に
+          // 含めてしまっていたため、これらのコンポーネントが本文に
+          // 挿入されている状態でその上（または近く）から指でスワイプを
+          // 開始すると、自前スクロール処理が完全に手を引く一方で、
+          // 実際にスクロールを担う祖先`[class*="EditorContainer"]`は
+          // `overflow:hidden`（9.7章参照、自前スクロール専用の設定）の
+          // ため、ブラウザのネイティブスクロールも一切発生せず、
+          // 「その要素より下へスクロールできない」という不具合になって
+          // いた。`[contenteditable="true"]`（値を明示）に限定することで、
+          // 本当に編集可能なテキスト領域（Slateのエディタ本体）だけを
+          // 除外し、`contenteditable="false"`のvoidブロック自体は
+          // 自前スクロールの対象に含める（＝その内部のinput/textarea/
+          // selectは引き続き別途この配列でスクロール対象外になる）。
           return !!(
             target.closest &&
             target.closest(
@@ -735,7 +758,7 @@
                 'input',
                 'textarea',
                 'select',
-                '[contenteditable]',
+                '[contenteditable="true"]',
                 '[class*="DragIconContainer"]',
                 '#cms-quick-nav-btn',
                 '#cms-quick-nav-menu',
