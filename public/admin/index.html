@@ -292,6 +292,35 @@
         min-width: 375px !important;
         max-width: none !important;
       }
+      /*
+        「PC」選択時：react-split-pane既定の50/50分割（両ペイン
+        `flex: 1 1 0%`）だと、Pane2（プレビュー）の実測幅がタブレット
+        固定値の768pxを下回る場合があり（例：ウィンドウ幅1400pxで
+        698px）、「PC表示のほうがタブレット表示より狭い」不具合の
+        原因になっていた。さらにこの768px未満という狭さが、実サイト
+        側のStickyContactBarが持つ`md:hidden`（Tailwind既定のmd
+        ブレークポイント=768px）を「768px未満だから表示する」に
+        正しく反応させてしまい、「PC表示なのに画面下部固定バーが
+        出る」不具合にもつながっていた（サイト側のレスポンシブ判定
+        自体は正しく、プレビュー幅が狭すぎたことが根本原因）。
+        tablet/mobileと同じ`!important`パターンで、フォーム側
+        （Pane1）に無理のない固定幅（400px）を、プレビュー側
+        （Pane2）に残り全幅を与える。一般的なデスクトップ幅
+        （1200px以上）であれば、Pane2は自然に1000px前後を確保でき、
+        タブレット・スマホ双方のブレークポイントを安全に上回る。
+      */
+      .SplitPane[data-cms-device='pc'] > .Pane1 {
+        flex: none !important;
+        width: 400px !important;
+        min-width: 400px !important;
+        max-width: none !important;
+      }
+      .SplitPane[data-cms-device='pc'] > .Pane2 {
+        flex: none !important;
+        width: calc(100% - 400px) !important;
+        min-width: 0 !important;
+        max-width: none !important;
+      }
       .Pane2 iframe {
         width: 100% !important;
         height: 100% !important;
@@ -1461,10 +1490,19 @@
         function applyPreviewDevice(device) {
           currentPreviewDevice = device;
           var splitPane = document.querySelector('.SplitPane');
-          if (splitPane) {
-            if (device === 'pc') splitPane.removeAttribute('data-cms-device');
-            else splitPane.setAttribute('data-cms-device', device);
-          }
+          // 【重要】「PC」もtablet/mobileと全く同じ「data-cms-device属性
+          // ＋ CSSの!important」方式に統一した（旧実装は属性を外して
+          // react-split-pane既定の50/50分割任せにしていたが、その既定値
+          // だとPane2＝プレビューの実測幅がタブレット固定値768pxを下回る
+          // 場合があり＝「PCの方がタブレットより狭い」不具合、かつその
+          // 狭さ（768px未満）が実サイト側StickyContactBarの`md:hidden`
+          // を「768px未満だから表示する」に正しく反応させてしまい＝
+          // 「PC表示なのに画面下部固定バーが出る」不具合にもつながって
+          // いた。詳細はCSS側の`[data-cms-device='pc']`ルールのコメント
+          // 参照）。react-split-pane自身のinline style任せにする「無指定」
+          // 状態は、Resizerを手動ドラッグしている間だけ使う
+          // （下記のdocument.addEventListener('mousedown'/'touchstart')参照）。
+          if (splitPane) splitPane.setAttribute('data-cms-device', device);
           Array.prototype.forEach.call(deviceToolbar.querySelectorAll('button'), function (btn) {
             btn.classList.toggle('active', btn.dataset.device === device);
           });
@@ -1473,16 +1511,48 @@
           if (typeof updateNavButtonPosition === 'function') updateNavButtonPosition();
         }
         applyPreviewDevice('pc');
+        // `.SplitPane`はReactが非同期に描画するため、上のスクリプト実行
+        // 時点ではまだDOMに存在せず、直後のapplyPreviewDevice('pc')が
+        // 属性を設定できない（＝何もしない）まま終わってしまうことが
+        // ある。エントリ切替時のhashchangeリスナー（後述）で毎回PCへ
+        // 戻す運用のため通常は問題にならないが、管理画面を開いた直後の
+        // 最初の1回だけこの取りこぼしが起きるため、`.SplitPane`が
+        // 実際にDOMへ現れるのを監視し、そのタイミングで現在選択中の
+        // デバイス（自由ドラッグ中＝nullの場合は何もしない）を
+        // 改めて適用する。
+        var splitPaneDeviceObserver = new MutationObserver(function () {
+          var splitPane = document.querySelector('.SplitPane');
+          if (!splitPane || !currentPreviewDevice) return;
+          if (splitPane.getAttribute('data-cms-device') !== currentPreviewDevice) {
+            splitPane.setAttribute('data-cms-device', currentPreviewDevice);
+          }
+        });
+        splitPaneDeviceObserver.observe(document.body, { childList: true, subtree: true });
 
         // 幅を強制している最中に手動でResizerをドラッグしても、!important
         // 指定が常に勝ってしまい見た目が一切動かず「壊れた」ように見える
-        // ため、ドラッグ開始を検知した時点でPCへ戻し、react-split-pane
+        // ため、ドラッグ開始を検知した時点で強制を解除し、react-split-pane
         // 自身のドラッグ処理に幅の制御を返す。
+        // ⚠️ 「PC」もtablet/mobileと同じ`!important`方式になったため
+        // （上記参照）、以前の「currentPreviewDevice !== 'pc' の時だけ
+        // 解除」という条件のままだと、PC表示中にResizerをドラッグしても
+        // 何も反応しなくなってしまう（既にPCなので条件に一致しない）。
+        // デバイスの種類を問わず、Resizerのドラッグ開始を検知したら
+        // 必ずdata-cms-device属性そのものを外して自由なドラッグに戻す
+        // （＝どのプリセットからでも手動リサイズを開始できる）。
+        function releaseDeviceWidthLock() {
+          var splitPane = document.querySelector('.SplitPane');
+          if (splitPane) splitPane.removeAttribute('data-cms-device');
+          currentPreviewDevice = null;
+          Array.prototype.forEach.call(deviceToolbar.querySelectorAll('button'), function (btn) {
+            btn.classList.remove('active');
+          });
+        }
         document.addEventListener(
           'mousedown',
           function (e) {
-            if (e.target && e.target.classList && e.target.classList.contains('Resizer') && currentPreviewDevice !== 'pc') {
-              applyPreviewDevice('pc');
+            if (e.target && e.target.classList && e.target.classList.contains('Resizer')) {
+              releaseDeviceWidthLock();
             }
           },
           true
@@ -1490,8 +1560,8 @@
         document.addEventListener(
           'touchstart',
           function (e) {
-            if (e.target && e.target.classList && e.target.classList.contains('Resizer') && currentPreviewDevice !== 'pc') {
-              applyPreviewDevice('pc');
+            if (e.target && e.target.classList && e.target.classList.contains('Resizer')) {
+              releaseDeviceWidthLock();
             }
           },
           true
