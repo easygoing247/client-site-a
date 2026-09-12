@@ -479,6 +479,28 @@
         }
 
         /*
+          本文（markdownウィジェット）のSlateエディタ本体（[data-slate-editor]）
+          へのタッチスワイプを、ブラウザ自身のcontentEditable用ジェスチャー
+          （テキスト選択・慣性スクロール等）に奪われる前に、必ずJS側の
+          自前タッチスクロール処理（touchstart/touchmove、上記
+          isTouchScrollExempt参照）へ渡すための保険。`touch-action: pan-y`
+          により、横方向のジェスチャーやブラウザ既定の複雑な処理を無効化し、
+          縦方向のパン操作であることを先に宣言しておく（`{ passive: false }`
+          で登録している自前のtouchmoveリスナーがpreventDefaultで主導権を
+          握れるようにするため）。囲い枠・吹き出し等のvoidブロック内の
+          個別要素（アイコン画像・装飾用のバッジ等）にも同様に適用し、
+          非インタラクティブな装飾要素がジェスチャーを奪わないようにする。
+        */
+        [data-slate-editor] {
+          touch-action: pan-y;
+        }
+        [data-slate-void='true'] img,
+        [data-slate-void='true'] mark,
+        [data-slate-void='true'] > div {
+          touch-action: pan-y;
+        }
+
+        /*
           左右分割レイアウトを解除し、フォームのみを全幅表示する。
           .SplitPane の height:auto は一見不要に見えるが、これを外すと
           .SplitPane 自身が持つ inline の overflow:hidden ＋ 固定高さ（100%）
@@ -728,29 +750,36 @@
           // フォーム操作要素・ドラッグ並び替えハンドル・クイックナビUI・
           // プルダウンの選択肢・モーダル内は、それぞれ本来の操作を優先し、
           // 自前スクロールの対象外とする。
-          // ⚠️【重要な既知の落とし穴】`[contenteditable]` という属性セレクタは
-          // 値を問わず（`contenteditable="true"` だけでなく
-          // `contenteditable="false"` にも）マッチする。本文（markdown
-          // ウィジェット）内の囲い枠・吹き出し等（registerEditorComponentの
-          // 既定`type:"shortcode"`）が挿入するSlateのvoidブロックは、
-          // 編集不可を示すために`contenteditable="false"`を持つが、これは
-          // 実際には「ユーザーが指でスワイプしてスクロールしたい、ただの
-          // 非編集領域」であり、内部にreact-selectのドロップダウンや
-          // textareaを含むとはいえ、ブロックの背景・余白部分に対する
-          // タッチは自前スクロールに処理させるべきだった。誤って
-          // `[contenteditable]`（値を問わない）でこれも除外対象に
-          // 含めてしまっていたため、これらのコンポーネントが本文に
-          // 挿入されている状態でその上（または近く）から指でスワイプを
-          // 開始すると、自前スクロール処理が完全に手を引く一方で、
-          // 実際にスクロールを担う祖先`[class*="EditorContainer"]`は
-          // `overflow:hidden`（9.7章参照、自前スクロール専用の設定）の
-          // ため、ブラウザのネイティブスクロールも一切発生せず、
-          // 「その要素より下へスクロールできない」という不具合になって
-          // いた。`[contenteditable="true"]`（値を明示）に限定することで、
-          // 本当に編集可能なテキスト領域（Slateのエディタ本体）だけを
-          // 除外し、`contenteditable="false"`のvoidブロック自体は
-          // 自前スクロールの対象に含める（＝その内部のinput/textarea/
-          // selectは引き続き別途この配列でスクロール対象外になる）。
+          // ⚠️【重要な既知の落とし穴・2段階で判明】
+          // 第1段階（旧: `[contenteditable]`）：値を問わずマッチする
+          // ため、囲い枠・吹き出し等のvoidブロック（`contenteditable=
+          // "false"`）まで誤って除外していた。`[contenteditable="true"]`
+          // に限定して修正済みだったが、これだけでは不十分だった。
+          // 第2段階（本修正）：`[contenteditable="true"]`は本文
+          // （markdownウィジェット）の**Slateエディタ本体そのもの**
+          // （`[data-slate-editor]`、本文中の通常のテキスト全体を
+          // 包む要素）にも付与されている。これを除外リストに残したままだと、
+          // 「本文入力エリア内の、装飾コンポーネントではない普通のテキスト
+          // 部分」を指で直接スワイプしても自前スクロールが一切発動せず、
+          // かつスクロールを担う祖先`[class*="EditorContainer"]`は
+          // `overflow:hidden`のためネイティブスクロールも発生しない
+          // （＝ツールバー等の外枠部分をスワイプすればスクロールするのに、
+          // 本文のテキスト部分の上だとスクロールできない、という報告と
+          // 一致）。
+          // `[contenteditable="true"]`を除外リストから完全に外し、
+          // 本文のテキスト部分も自前スクロールの対象に含める。これが
+          // カーソル位置指定（タップ）を壊さない理由：`touchmove`側の
+          // 処理（下記）は`TOUCH_MOVE_THRESHOLD`（6px）を超える移動が
+          // あった場合のみ`preventDefault`してスクロールを開始する設計に
+          // なっており、指を動かさない単純なタップ（＝カーソルを置く
+          // 操作）はこの閾値を超えないため`touchmove`側で一切介入せず、
+          // `touchend`後のブラウザ標準のクリック処理でカーソル位置は
+          // 従来どおり正しく設定される。長押しからのテキスト選択
+          // ドラッグ操作とは弁別しきれない場合があり得るが、本UIは
+          // あくまで管理画面の編集フォームであり、スクロールできない
+          // 致命的な不具合を放置するより、稀なテキスト選択操作との
+          // トレードオフを許容する方針とする（本文以外のフォーム要素
+          // でも同じ閾値ベースの判定が既に使われており、一貫した設計）。
           return !!(
             target.closest &&
             target.closest(
@@ -758,7 +787,6 @@
                 'input',
                 'textarea',
                 'select',
-                '[contenteditable="true"]',
                 '[class*="DragIconContainer"]',
                 '#cms-quick-nav-btn',
                 '#cms-quick-nav-menu',
