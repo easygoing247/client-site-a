@@ -441,7 +441,11 @@
   }
 
   .prose-content .cms-mark {
-    padding: 0 4px;
+    /* 前後の通常テキストと地続きに見えるよう、左右の余白は持たせない
+       （2026-09、以前は左右4pxのpaddingがあり、マーカー部分だけ
+       前後にわずかな隙間が空いて見える不具合があった）。 */
+    padding: 0;
+    margin: 0;
     border-radius: 3px;
   }
   .prose-content .cms-mark--yellow {

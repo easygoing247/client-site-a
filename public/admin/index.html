@@ -1499,10 +1499,42 @@
         //    （window.innerHeight - 自身のtop座標）」に強制的に一致させる
         //    ことで、Pane2・iframeもその高さに収まり、常にウィンドウ内に
         //    固定バーが表示されるようにする。
+        //    ⚠️【重要な既知の落とし穴】この処理は「PC幅でデバイス幅切替
+        //    ボタン（PC/タブレット/スマホ）を使ってプレビューだけを
+        //    スマホ幅シミュレーションする」場合にのみ必要な処理であり、
+        //    管理画面自体を実機のスマホ（実際の狭いビューポート）で
+        //    開いている場合に適用すると、別の重大な不具合を引き起こす
+        //    ことを実機検証で確認した：スマホ幅では
+        //    `[class*='ControlPaneContainer']` に `overflow: visible
+        //    !important`（本ファイル該当箇所参照。react-selectの
+        //    ドロップダウンが祖先のoverflowで見切れないようにするため
+        //    必須）が指定されており、これにより本来22000px超あるフォーム
+        //    全体の実コンテンツは「見た目には全部描画されるが、祖先要素の
+        //    レイアウト計算上の高さには反映されない」状態になる。この状態で
+        //    `.SplitPane` の高さを本処理がwindow.innerHeight基準の固定値
+        //    （例:746px）に強制すると、実際にスクロールを担う祖先
+        //    `[class*='EditorContainer']`（overflow:hidden、9.7章の自前
+        //    タッチスクロール実装の対象）の`scrollHeight`もこの固定値
+        //    近辺（実測+66px程度）に押し込まれてしまい、フォーム最下部
+        //    まで実質スクロールできなくなる（＝「スマホで編集画面を開くと
+        //    スクロールできない」不具合の直接の原因）。
+        //    対策：実機のスマホ幅（既存の`@media (max-width: 799px)`と
+        //    同じ799px基準）では、この処理を完全にスキップする（＝スマホ
+        //    幅時点で`.SplitPane`にプレビュー用の高さ強制は不要——スマホ
+        //    幅ではそもそもプレビューPane2は非表示のため、9.25が対象とした
+        //    「プレビューiframeが画面外に出る」問題自体が発生しない）。
+        //    ウィンドウ幅がPC幅↔スマホ幅をまたいでリサイズされた場合に
+        //    備え、スマホ幅に該当する場合は以前このJSが設定した強制値も
+        //    明示的に解除する（PC幅のまま残り続けて悪影響が出るのを防ぐ）。
         // ==================================================================
         function fixSplitPaneHeight() {
           var splitPane = document.querySelector('.SplitPane');
           if (!splitPane) return;
+          if (window.matchMedia('(max-width: 799px)').matches) {
+            splitPane.style.removeProperty('height');
+            splitPane.style.removeProperty('max-height');
+            return;
+          }
           var top = splitPane.getBoundingClientRect().top;
           if (top < 0) return; // スクロール等で一時的に負値になる場合は何もしない
           var available = window.innerHeight - top;

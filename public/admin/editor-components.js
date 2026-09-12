@@ -331,7 +331,7 @@
         'mark',
         {
           style: hasText
-            ? { background: MARK_HEX[obj.color] || MARK_HEX.yellow, padding: '0 3px', borderRadius: '2px' }
+            ? { background: MARK_HEX[obj.color] || MARK_HEX.yellow, padding: 0, margin: 0, borderRadius: '2px' }
             : {
                 background: 'transparent',
                 border: '1px dashed #b9c0cc',
