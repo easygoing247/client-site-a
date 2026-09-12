@@ -79,6 +79,7 @@
   var currentTheme = 'blue';
   var publishedHeaderHtml = '';
   var publishedFooterHtml = '';
+  var publishedStickyBarHtml = '';
   function loadSiteStylesheetAndTheme() {
     return fetch('/')
       .then(function (res) {
@@ -144,15 +145,22 @@
           });
         }
 
-        // --- 商品／下層ページのプレビュー用に、公開済みのヘッダー・フッターを抜き出す ---
+        // --- 商品／下層ページのプレビュー用に、公開済みのヘッダー・フッター・
+        //     画面下部固定バーを抜き出す ---
         // （innerHTML 挿入時に内部 <script> は実行されないため、ハンバーガー
         //   メニュー等の動的挙動はプレビュー上では動かないが見た目には影響しない）
+        // 画面下部固定バー（StickyContactBar.astro）は<footer>の外側の
+        // 独立した<div>のため、footerElとは別にaria-labelで直接取得する
+        // （両ボタンとも非表示設定・リンク先未設定の場合は公開ページ自体に
+        // この要素が存在しないため、その場合はプレビューにも表示されない）。
         try {
           if (parsed) {
             var headerEl = parsed.querySelector('header');
             var footerEl = parsed.querySelector('footer');
+            var stickyBarEl = parsed.querySelector('[aria-label="お問い合わせショートカット"]');
             if (headerEl) publishedHeaderHtml = headerEl.outerHTML;
             if (footerEl) publishedFooterHtml = footerEl.outerHTML;
+            if (stickyBarEl) publishedStickyBarHtml = stickyBarEl.outerHTML;
           }
         } catch (e) {
           /* DOMParser非対応環境等では諦め、ヘッダー無しのプレビューにフォールバックする */
@@ -321,6 +329,13 @@
     return customLink;
   }
 
+  // src/components/StickyContactBar.astro の buttonColorClass() と一致させること。
+  function stickyButtonColorClass(color) {
+    return color === 'accent'
+      ? 'bg-accent tracking-wide [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]'
+      : 'bg-gradient-to-br from-primary to-primary-dark';
+  }
+
   function renderStickyContactBarPreview(h, data) {
     var bar = data.stickyContactBar || {};
     var left = bar.leftButton || {};
@@ -334,7 +349,6 @@
     var showPhone = left.show && !!phoneHref;
     var showLine = right.show && !!lineHref;
     if (!showPhone && !showLine) return null;
-    var phoneIsAccent = left.color === 'accent';
 
     return h(
       'div',
@@ -347,10 +361,7 @@
             'a',
             {
               href: phoneHref,
-              className: cx(
-                'flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4',
-                phoneIsAccent ? 'bg-accent [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]' : 'bg-gradient-to-br from-primary to-primary-dark'
-              ),
+              className: cx('flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', stickyButtonColorClass(left.color)),
             },
             h(
               'svg',
@@ -365,7 +376,7 @@
         showLine &&
           h(
             'a',
-            { href: lineHref, className: 'flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] tracking-wide py-4' },
+            { href: lineHref, className: cx('flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', stickyButtonColorClass(right.color)) },
             h(
               'svg',
               { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none' },
@@ -1376,7 +1387,8 @@
         // ため、編集中のテーマ変更にそのまま追従する）。
         publishedFooterHtml
           ? h('div', htmlProp(publishedFooterHtml))
-          : h('p', { className: 'text-[12px] text-ink-faint px-8 pb-8' }, '（本番サイトからフッターを取得できませんでした。npm run build && npm run preview で確認してください）')
+          : h('p', { className: 'text-[12px] text-ink-faint px-8 pb-8' }, '（本番サイトからフッターを取得できませんでした。npm run build && npm run preview で確認してください）'),
+        publishedStickyBarHtml && h('div', htmlProp(publishedStickyBarHtml))
       );
     },
   });
@@ -1488,7 +1500,8 @@
             )
           )
         ),
-        publishedFooterHtml && h('div', htmlProp(publishedFooterHtml))
+        publishedFooterHtml && h('div', htmlProp(publishedFooterHtml)),
+        publishedStickyBarHtml && h('div', htmlProp(publishedStickyBarHtml))
       );
     },
   });
@@ -1706,7 +1719,8 @@
       { 'data-theme': currentTheme, className: 'font-sans bg-surface text-ink' },
       publishedHeaderHtml && h('div', htmlProp(publishedHeaderHtml)),
       h('main', {}, children),
-      publishedFooterHtml && h('div', htmlProp(publishedFooterHtml))
+      publishedFooterHtml && h('div', htmlProp(publishedFooterHtml)),
+      publishedStickyBarHtml && h('div', htmlProp(publishedStickyBarHtml))
     );
   }
 

@@ -245,6 +245,7 @@ stickyContactBar:
   rightButton:
     label: LINEで相談
     show: true
+    color: accent
     actionType: url
     customLink: ""
 copyright: © 2026 LOGO. All Rights Reserved.

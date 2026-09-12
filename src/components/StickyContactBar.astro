@@ -15,9 +15,11 @@
 //   ・両方表示 → 50% / 50%
 //   ・片方のみ → 100%
 //   ・両方非表示 → バー自体を描画しない
-// 左ボタンの背景色（leftButton.color）は "primary"（デザインテーマ設定の
-// テーマカラーに連動するグラデーション）／"accent"（LINE公式ブランド
-// カラーに準じたグリーン。右ボタンと同じ配色）から選べる。
+// 左右どちらのボタンも、背景カラー（leftButton.color / rightButton.color）は
+// "primary"（デザインテーマ設定のテーマカラーに連動するグラデーション）／
+// "accent"（LINE公式ブランドカラーに準じたグリーン）から選べる
+// （buttonColorClass()で共通化。既定値は左="primary"・右="accent"＝
+// これまでの固定配色と同じ見た目になるようconfig.yml側のdefaultで担保）。
 // ============================================================================
 import { site } from '../lib/site';
 import { snsUrl } from '../lib/sns';
@@ -32,13 +34,18 @@ function resolveHref(actionType: 'tel' | 'url' | 'form' | undefined, customLink:
   return customLink;
 }
 
+function buttonColorClass(color: 'primary' | 'accent' | undefined): string {
+  return color === 'accent'
+    ? 'bg-accent tracking-wide [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]'
+    : 'bg-gradient-to-br from-primary to-primary-dark';
+}
+
 const left = site.stickyContactBar.leftButton;
 const right = site.stickyContactBar.rightButton;
 const phoneHref = resolveHref(left.actionType, left.customLink, site.contact.phoneHref);
 const lineHref = resolveHref(right.actionType, right.customLink, snsUrl('line') ?? '');
 const showPhone = left.show && !!phoneHref;
 const showLine = right.show && !!lineHref;
-const phoneIsAccent = left.color === 'accent';
 ---
 
 {(showPhone || showLine) && (
@@ -51,12 +58,7 @@ const phoneIsAccent = left.color === 'accent';
       {showPhone && (
         <a
           href={phoneHref}
-          class:list={[
-            'flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4',
-            phoneIsAccent
-              ? 'bg-accent tracking-wide [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]'
-              : 'bg-gradient-to-br from-primary to-primary-dark',
-          ]}
+          class:list={['flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', buttonColorClass(left.color)]}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
@@ -70,7 +72,7 @@ const phoneIsAccent = left.color === 'accent';
       {showLine && (
         <a
           href={lineHref}
-          class="flex items-center justify-center gap-2 bg-accent text-white font-bold text-[14px] tracking-wide py-4 [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]"
+          class:list={['flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', buttonColorClass(right.color)]}
         >
           <svg
             width="18"

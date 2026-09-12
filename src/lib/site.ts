@@ -206,6 +206,8 @@ export interface SiteInfo {
     rightButton: {
       label: string;
       show: boolean;
+      /** "primary"=デザインテーマ設定のテーマカラーに連動／"accent"=LINE風グリーン（既定） */
+      color?: 'primary' | 'accent';
       actionType?: 'tel' | 'url' | 'form';
       /** 入力があれば「SNS設定」のLINE URLより優先される個別リンク先 */
       customLink?: string;

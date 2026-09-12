@@ -398,6 +398,15 @@ collections:
                 fields:
                   - { label: "ボタン文言", name: "label", widget: string, required: false }
                   - { label: "表示する", name: "show", widget: boolean, default: true }
+                  - label: "背景カラー"
+                    name: "color"
+                    widget: select
+                    default: "accent"
+                    required: false
+                    hint: "「デザインテーマ設定」に準拠したテーマカラー、またはLINE公式ブランドカラーに準じたグリーンから選べます。"
+                    options:
+                      - { label: "LINE風グリーン", value: "accent" }
+                      - { label: "テーマカラー（デザインテーマ設定に連動）", value: "primary" }
                   - label: "アクション種別"
                     name: "actionType"
                     widget: select
@@ -578,7 +587,7 @@ collections:
             "numbered-list",
           ]
         editor_components: &richTextComponents
-          ["youtube-video", "video-file", "highlight-marker", "callout-box", "speech-bubble", "aligned-text"]
+          ["image", "youtube-video", "video-file", "highlight-marker", "callout-box", "speech-bubble", "aligned-text"]
 
   # ==========================================================================
   # ③ 複数ページ版（master-template-multi）専用：下層ページのファイルコレクション
