@@ -50,12 +50,10 @@ draft: false
 
 あ
 
-
-
 う
 
 う
 
-
+<div class="cms-blank-line"></div>
 
 う
