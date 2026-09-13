@@ -634,7 +634,16 @@ collections:
             "numbered-list",
           ]
         editor_components: &richTextComponents
-          ["image", "youtube-video", "video-file", "highlight-marker", "callout-box", "speech-bubble", "aligned-text"]
+          [
+            "image",
+            "youtube-video",
+            "video-file",
+            "highlight-marker",
+            "callout-box",
+            "speech-bubble",
+            "aligned-text",
+            "blank-line",
+          ]
 
   # ==========================================================================
   # ③ 複数ページ版（master-template-multi）専用：下層ページのファイルコレクション
