@@ -1,5 +1,6 @@
 ---
 title: コーポレートサイト制作パック
+urlSlug: sample
 price: 300000
 image: ../../assets/works-corporate.jpg
 summary: 企業の信頼感を高める、情報設計から丁寧に組み立てるコーポレートサイト制作プランです。

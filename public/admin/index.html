@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913e" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260913f" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913e"></script>
+    <script src="./preview.js?v=20260913f"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913e"></script>
+    <script src="./editor-components.js?v=20260913f"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2195,6 +2195,55 @@
           }
         });
 
+        // アップロード直後にカテゴリ・タイトル・Altの登録を案内する
+        // トースト。Decap本体のアップロード処理自体（GitHubへの実際の
+        // コミット）にフックできる公開APIが無いため「アップロードが
+        // 完了したこと」を正確には検知できないが、`input[type="file"]`
+        // の`change`イベント（ボタン経由の手動選択・上記ドラッグ&
+        // ドロップの両方で発火）を「アップロードを開始したタイミング」
+        // の代理指標として使い、案内を表示する（多少タイミングが早くても
+        // 実害は無い簡易な通知のため、この近似で十分と判断した）。
+        // ⚠️ このトーストを`modal`の子要素として追加すると、実機検証で
+        // 「アップロード完了に伴うメディア一覧の再描画で、Decap側が
+        // モーダルの子要素ツリーを丸ごと作り直し、こちらが追加した
+        // 要素だけが一瞬で消えてしまう」ことを確認した（モーダル要素
+        // 自身は再利用される＝付与した目印クラスは残るが、中身は
+        // Reactの再レンダーで置き換わる）。そのため`document.body`
+        // 直下（React管理下の外）に配置し、`position: fixed`で
+        // モーダルの実測位置に重ねて表示することで、この消失を回避する。
+        function showUploadMetadataToast(modal) {
+          if (document.querySelector('.cms-media-upload-toast')) return;
+          var toast = document.createElement('div');
+          toast.className = 'cms-media-upload-toast';
+          toast.textContent = 'アップロードした画像のカテゴリ・タイトル・Altテキストは、一覧のカード右上の✎ボタン、または「メディア管理」から設定できます。';
+          var closeBtn = document.createElement('button');
+          closeBtn.type = 'button';
+          closeBtn.textContent = '×';
+          closeBtn.setAttribute('aria-label', '閉じる');
+          closeBtn.addEventListener('click', function () {
+            toast.remove();
+          });
+          toast.appendChild(closeBtn);
+          var rect = modal.getBoundingClientRect();
+          toast.style.position = 'fixed';
+          toast.style.left = rect.left + 24 + 'px';
+          toast.style.right = window.innerWidth - rect.right + 24 + 'px';
+          toast.style.bottom = window.innerHeight - rect.bottom + 16 + 'px';
+          document.body.appendChild(toast);
+          setTimeout(function () {
+            if (toast.parentElement) toast.remove();
+          }, 8000);
+        }
+
+        function wireUploadInputOnce(modal) {
+          var input = modal.querySelector('input[type="file"]');
+          if (!input || input.dataset.cmsUploadHintWired) return;
+          input.dataset.cmsUploadHintWired = '1';
+          input.addEventListener('change', function () {
+            showUploadMetadataToast(modal);
+          });
+        }
+
         // ==================================================================
         // 12) メディアライブラリの検索欄横に「カテゴリ絞り込み」を追加。
         //
@@ -2298,20 +2347,88 @@
           return null;
         }
 
+        // カテゴリ絞り込み適用時、react-virtualized（Grid）が絶対配置で
+        // 描画しているカードを単純に display:none で隠すだけだと、
+        // 各カードが元々割り当てられていた座標（left/top）はそのまま
+        // 残るため、非該当カードのあった位置に空白（歯抜け）が残る。
+        // react-virtualizedはスクロール位置に応じてセルの座標を自前で
+        // 再計算してReactの再描画のたびに上書きするため、こちらから
+        // 直接styleを書き換えて「隙間なく詰める」再配置を行っても、
+        // 次の再描画で元の座標に戻されてしまい安定しない（実装・
+        // 実機検証で確認済み）。
+        // そのため、絞り込み中は元のGrid自体を丸ごと非表示にし、
+        // 該当する画像だけを独自の通常のCSS Grid（隙間なく上から順に
+        // 自動的に詰まって並ぶ）で別途描画する方式にした。各タイルの
+        // クリックは、対応する非表示中の元カード要素へ実際に
+        // `.click()`を発火させることで、選択処理自体はDecap本体の
+        // 既存ロジックにそのまま委譲する（選択・保存に関わる処理を
+        // 独自実装しない＝安全性を損なわない）。
+        function getCardThumbnailSrc(card) {
+          var img = card.querySelector('img');
+          return img ? img.src : '';
+        }
+
         function applyMediaCategoryFilter(modal, category) {
+          var gridContainer = modal.querySelector('[class*="CardGridContainer"]');
+          var existingOverlay = modal.querySelector('.cms-media-filtered-grid');
+          if (!category) {
+            if (gridContainer) gridContainer.style.display = '';
+            if (existingOverlay) existingOverlay.remove();
+            return;
+          }
           loadMediaMetaOnce(function (meta) {
             var textEls = modal.querySelectorAll('[class*="CardText"]');
+            var matches = [];
             textEls.forEach(function (textEl) {
               var card = findCardAncestor(textEl);
               if (!card) return;
-              if (!category) {
-                card.style.display = '';
-                return;
-              }
               var filename = (textEl.textContent || '').trim();
               var entry = meta[filename];
-              card.style.display = entry && entry.category === category ? '' : 'none';
+              if (entry && entry.category === category) {
+                matches.push({ filename: filename, thumb: getCardThumbnailSrc(card), card: card });
+              }
             });
+            if (!gridContainer) return;
+            gridContainer.style.display = 'none';
+            var overlay = modal.querySelector('.cms-media-filtered-grid');
+            if (overlay) overlay.remove();
+            overlay = document.createElement('div');
+            overlay.className = 'cms-media-filtered-grid';
+            matches.forEach(function (item) {
+              // role="button"のdivにする（内部に✎ボタンも置くため、
+              // <button>のネストを避ける＝無効なHTML・クリック
+              // イベントの誤動作を防ぐ）。
+              var tile = document.createElement('div');
+              tile.setAttribute('role', 'button');
+              tile.tabIndex = 0;
+              tile.className = 'cms-media-filtered-tile';
+              tile.title = item.filename;
+              if (item.thumb) {
+                var img = document.createElement('img');
+                img.src = item.thumb;
+                img.alt = item.filename;
+                tile.appendChild(img);
+              }
+              var caption = document.createElement('p');
+              caption.textContent = item.filename;
+              tile.appendChild(caption);
+              tile.addEventListener('click', function () {
+                modal.querySelectorAll('.cms-media-filtered-tile.is-selected').forEach(function (el) {
+                  el.classList.remove('is-selected');
+                });
+                tile.classList.add('is-selected');
+                item.card.click();
+              });
+              addEditShortcutButton(tile, item.filename);
+              overlay.appendChild(tile);
+            });
+            if (!matches.length) {
+              var empty = document.createElement('p');
+              empty.className = 'cms-media-filtered-empty';
+              empty.textContent = 'このカテゴリに該当する画像はありません。';
+              overlay.appendChild(empty);
+            }
+            gridContainer.parentElement.insertBefore(overlay, gridContainer.nextSibling);
           });
         }
 
@@ -2342,6 +2459,125 @@
           searchContainer.parentElement.parentElement.insertBefore(hint, searchContainer.parentElement.nextSibling);
         }
 
+        // 「編集」ショートカット：カードの✎ボタンから「メディア管理」の
+        // 該当行へ直接ジャンプする。
+        //
+        // 本来のご要望は「メディアライブラリのカード上でその場（同じ
+        // モーダル内）でカテゴリ・タイトル・Altを編集・保存できる
+        // ようにする」ことだったが、実際に保存を成立させるには
+        // Decap本体の非公開の内部処理（persistEntry相当のRedux
+        // dispatch）を呼び出す必要があり、これは9.26-Bで確立した
+        // 「Reduxストアは読み取り専用でのみ参照し、状態変更の
+        // dispatchは一切行わない」という本プロジェクトの安全原則に
+        // 反する（公開APIの外側にある非公開の内部実装に書き込み処理を
+        // 依存させることになり、decap-cms本体のバージョンアップで
+        // 動作しなくなった場合に、単に機能が止まるだけでなく保存内容が
+        // 壊れる形で失敗するおそれがある）。そのため、実際の保存は
+        // 必ずDecap本体の正規の「公開する」ボタンを経由させることを
+        // 維持しつつ、そこに至るまでの手間（一覧から目的の項目を
+        // 探す・スクロールする・展開する）を可能な限り自動化する
+        // 「ショートカット」として実装した：
+        //   1. メディアライブラリのモーダルを閉じ、「メディア管理」の
+        //      エントリへ遷移する。
+        //   2. Reduxストア（読み取り専用）から`items`配列を参照し、
+        //      クリックした画像のファイル名と一致する既存項目があれば、
+        //      そのインデックスに対応するリスト行（DOM上の並び順は
+        //      Reduxの配列順と一致する）を自動的に展開し、画面中央へ
+        //      スクロールする。
+        //   3. 一致する項目が無い場合は「Add 画像一覧」ボタンを
+        //      自動的にクリックして新規行を追加するところまで代行する
+        //      （画像の選択自体は、既存の画像ピッカーUIをそのまま
+        //      使うため、ユーザーの最後の一手だけ残す）。
+        function jumpToMediaLibraryEntry(filename) {
+          try {
+            var modal = findOpenMediaLibraryModal();
+            if (modal) {
+              var closeBtn = modal.querySelector('button[aria-label="Close"]');
+              if (closeBtn) closeBtn.click();
+            }
+            location.hash = '#/collections/mediaLibrary/entries/mediaLibrary';
+            var attempts = 0;
+            var timer = setInterval(function () {
+              attempts++;
+              var itemsField = document.querySelector('[id^="items-field-"]');
+              if (itemsField) {
+                clearInterval(timer);
+                focusMediaLibraryItem(itemsField, filename);
+              } else if (attempts > 25) {
+                clearInterval(timer);
+              }
+            }, 200);
+          } catch (e) {}
+        }
+
+        function focusMediaLibraryItem(itemsField, filename) {
+          try {
+            var index = -1;
+            var store = findDecapReduxStore();
+            if (store && filename) {
+              var state = store.getState();
+              var entities = state && state.entries && state.entries.get && state.entries.get('entities');
+              var entry = entities && entities.get('mediaLibrary.mediaLibrary');
+              var data = entry && entry.get('data');
+              var items = data && data.get('items');
+              if (items && typeof items.toJS === 'function') {
+                var arr = items.toJS();
+                for (var i = 0; i < arr.length; i++) {
+                  if (arr[i] && arr[i].image && String(arr[i].image).split('/').pop() === filename) {
+                    index = i;
+                    break;
+                  }
+                }
+              }
+            }
+            var rows = itemsField.querySelectorAll('[class*="SortableListItem"]');
+            if (index >= 0 && rows[index]) {
+              var toggle = rows[index].querySelector('[class*="TopBarButton"]');
+              if (toggle) toggle.click();
+              rows[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+            // 一致する項目が無い＝この画像はまだ「メディア管理」に
+            // 未登録。新規行の追加まで代行する（画像選択は手動）。
+            var addButtons = document.querySelectorAll('button');
+            for (var j = 0; j < addButtons.length; j++) {
+              if ((addButtons[j].textContent || '').indexOf('Add 画像一覧') !== -1) {
+                addButtons[j].click();
+                addButtons[j].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                break;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // カード（元のGrid・カテゴリ絞り込みオーバーレイの双方）に、
+        // 上記ショートカットを起動する✎ボタンを重ねて表示する。
+        function addEditShortcutButton(card, filename) {
+          if (!card || card.querySelector('.cms-media-edit-shortcut')) return;
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cms-media-edit-shortcut';
+          btn.title = 'カテゴリ・タイトル・Altを編集（メディア管理へ）';
+          btn.textContent = '✎';
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            jumpToMediaLibraryEntry(filename);
+          });
+          var style = getComputedStyle(card);
+          if (style.position === 'static') card.style.position = 'relative';
+          card.appendChild(btn);
+        }
+
+        function addEditShortcutsToGrid(modal) {
+          var textEls = modal.querySelectorAll('[class*="CardText"]');
+          textEls.forEach(function (textEl) {
+            var card = findCardAncestor(textEl);
+            if (!card) return;
+            addEditShortcutButton(card, (textEl.textContent || '').trim());
+          });
+        }
+
         function ensureMediaCategoryFilter() {
           try {
             var modal = findOpenMediaLibraryModal();
@@ -2349,6 +2585,8 @@
             var searchContainer = modal.querySelector('[class*="SearchContainer"]');
             if (!searchContainer) return;
             ensureMediaLibraryHint(modal, searchContainer);
+            addEditShortcutsToGrid(modal);
+            wireUploadInputOnce(modal);
             if (searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
             loadMediaMetaOnce(function (meta) {
               if (searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
@@ -2541,6 +2779,105 @@
       }
       .cms-media-library-hint a:hover {
         text-decoration: underline;
+      }
+      /* 16) カテゴリ絞り込み時の「詰め表示」用オーバーレイグリッド */
+      .cms-media-filtered-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+        padding: 4px 4px 16px;
+      }
+      .cms-media-filtered-tile {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        border: 1px solid #e2e5eb;
+        border-radius: 8px;
+        background: #fff;
+        padding: 0;
+        cursor: pointer;
+        overflow: hidden;
+        text-align: left;
+        font: inherit;
+      }
+      .cms-media-filtered-tile:hover {
+        border-color: #1954e0;
+      }
+      .cms-media-filtered-tile.is-selected {
+        border-color: #1954e0;
+        box-shadow: 0 0 0 2px rgba(25, 84, 224, 0.35);
+      }
+      .cms-media-filtered-tile img {
+        width: 100%;
+        height: 120px;
+        object-fit: contain;
+        background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+        display: block;
+      }
+      .cms-media-filtered-tile p {
+        margin: 0;
+        padding: 6px 8px;
+        font-size: 11px;
+        color: #1e2330;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cms-media-filtered-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #6b7280;
+        font-size: 13px;
+        padding: 24px 0;
+      }
+      @media (max-width: 1400px) {
+        .cms-media-filtered-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      /* 17) カード上の✎（メディア管理へジャンプ）ショートカットボタン */
+      .cms-media-edit-shortcut {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 5;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        border: none;
+        background: rgba(30, 35, 48, 0.72);
+        color: #fff;
+        font-size: 13px;
+        line-height: 26px;
+        text-align: center;
+        padding: 0;
+        cursor: pointer;
+      }
+      .cms-media-edit-shortcut:hover {
+        background: #1954e0;
+      }
+      /* 18) アップロード直後の案内トースト（位置はJS側でfixed指定） */
+      .cms-media-upload-toast {
+        z-index: 2000;
+        background: #1e2330;
+        color: #fff;
+        font-size: 12px;
+        line-height: 1.6;
+        padding: 12px 36px 12px 14px;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .cms-media-upload-toast button {
+        position: absolute;
+        top: 6px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 4px;
       }
       /*
         14) メディアライブラリの横スクロール解消・5列グリッド調整。

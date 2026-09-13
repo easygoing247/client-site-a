@@ -38,6 +38,33 @@
   if (!h || !createClass || !window.CMS) return;
 
   // ==========================================================================
+  // works/news の markdown ウィジェットのプレビュー（widgetFor('body')。
+  // WorkPreview/NewsPreview が使用）は、Decap本体に内蔵された独自の
+  // remarkパイプラインでHTML化されており、本番ビルド側（astro.config.mjs
+  // の remark-breaks プラグイン）とは完全に別物のため、本番側だけを
+  // 修正しても「段落内の単一改行（Enter1回）が見た目上詰まる」問題は
+  // このプレビュー画面には反映されない。
+  // 実機検証で、Decap側が生成するHTMLの`<p>`要素には、単一改行の
+  // 箇所に**元の改行文字（\n）がテキストノードとしてそのまま残って
+  // いる**ことを確認した（`white-space: normal`の既定値のせいで
+  // ブラウザ表示上は空白1個に見えているだけで、DOM上は消えていない）。
+  // そのため、Decapのプレビュー描画にのみ付与される
+  // `[class*="WidgetPreviewContainer"]`（本番サイトには存在しない
+  // Decap内部クラス）配下の`<p>`にだけ`white-space: pre-line`を
+  // 適用し、この残存する改行文字を見た目上も改行として表示させる。
+  // 本番サイト側の`.prose-content`（global.css）には適用しない——
+  // 本番のビルド後HTMLは既に`<br>`要素として改行が明示的に挿入されて
+  // おり、`<br>`直後にも同じ理由で改行文字が残っているため、ここに
+  // `white-space: pre-line`を適用すると`<br>`と残存改行文字の両方が
+  // 改行として扱われ、意図せず二重改行（空行）になってしまう
+  // （本番側は`<br>`という確実な手段が既にあるため、この保険的な
+  // CSSは不要かつ有害）。
+  window.CMS.registerPreviewStyle(
+    '[class*="WidgetPreviewContainer"] p { white-space: pre-line; }',
+    { raw: true }
+  );
+
+  // ==========================================================================
   // 「お知らせ」「実績・活用事例」記事のURLスラッグに日本語（非ASCII）が
   // 紛れ込むのを防ぐ。config.yml の news / works コレクションは、記事
   // タイトルからではなくフォームの「URL用識別子（半角英数字）」フィールド
@@ -90,14 +117,40 @@
       .replace(/(<\/mark>|<\/div>|<\/video>)\n{2,}/g, '$1\n');
   }
 
+  // urlSlug（works / news が持つ「URL用識別子」）を空欄のまま保存した
+  // 場合、ランダムな識別子を自動採番してファイル名が壊れないようにする
+  // 補正（9.3参照）。当初は `data.has('urlSlug')` で対象コレクション
+  // かどうかを判定していたが、実機検証で **preSave の `args` には
+  // `entry` と `author` しか含まれず、コレクション情報が一切渡されない**
+  // こと、および **`default:` を持たないフィールド（`urlSlug` 等）は、
+  // ユーザーが一度もフォーカス／入力していない場合、エントリの
+  // `data` Immutable Map に**キー自体が存在しない**（`has()` が
+  // `false` を返す）ことを確認した。つまり「新規作成→タイトルだけ
+  // 入力してURL識別子欄には一切触れず即座に公開」という、最も
+  // ありがちな操作パターンでこの安全策が発動せず、`slug:
+  // "{{fields.urlSlug}}"` が空文字のまま評価されて `.md`（ファイル名が
+  // 拡張子のみ）という不可視ファイルが生成される実害を実機で再現した
+  // （Astro の Content Collections はこの種のファイルを検出せず、
+  // 静的サイトに一切反映されない＝「新規作成したのに表示されない」の
+  // 実例だった）。
+  // 対策：`has()` によるコレクション判定をやめ、代わりに現在の画面の
+  // ハッシュ（`#/collections/<name>/...`）からコレクション名を判定する
+  // （postSave 側の `pendingCreateNewCollection` 判定と同じ手法）。
+  // これなら `urlSlug` フィールドが一度も触れられていなくても、
+  // 「works / news エントリの保存である」という事実さえ分かれば
+  // 確実に値を検査・補正できる。
+  var URLSLUG_COLLECTIONS = ['works', 'news'];
+
   window.CMS.registerEventListener({
     name: 'preSave',
     handler: function (args) {
       var entry = args && args.entry;
       var data = entry && typeof entry.get === 'function' ? entry.get('data') : undefined;
-      if (!data || typeof data.has !== 'function') return data;
+      if (!data || typeof data.set !== 'function') return data;
 
-      if (data.has('urlSlug')) {
+      var collectionMatch = location.hash.match(/^#\/collections\/([^/]+)/);
+      var collectionName = collectionMatch ? collectionMatch[1] : null;
+      if (collectionName && URLSLUG_COLLECTIONS.indexOf(collectionName) !== -1) {
         var urlSlug = data.get('urlSlug');
         if (!(typeof urlSlug === 'string' && urlSlug.trim())) {
           var random = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
@@ -105,7 +158,7 @@
         }
       }
 
-      if (data.has('body') && typeof data.get('body') === 'string') {
+      if (typeof data.has === 'function' && data.has('body') && typeof data.get('body') === 'string') {
         data = data.set('body', collapseDecorationBlankLines(data.get('body')));
       }
 

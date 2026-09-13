@@ -181,6 +181,7 @@ export interface SiteInfo {
     breadcrumbHome: string;
     specsHeading: string;
     ctaLabel: string;
+    ctaHref: string;
   };
   ui: {
     privacyPolicyLabel: string;

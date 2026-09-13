@@ -450,6 +450,7 @@ collections:
               - { label: "パンくずリストの「トップ」表示名", name: "breadcrumbHome", widget: string, required: false }
               - { label: "「仕様・含まれる内容」見出し（実績詳細ページ）", name: "specsHeading", widget: string, required: false }
               - { label: "相談CTAボタン文言（実績詳細ページ）", name: "ctaLabel", widget: string, required: false }
+              - { label: "相談CTAボタンのリンク先（実績詳細ページ）", name: "ctaHref", widget: string, required: false, default: "/#contact", hint: "未入力の場合はトップページのお問い合わせセクション（/#contact）へリンクします。" }
 
       - name: "siteSettings"
         label: "デザインテーマ設定（site-settings.json）"
@@ -600,6 +601,7 @@ collections:
         name: "body"
         widget: markdown
         required: false
+        hint: "※個別ページに掲載されている「このプランで相談する ›」ボタンの表記やリンク先を変更する場合は、「サイト全体設定」＞「共通文言・実績詳細ページ」から設定を行ってください（このコレクションの個別項目からは変更できません）。"
         # ツールバーはよく使う項目のみに絞り、意味の近い順にグループ化
         # （太字系→見出し→引用→リスト）。「+」ボタン（コンポーネント追加）
         # から挿入できるカスタムブロックは editor_components で個別に登録

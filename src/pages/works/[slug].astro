@@ -94,7 +94,7 @@ const { Content } = await work.render();
 
         {site.productPage.ctaLabel && (
           <a
-            href="/#contact"
+            href={site.productPage.ctaHref || '/#contact'}
             class="inline-flex items-center gap-2 text-white font-bold text-[15px] px-8 py-4 rounded-full bg-gradient-to-br from-primary to-primary-dark"
           >
             {site.productPage.ctaLabel} <span aria-hidden="true">›</span>

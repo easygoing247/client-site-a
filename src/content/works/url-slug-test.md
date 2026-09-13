@@ -1,5 +1,6 @@
 ---
 title: URL半角英数字で自動入力される？
+urlSlug: url-slug-test
 price: 100000
 image: ../../assets/uploadtest-image.png
 summary: URL用識別子には何も入力せず
