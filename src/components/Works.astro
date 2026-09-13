@@ -5,7 +5,9 @@
 // （/works/[slug]）が実在するため、カード自体が /works/[slug] へのリンクになる。
 // ・表示件数は site.works.count（先頭N件。既定3）。
 // ・並び順は site.works.order（CMS「表示順序」リストのドラッグ&ドロップ）を
-//   優先し、未掲載の実績は order（数値フィールド）→ 登録順でその後ろに続く。
+//   優先し、未掲載の実績は公開日の新しい順でその後ろに続く（個別記事側の
+//   数値「表示順」フィールドは、この表示順序リストへ一本化されたことに伴い
+//   9.38で廃止した）。
 // ・PC表示の並列カード枚数は site.works.columns（既定3、1〜3）。表示件数が
 //   その枚数を超える場合は、両端の矢印クリック／フリック／下部ドット
 //   インジケーターでスライド閲覧する（外部ライブラリ不使用：CSS
@@ -30,7 +32,7 @@ const columns = Math.min(3, Math.max(1, Math.floor(Number(site.works.columns)) |
 const allWorks = await getCollection('works');
 
 // 「表示順序」（CMSでドラッグ&ドロップした slug のリスト）を優先し、
-// そこに無い実績は従来の order（数値）→ 登録順でその後ろに続ける。
+// そこに無い実績は公開日の新しい順でその後ろに続ける。
 const orderList = (site.works.order ?? []).filter(
   (slug): slug is string => !!slug && String(slug).trim() !== ''
 );
@@ -46,16 +48,7 @@ orderList.forEach((slug) => {
 });
 allWorks
   .filter((w) => !seen.has(w.slug))
-  .sort((a, b) => {
-    // 「表示順序」（order）は既定値が全実績共通で0のため、明示的に
-    // 数値を設定していない新規作成の実績同士は order だけでは順序が
-    // 定まらない。その場合は公開日が新しいものを優先することで、
-    // 未キュレーションの新着実績が「登録順（＝多くの場合ファイル名の
-    // 辞書順）」に埋もれて表示件数の枠から漏れるのを防ぐ。
-    const orderDiff = a.data.order - b.data.order;
-    if (orderDiff !== 0) return orderDiff;
-    return (b.data.publishedAt?.getTime() ?? 0) - (a.data.publishedAt?.getTime() ?? 0);
-  })
+  .sort((a, b) => (b.data.publishedAt?.getTime() ?? 0) - (a.data.publishedAt?.getTime() ?? 0))
   .forEach((w) => ordered.push(w));
 
 const works = ordered.slice(0, count);

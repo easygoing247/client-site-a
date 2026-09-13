@@ -62,7 +62,6 @@ const works = defineCollection({
       image: image().optional(),
       summary: z.string().optional(),
       specs: z.array(z.string()).default([]),
-      order: cmsNumberWithDefault(0),
       publishedAt: cmsDateOptional,
     }),
 });

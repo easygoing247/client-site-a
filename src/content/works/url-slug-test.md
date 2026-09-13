@@ -6,7 +6,6 @@ image: ../../assets/uploadtest-image.png
 summary: URL用識別子には何も入力せず
 specs:
   - これが付いてます
-order: 1
 publishedAt: 2026-09-13T13:29:00.000+09:00
 ---
 ちゃんと英数字でURL作られた？
