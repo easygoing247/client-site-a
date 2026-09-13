@@ -69,8 +69,8 @@ works:
   count: 10
   columns: 3
   order:
-    - lp-package
     - "-2"
+    - lp-package
     - sample
     - url-slug-test
     - テスト２テスト２テスト２テスト２
