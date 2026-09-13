@@ -1,6 +1,6 @@
 ---
 title: 明日の天気はきっと晴れだろう
-urlSlug: co0whwxifq
+urlSlug: whatistomorrowweather
 price: 5000
 image: ../../assets/2026-09-13_13h13_17.png
 summary: テスト投稿です。
