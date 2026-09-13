@@ -71,6 +71,7 @@ works:
   order:
     - "-2"
     - sample
+    - ""
     - lp-package
     - テスト２テスト２テスト２テスト２
 plans:
