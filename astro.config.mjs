@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import remarkBreaks from 'remark-breaks';
+import rehypeMarkBlankParagraphs from './src/lib/rehypeMarkBlankParagraphs.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -122,6 +123,18 @@ export default defineConfig({
     // 境界として扱われる。remark-breaksが変換するのは「同じ段落内の」
     // 単一改行のみ）。
     remarkPlugins: [remarkBreaks],
+    // Enterキーを2回押して作った意図的な空行が「テキストの行間が
+    // 広がっただけ」に見えてしまう不具合の修正（9.48）。Decap CMSの
+    // Slateエディタは、意図的に空けた行をゼロ幅スペース（U+200B）だけを
+    // 内容に持つ`<p>`としてMarkdownへシリアライズすることがあり、この
+    // 段落は`.prose-content p`の一律のmargin-bottom（9.41）をそのまま
+    // 受け取ってしまうため、直前の段落のmargin＋この段落自身の行の
+    // 高さ＋この段落自身のmarginが単純に積み重なり、意図した「空行
+    // 1つぶん」よりも明らかに広い余白（実測で約3倍）になっていた。
+    // このrehypeプラグイン（src/lib/rehypeMarkBlankParagraphs.mjs）が
+    // ビルド時にそのような段落を検出して`prose-blank-line`クラスを
+    // 付与し、CSS側（global.css）でちょうど1行ぶんの高さに揃える。
+    rehypePlugins: [rehypeMarkBlankParagraphs],
   },
   build: {
     // サイト全体で共有する CSS は1ファイル約20KB（gzip 約5KB）と小さいため、

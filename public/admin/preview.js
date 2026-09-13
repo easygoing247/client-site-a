@@ -60,7 +60,17 @@
   // （本番側は`<br>`という確実な手段が既にあるため、この保険的な
   // CSSは不要かつ有害）。
   window.CMS.registerPreviewStyle(
-    '[class*="WidgetPreviewContainer"] p { white-space: pre-line; }',
+    '[class*="WidgetPreviewContainer"] p { white-space: pre-line; }' +
+      // Enterキーを2回押して作った意図的な空行（ゼロ幅スペースのみの
+      // <p>）を、テキストのmarginが広がっただけに見せず「空行1行ぶん」
+      // の実体として見せるための対応（9.48）。判定自体は
+      // markBlankParagraphsInPreview()（このファイル内）がJSで
+      // `.cms-preview-blank-line`クラスを付与し、ここではそのクラスの
+      // 見た目だけを定義する（global.cssの`.prose-blank-line`と同じ
+      // 考え方）。プレビュー側はDecapが挿入するインラインstyle等と
+      // 詳細度で競合する場合があるため`!important`を付けている。
+      '.prose-content p.cms-preview-blank-line { margin: 0 !important; height: 1.9em !important; white-space: normal !important; }' +
+      '.prose-content p:has(+ p.cms-preview-blank-line) { margin-bottom: 0 !important; }',
     { raw: true }
   );
 
@@ -433,6 +443,42 @@
         link.addEventListener('click', function () {
           setMenu(false);
         });
+      });
+    } catch (e) {
+      /* iframeが未マウント・クロスオリジン等で参照できない場合は諦める */
+    }
+  }
+
+  // ==========================================================================
+  // 本文プレビュー（works/newsのmarkdownウィジェット）内で、Enterキーを
+  // 2回押して作った意図的な空行が「テキストの行間が広がっただけ」に
+  // 見えないようにする（2026-09、9.48）。本番ビルド側は
+  // src/lib/rehypeMarkBlankParagraphs.mjs（rehypeプラグイン）で対応
+  // 済みだが、このプレビューはDecap本体の内蔵markdownレンダラーが
+  // widgetFor('body')経由で直接生成するReact要素であり、Astroの
+  // remark/rehypeパイプラインを一切通らないため、production側の
+  // 修正だけでは反映されない（プレビューが別レンダリング経路を持つ、
+  // 7章で既出の制約と同じ構図）。
+  //
+  // Decap CMSのSlateエディタは、意図的に空けた行をゼロ幅スペース
+  // （U+200B）だけを内容に持つ`<p>`としてシリアライズすることがあり、
+  // このプレビューでも同じ構造（`<p>​</p>`）がそのままReact要素として
+  // 描画される。CSSの`:has()`は使えても、CSSだけでは「テキストノードの
+  // 中身がゼロ幅スペースだけかどうか」までは判定できないため、
+  // `activateStaticHeaderMenu()`と同じ「iframeへ直接手を伸ばして
+  // DOMを調べ、目印クラスを付与する」方式で対応する。スタイル自体は
+  // このファイル冒頭の`registerPreviewStyle`に登録済みのCSS
+  // （`.cms-preview-blank-line`他）が担当する。
+  var ZERO_WIDTH_SPACE_RE = /​/g;
+  function markBlankParagraphsInPreview() {
+    try {
+      var iframe = document.querySelector('.Pane2 iframe');
+      var doc = iframe && iframe.contentDocument;
+      if (!doc) return;
+      doc.querySelectorAll('.prose-content p').forEach(function (p) {
+        var text = p.textContent || '';
+        var isBlank = text.length > 0 && text.replace(ZERO_WIDTH_SPACE_RE, '').trim() === '';
+        p.classList.toggle('cms-preview-blank-line', isBlank);
       });
     } catch (e) {
       /* iframeが未マウント・クロスオリジン等で参照できない場合は諦める */
@@ -1675,9 +1721,11 @@
         if (!self._unmounted) self.forceUpdate();
       });
       activateStaticHeaderMenu();
+      markBlankParagraphsInPreview();
     },
     componentDidUpdate: function () {
       activateStaticHeaderMenu();
+      markBlankParagraphsInPreview();
     },
     componentWillUnmount: function () {
       this._unmounted = true;
@@ -1993,9 +2041,11 @@
           if (!self._unmounted) self.forceUpdate();
         });
         activateStaticHeaderMenu();
+        markBlankParagraphsInPreview();
       },
       componentDidUpdate: function () {
         activateStaticHeaderMenu();
+        markBlankParagraphsInPreview();
       },
       componentWillUnmount: function () {
         this._unmounted = true;

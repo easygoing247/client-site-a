@@ -374,6 +374,25 @@
   .prose-content p:has(> br:only-child) {
     min-height: 1.9em;
   }
+  /* Enterキーを2回押して作った意図的な空行が、単に段落marginが広がった
+     だけに見えず「空行1つぶん」の実体を持つ1行として表示されるように
+     する（2026-09、9.48）。Decap CMSがこの種の空行をゼロ幅スペースの
+     みを内容に持つ<p>としてMarkdownへシリアライズすることがあり、
+     ビルド時のrehypeプラグイン（src/lib/rehypeMarkBlankParagraphs.mjs）
+     がその段落を検出して`prose-blank-line`クラスを付与する。この段落
+     自体の高さ（本文の行送りぶん）をそのまま「空行1行」として使い、
+     margin自体は持たせない（直前の段落のmarginと二重に積み重なって
+     空行3行ぶんのように見えてしまう不具合が実機検証で確認されたため）。
+     さらに、この空行の直前にある段落（直前が別の空行の場合も含む）の
+     margin-bottomも打ち消し、「段落マージン＋空行の高さ＋空行自身の
+     マージン」の二重・三重計上を避ける。 */
+  .prose-content p.prose-blank-line {
+    margin: 0;
+    height: 1.9em;
+  }
+  .prose-content p:has(+ p.prose-blank-line) {
+    margin-bottom: 0;
+  }
   .prose-content h1,
   .prose-content h2,
   .prose-content h3,
