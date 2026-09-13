@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260913b" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913"></script>
+    <script src="./preview.js?v=20260913b"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913"></script>
+    <script src="./editor-components.js?v=20260913b"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2114,7 +2114,218 @@
           },
         });
         window.addEventListener('load', restoreScrollPositionAfterReload);
+
+        // ==================================================================
+        // 11) メディアライブラリへのドラッグ&ドロップアップロード対応。
+        //
+        //     decap-cms@3.16.2 本体バンドルを解析した結果、メディア
+        //     ライブラリのモーダルには react-dropzone 等のドラッグ&
+        //     ドロップアップロード機構が組み込まれておらず（"Dropzone"
+        //     文字列自体がバンドル中に存在しない）、既定では「アップロード
+        //     する」ボタン経由の `<input type="file">` からの選択のみが
+        //     アップロード手段であることを確認した。
+        //
+        //     実装方針：ドロップされたファイルをこちらで直接GitHubへ
+        //     アップロードする（＝Decap本体の保存処理を再実装する）のは
+        //     リスクが高いため行わない。代わりに、モーダル内の既存の
+        //     `<input type="file">`（"アップロードする"ボタンの実体）に
+        //     対して、ドロップされたファイル群を `DataTransfer` 経由で
+        //     セットし、`change` イベントを発火させることで、Decap自身の
+        //     既存のアップロード処理をそのまま起動させる（安全性は
+        //     ボタンをクリックして手動でファイルを選択した場合と完全に
+        //     同一）。
+        //
+        //     対象の判定：開いているモーダル（`[class*="StyledModal"]`。
+        //     ハッシュ化されたクラス名のため前方一致で判定する既存の
+        //     `findScrollContainer()` 等と同じ方式）の中に
+        //     `input[type="file"]` が存在する場合のみ、そのモーダルを
+        //     ドロップ対象として扱う（メディアライブラリ以外のモーダルを
+        //     誤って対象にしないためのガード）。
+        // ==================================================================
+        function findOpenMediaLibraryModal() {
+          var modals = document.querySelectorAll('[class*="StyledModal"]');
+          for (var i = 0; i < modals.length; i++) {
+            if (modals[i].querySelector('input[type="file"]')) return modals[i];
+          }
+          return null;
+        }
+
+        var mediaDropHighlightClass = 'cms-media-drop-active';
+
+        document.addEventListener('dragover', function (e) {
+          if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') === -1) return;
+          var modal = findOpenMediaLibraryModal();
+          if (!modal) return;
+          e.preventDefault();
+          modal.classList.add(mediaDropHighlightClass);
+        });
+
+        document.addEventListener('dragleave', function (e) {
+          var modal = findOpenMediaLibraryModal();
+          if (modal && e.target === modal) modal.classList.remove(mediaDropHighlightClass);
+        });
+
+        document.addEventListener('drop', function (e) {
+          if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+          var modal = findOpenMediaLibraryModal();
+          if (!modal) return;
+          e.preventDefault();
+          modal.classList.remove(mediaDropHighlightClass);
+          var input = modal.querySelector('input[type="file"]');
+          if (!input) return;
+          try {
+            var dt = new DataTransfer();
+            Array.prototype.forEach.call(e.dataTransfer.files, function (file) {
+              dt.items.add(file);
+            });
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+          } catch (err) {
+            // DataTransfer未対応の古いブラウザ等では、ドラッグ&ドロップは
+            // 諦め、従来どおり「アップロードする」ボタンでの選択を促す
+            // （例外を投げず静かにフォールバックする）。
+          }
+        });
+
+        // ==================================================================
+        // 12) メディアライブラリの検索欄横に「カテゴリ絞り込み」を追加。
+        //
+        //     画像ごとのカテゴリは「メディア管理」コレクション
+        //     （src/data/mediaLibrary.yml）で管理するが、Decap本体の
+        //     Reduxストアはそのエントリを一度も開いていないと未ロード
+        //     のまま（実機検証で確認済み：起動直後は最初に表示された
+        //     コレクションのエントリしか entities に載らない）。
+        //     そのため9.26-BのようなRedux直読みには依存せず、既存の
+        //     「本番公開済みデータの流用」パターン（preview.js の
+        //     loadSiteStylesheetAndTheme() と同じ考え方）を踏襲し、
+        //     ビルド時に静的生成される `/media-library.json`
+        //     （src/pages/media-library.json.ts）を同一オリジンから
+        //     fetch して参照する。この方式は「最後にビルド・デプロイ
+        //     した時点のカテゴリ情報」を参照する点に注意（＝メディア
+        //     管理でカテゴリを変更した直後は、再ビルド・再デプロイ
+        //     するまでこのフィルターには反映されない。他の「公開済み
+        //     HTML流用」プレビューと同じ既知の制約）。
+        //
+        //     絞り込みは表示中のカードを display:none で隠すだけの
+        //     純粋な見た目上の処理で、Decapの選択・アップロード処理には
+        //     一切干渉しない（安全）。
+        // ==================================================================
+        var CMS_MEDIA_CATEGORY_LABELS = {
+          logo: 'ロゴ・アイコン',
+          hero: 'ヒーロー・背景',
+          service: 'サービス・商品',
+          works: '実績・事例',
+          people: 'スタッフ・人物',
+          news: 'お知らせ・ブログ',
+          other: 'その他',
+        };
+        var cmsMediaMetaCache = null;
+        var cmsMediaMetaFetching = false;
+
+        function loadMediaMetaOnce(callback) {
+          if (cmsMediaMetaCache) {
+            callback(cmsMediaMetaCache);
+            return;
+          }
+          if (cmsMediaMetaFetching) return;
+          cmsMediaMetaFetching = true;
+          fetch('/media-library.json')
+            .then(function (res) {
+              return res.ok ? res.json() : {};
+            })
+            .then(function (json) {
+              cmsMediaMetaCache = json || {};
+              cmsMediaMetaFetching = false;
+              callback(cmsMediaMetaCache);
+            })
+            .catch(function () {
+              cmsMediaMetaCache = {};
+              cmsMediaMetaFetching = false;
+            });
+        }
+
+        function findCardAncestor(el) {
+          var node = el.parentElement;
+          while (node && node.classList) {
+            for (var i = 0; i < node.classList.length; i++) {
+              if (/-Card$/.test(node.classList[i])) return node;
+            }
+            node = node.parentElement;
+          }
+          return null;
+        }
+
+        function applyMediaCategoryFilter(modal, category) {
+          loadMediaMetaOnce(function (meta) {
+            var textEls = modal.querySelectorAll('[class*="CardText"]');
+            textEls.forEach(function (textEl) {
+              var card = findCardAncestor(textEl);
+              if (!card) return;
+              if (!category) {
+                card.style.display = '';
+                return;
+              }
+              var filename = (textEl.textContent || '').trim();
+              var entry = meta[filename];
+              card.style.display = entry && entry.category === category ? '' : 'none';
+            });
+          });
+        }
+
+        function ensureMediaCategoryFilter() {
+          try {
+            var modal = findOpenMediaLibraryModal();
+            if (!modal) return;
+            var searchContainer = modal.querySelector('[class*="SearchContainer"]');
+            if (!searchContainer || searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
+            loadMediaMetaOnce(function (meta) {
+              if (searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
+              var usedCategories = {};
+              Object.keys(meta).forEach(function (filename) {
+                if (meta[filename] && meta[filename].category) usedCategories[meta[filename].category] = true;
+              });
+              if (!Object.keys(usedCategories).length) return; // まだ何もタグ付けされていなければ表示しない
+              var select = document.createElement('select');
+              select.className = 'cms-media-category-filter';
+              var allOption = document.createElement('option');
+              allOption.value = '';
+              allOption.textContent = 'すべてのカテゴリ';
+              select.appendChild(allOption);
+              Object.keys(CMS_MEDIA_CATEGORY_LABELS).forEach(function (value) {
+                if (!usedCategories[value]) return;
+                var opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = CMS_MEDIA_CATEGORY_LABELS[value];
+                select.appendChild(opt);
+              });
+              select.addEventListener('change', function () {
+                applyMediaCategoryFilter(modal, select.value);
+              });
+              searchContainer.parentElement.insertBefore(select, searchContainer.nextSibling);
+            });
+          } catch (e) {}
+        }
+
+        var mediaCategoryFilterObserver = new MutationObserver(ensureMediaCategoryFilter);
+        mediaCategoryFilterObserver.observe(document.body, { childList: true, subtree: true });
       })();
     </script>
+    <style>
+      /* 11) メディアライブラリへドラッグ中であることを示す視覚的フィードバック */
+      [class*='StyledModal'].cms-media-drop-active {
+        outline: 3px dashed var(--color-primary, #1954e0) !important;
+        outline-offset: -3px;
+      }
+      /* 12) メディアライブラリのカテゴリ絞り込みセレクト */
+      .cms-media-category-filter {
+        margin-left: 8px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        border: 1px solid #d5d5d5;
+        font-size: 13px;
+        background: #fff;
+        color: #1e2330;
+      }
+    </style>
   </body>
 </html>

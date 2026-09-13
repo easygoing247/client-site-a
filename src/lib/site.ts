@@ -262,17 +262,28 @@ const navHrefToPageHeading: Partial<Record<string, string | undefined>> = {
   '/news': newsPage.heading,
 };
 
+// ============================================================================
+// 表示名の優先順位：
+//   1. 対象が「下層ページ編集」の各ページ（/services 等）へのリンクの場合、
+//      既定では対応ページの「ページ見出し」を表示名として使う。
+//   2. ナビ項目側の「表示名」フィールドに入力があれば、それを優先して
+//      上書きする（個別に別の表記へ差し替えたい場合のみ入力すればよい）。
+//   3. どちらも空の項目（リンク先・表示名が両方未入力）は表示しない。
+// これにより「表示名」フィールドは省略可能な上書き用途に変わるため、
+// 未入力を理由に項目ごと非表示にしていた旧ロジックの `!item.label` 判定は
+// 撤廃している。
+// ============================================================================
 export function visibleNavItems<T extends { href: string; label: string }>(items: T[]): T[] {
   return (items ?? [])
-    .filter((item) => {
-      // 表示名・リンク先のどちらかが未入力の項目は表示しない
-      if (!item.label || !item.href) return false;
-      const flag = navHrefToFeatureFlag[item.href];
-      // 対応するセクションフラグが無いリンク（外部リンク等）は常に表示する
-      return flag === undefined || site.features[flag];
-    })
     .map((item) => {
+      if (!item.href) return null;
       const pageHeading = navHrefToPageHeading[item.href];
-      return pageHeading ? { ...item, label: pageHeading } : item;
-    });
+      const label = item.label || pageHeading;
+      if (!label) return null;
+      const flag = navHrefToFeatureFlag[item.href];
+      // 対応するセクションフラグが無いリンク（外部リンク・下層ページ等）は常に表示する
+      if (flag !== undefined && !site.features[flag]) return null;
+      return { ...item, label };
+    })
+    .filter((item): item is T => item !== null);
 }

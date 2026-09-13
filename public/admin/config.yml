@@ -148,7 +148,8 @@ collections:
                 name: "order"
                 widget: list
                 required: false
-                hint: "ドラッグ&ドロップで並び替えると、トップページでの表示順に反映されます。ここに追加していない実績（または新しく作成した実績）は、この一覧の後ろに登録順で表示されます。"
+                summary: "{{fields.item}}"
+                hint: "ドラッグ&ドロップで並び替えると、トップページでの表示順に反映されます。ここに追加していない実績（または新しく作成した実績）は、この一覧の後ろに登録順で表示されます。各行には選択中の実績のURL用識別子（例：corporate-site-renewal）が表示されます。"
                 field:
                   label: "実績"
                   name: "item"
@@ -341,8 +342,9 @@ collections:
             name: "nav"
             widget: list
             required: false
+            hint: "リンク先が「下層ページ編集」の各ページ（/services 等）の場合、「表示名」が未入力ならそのページの「ページ見出し」が自動的に表示されます。個別の表記にしたい場合のみ「表示名」を入力してください。トップページ内セクションへのリンク（例：/#works）は対応する「ページ見出し」が無いため、表示名の入力が必要です。"
             fields:
-              - { label: "表示名", name: "label", widget: string, required: false }
+              - { label: "表示名", name: "label", widget: string, required: false, hint: "※未入力の場合は「下層ページ編集」の「ページ見出し」が反映されます。個別の表記にしたい場合のみ入力してください。" }
               - { label: "リンク先", name: "href", widget: string, required: false }
 
           - label: "ヘッダーCTAボタン"
@@ -356,8 +358,9 @@ collections:
             name: "footerNav"
             widget: list
             required: false
+            hint: "リンク先が「下層ページ編集」の各ページ（/services 等）の場合、「表示名」が未入力ならそのページの「ページ見出し」が自動的に表示されます。個別の表記にしたい場合のみ「表示名」を入力してください。トップページ内セクションへのリンク（例：/#works）は対応する「ページ見出し」が無いため、表示名の入力が必要です。"
             fields:
-              - { label: "表示名", name: "label", widget: string, required: false }
+              - { label: "表示名", name: "label", widget: string, required: false, hint: "※未入力の場合は「下層ページ編集」の「ページ見出し」が反映されます。個別の表記にしたい場合のみ入力してください。" }
               - { label: "リンク先", name: "href", widget: string, required: false }
 
           - label: "画面下部固定バー"
@@ -526,6 +529,46 @@ collections:
                   - { label: "両方に表示", value: "both" }
 
   # ==========================================================================
+  # ②a-2 単一ファイルコレクション：「メディア管理」
+  #    Decap CMS の既定メディアライブラリ（画像フィールドを開いた時の選択・
+  #    アップロードモーダル）には、画像1枚ごとに「カテゴリ」「タイトル」
+  #    「Altテキスト」を保存する仕組みが無く（公開APIの範囲では既定の
+  #    アセットピッカーを安全に拡張する手段が無いため未対応。詳細は
+  #    CLAUDE.md 9.32 参照）、代わりにこのコレクションで画像ごとの
+  #    メタデータを一覧管理する。素材を選んで登録するだけで、カテゴリ別に
+  #    ドラッグ&ドロップで並び替え・追加・削除ができる。
+  # ==========================================================================
+  - name: "mediaLibrary"
+    label: "メディア管理"
+    files:
+      - name: "mediaLibrary"
+        label: "画像メタデータ一覧"
+        file: "src/data/mediaLibrary.yml"
+        fields:
+          - label: "画像一覧"
+            name: "items"
+            widget: list
+            required: false
+            summary: "{{fields.title}}"
+            hint: "画像ごとに「カテゴリ」「画像タイトル」「Altテキスト」を登録・管理できます。ドラッグ&ドロップで並び替え、「+ 画像」で追加、ゴミ箱アイコンで削除できます（各ページの画像フィールド自体はこれまでどおり個別に選択します。ここでの登録は検索・整理用のメタデータ管理です）。"
+            fields:
+              - { label: "画像", name: "image", widget: image, required: false }
+              - label: "カテゴリ"
+                name: "category"
+                widget: select
+                required: false
+                options:
+                  - { label: "ロゴ・アイコン", value: "logo" }
+                  - { label: "ヒーロー・背景", value: "hero" }
+                  - { label: "サービス・商品", value: "service" }
+                  - { label: "実績・事例", value: "works" }
+                  - { label: "スタッフ・人物", value: "people" }
+                  - { label: "お知らせ・ブログ", value: "news" }
+                  - { label: "その他", value: "other" }
+              - { label: "画像タイトル", name: "title", widget: string, required: false }
+              - { label: "Altテキスト（代替テキスト）", name: "alt", widget: string, required: false }
+
+  # ==========================================================================
   # ②b フォルダコレクション：型化ページ（works）＝実績・活用事例を追加・編集・削除
   # ==========================================================================
   - name: "works"
@@ -606,7 +649,7 @@ collections:
         file: "src/data/services.yml"
         fields:
           - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "サービス内容・料金", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false }
+          - { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "「サービス詳細」セクションの見出し", name: "itemsHeading", widget: string, required: false, default: "サービス内容", hint: "サービス詳細（画像＋説明）の一覧の上に表示される見出し。空欄にすると「サービス内容」を表示します。" }
           - label: "サービス詳細"
@@ -652,7 +695,7 @@ collections:
         file: "src/data/about.yml"
         fields:
           - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "会社概要", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false }
+          - { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - label: "セクションの表示・非表示"
             name: "sections"
@@ -703,7 +746,7 @@ collections:
         file: "src/data/contactPage.yml"
         fields:
           - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "お問い合わせ・ご予約", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false }
+          - { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
           - { label: "フォーム上部の案内文（Enterキーで改行可）", name: "intro", widget: text, required: false }
           - label: "ご予約・お問い合わせの注意事項"
             name: "notes"
@@ -806,7 +849,7 @@ collections:
         file: "src/data/newsPage.yml"
         fields:
           - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "お知らせ一覧ページ", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false, default: "お知らせ" }
+          - { label: "ページ見出し", name: "heading", widget: string, required: false, default: "お知らせ", hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "一覧セクションの見出し", name: "listHeading", widget: string, required: false, default: "お知らせ一覧", hint: "カテゴリ絞り込み・記事一覧の直前に表示される見出し。空欄にすると「お知らせ一覧」を表示します。" }
 

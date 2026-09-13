@@ -851,7 +851,22 @@
               'p',
               { className: 'text-center text-[13px] text-ink-faint' },
               '（商品カードを取得できませんでした。「商品作成」コレクションを確認してください）'
+            ),
+        section.linkLabel &&
+          section.linkHref &&
+          h(
+            'div',
+            { className: 'text-center mt-10' },
+            h(
+              'a',
+              {
+                href: section.linkHref,
+                className:
+                  'inline-flex items-center justify-center gap-2 font-bold text-[15px] px-8 py-4 rounded-full text-primary bg-white border border-primary',
+              },
+              section.linkLabel + ' ›'
             )
+          )
       )
     );
   }
