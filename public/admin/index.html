@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913c" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260913e" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913c"></script>
+    <script src="./preview.js?v=20260913e"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913c"></script>
+    <script src="./editor-components.js?v=20260913e"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2218,15 +2218,11 @@
         //     純粋な見た目上の処理で、Decapの選択・アップロード処理には
         //     一切干渉しない（安全）。
         // ==================================================================
-        var CMS_MEDIA_CATEGORY_LABELS = {
-          logo: 'ロゴ・アイコン',
-          hero: 'ヒーロー・背景',
-          service: 'サービス・商品',
-          works: '実績・事例',
-          people: 'スタッフ・人物',
-          news: 'お知らせ・ブログ',
-          other: 'その他',
-        };
+        // カテゴリは固定の選択肢ではなく「メディア管理」側で自由入力
+        // できる文字列にしている（新しいカテゴリ名を追加できるように
+        // するため。9.34参照）。そのため、絞り込みドロップダウンの
+        // 選択肢は固定辞書を持たず、実際にタグ付けされている値から
+        // 動的に集計する。
         var cmsMediaMetaCache = null;
         var cmsMediaMetaFetching = false;
 
@@ -2319,30 +2315,62 @@
           });
         }
 
+        // メディアライブラリを開くたびに「カテゴリ・タイトル・Altは
+        // 『メディア管理』で設定する」ことを案内する常設バナーを1行
+        // 追加する。カテゴリ絞り込みドロップダウン自体は「1件も
+        // タグ付けされていない」場合は選択肢が無く実用にならないため
+        // 従来どおり非表示にしているが、そのせいで機能の存在自体に
+        // 気づけず「絞り込みができない＝壊れている」と誤認されやすい
+        // （実際に複数回この報告を受けた）。バナーは常に表示すること
+        // で、絞り込みが見えない状態でも「メディア管理でカテゴリを
+        // 設定すればここに絞り込みが出る」ことが常に分かるようにする。
+        function ensureMediaLibraryHint(modal, searchContainer) {
+          if (modal.querySelector('.cms-media-library-hint')) return;
+          var hint = document.createElement('div');
+          hint.className = 'cms-media-library-hint';
+          hint.textContent = '画像のカテゴリ・タイトル・Altテキストは「メディア管理」で設定します。';
+          var link = document.createElement('a');
+          link.href = '#/collections/mediaLibrary/entries/mediaLibrary';
+          link.textContent = '設定する →';
+          link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var closeBtn = modal.querySelector('button[aria-label="Close"], [class*="StyledModal"] button');
+            location.hash = '#/collections/mediaLibrary/entries/mediaLibrary';
+            if (closeBtn) closeBtn.click();
+          });
+          hint.appendChild(link);
+          searchContainer.parentElement.parentElement.insertBefore(hint, searchContainer.parentElement.nextSibling);
+        }
+
         function ensureMediaCategoryFilter() {
           try {
             var modal = findOpenMediaLibraryModal();
             if (!modal) return;
             var searchContainer = modal.querySelector('[class*="SearchContainer"]');
-            if (!searchContainer || searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
+            if (!searchContainer) return;
+            ensureMediaLibraryHint(modal, searchContainer);
+            if (searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
             loadMediaMetaOnce(function (meta) {
               if (searchContainer.parentElement.querySelector('.cms-media-category-filter')) return;
               var usedCategories = {};
               Object.keys(meta).forEach(function (filename) {
-                if (meta[filename] && meta[filename].category) usedCategories[meta[filename].category] = true;
+                var category = meta[filename] && meta[filename].category;
+                if (category && String(category).trim()) usedCategories[String(category).trim()] = true;
               });
-              if (!Object.keys(usedCategories).length) return; // まだ何もタグ付けされていなければ表示しない
+              var categoryNames = Object.keys(usedCategories).sort(function (a, b) {
+                return a.localeCompare(b, 'ja');
+              });
+              if (!categoryNames.length) return; // まだ何もタグ付けされていなければ表示しない（バナーで案内済み）
               var select = document.createElement('select');
               select.className = 'cms-media-category-filter';
               var allOption = document.createElement('option');
               allOption.value = '';
               allOption.textContent = 'すべてのカテゴリ';
               select.appendChild(allOption);
-              Object.keys(CMS_MEDIA_CATEGORY_LABELS).forEach(function (value) {
-                if (!usedCategories[value]) return;
+              categoryNames.forEach(function (name) {
                 var opt = document.createElement('option');
-                opt.value = value;
-                opt.textContent = CMS_MEDIA_CATEGORY_LABELS[value];
+                opt.value = name;
+                opt.textContent = name;
                 select.appendChild(opt);
               });
               select.addEventListener('change', function () {
@@ -2490,6 +2518,29 @@
         font-size: 13px;
         background: #fff;
         color: #1e2330;
+      }
+      /* 15) メディアライブラリの「メディア管理」案内バナー */
+      .cms-media-library-hint {
+        padding: 8px 12px;
+        margin: 4px 0 10px;
+        background: #eef4ff;
+        border: 1px solid #cfe0ff;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #1e2330;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .cms-media-library-hint a {
+        font-weight: bold;
+        color: #1954e0;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .cms-media-library-hint a:hover {
+        text-decoration: underline;
       }
       /*
         14) メディアライブラリの横スクロール解消・5列グリッド調整。
