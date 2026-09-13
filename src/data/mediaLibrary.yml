@@ -1,1 +1,5 @@
-items: []
+items:
+  - image: /src/assets/ceo-image.png
+    category: お知らせ
+    title: 代表の山田です。
+    alt: 代表の山田です。
