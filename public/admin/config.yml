@@ -178,7 +178,7 @@ collections:
                   - { label: "プラン名", name: "name", widget: string, required: false }
                   - { label: "説明", name: "description", widget: string, required: false }
                   - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
-                  - { label: "人気プランバッジを表示", name: "popular", widget: boolean, default: false }
+                  - { label: "人気プランバッジを表示", name: "popular", widget: boolean, default: false, required: false }
                   - label: "含まれる内容"
                     name: "features"
                     widget: list
@@ -303,7 +303,7 @@ collections:
                   - { label: "YouTube", value: "youtube" }
                   - { label: "TikTok", value: "tiktok" }
               - { label: "URL", name: "url", widget: string, required: false }
-              - { label: "このSNSを表示する", name: "enabled", widget: boolean, default: true }
+              - { label: "このSNSを表示する", name: "enabled", widget: boolean, default: true, required: false }
 
           # --- 5. 共通UI文言 -------------------------------------------------
           - label: "共通UI文言"
@@ -374,7 +374,7 @@ collections:
                 hint: "既定では「連絡先」の電話番号へ発信するボタンです。"
                 fields:
                   - { label: "ボタン文言", name: "label", widget: string, required: false }
-                  - { label: "表示する", name: "show", widget: boolean, default: true, hint: "左右どちらのボタンも、このスイッチと対応するリンク先（個別設定または共通の連絡先／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
+                  - { label: "表示する", name: "show", widget: boolean, default: true, required: false, hint: "左右どちらのボタンも、このスイッチと対応するリンク先（個別設定または共通の連絡先／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
                   - label: "背景カラー"
                     name: "color"
                     widget: select
@@ -400,7 +400,7 @@ collections:
                 hint: "既定では「SNS設定」のLINE URLへ遷移するボタンです。"
                 fields:
                   - { label: "ボタン文言", name: "label", widget: string, required: false }
-                  - { label: "表示する", name: "show", widget: boolean, default: true }
+                  - { label: "表示する", name: "show", widget: boolean, default: true, required: false }
                   - label: "背景カラー"
                     name: "color"
                     widget: select
@@ -430,16 +430,16 @@ collections:
             widget: object
             hint: "各項目のラベル文言は、対応するセクションの「見出し」フィールドの内容に自動で追従します（上の各セクション設定タブで見出しを変更すると、ここの表示もあわせて更新されます）。"
             fields:
-              - { label: "「お知らせ」セクションを表示する（トップページ／ヒーロー直下）", name: "enableNews", widget: boolean, default: true }
-              - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true }
-              - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true }
-              - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true }
-              - { label: "「商品一覧」セクションを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false }
-              - { label: "「実績・活用事例」セクションを表示する", name: "enableWorks", widget: boolean, default: true }
-              - { label: "「料金プラン」セクションを表示する", name: "enablePlans", widget: boolean, default: true }
-              - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true }
-              - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true }
-              - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true }
+              - { label: "「お知らせ」セクションを表示する（トップページ／ヒーロー直下）", name: "enableNews", widget: boolean, default: true, required: false }
+              - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true, required: false }
+              - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true, required: false }
+              - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true, required: false }
+              - { label: "「商品一覧」セクションを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false, required: false }
+              - { label: "「実績・活用事例」セクションを表示する", name: "enableWorks", widget: boolean, default: true, required: false }
+              - { label: "「料金プラン」セクションを表示する", name: "enablePlans", widget: boolean, default: true, required: false }
+              - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true, required: false }
+              - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true, required: false }
+              - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true, required: false }
 
           # --- 9. 共通文言・実績詳細ページ（一番最下部） -------------
           - label: "共通文言・実績詳細ページ"
@@ -693,9 +693,9 @@ collections:
             widget: object
             hint: "この会社概要ページ内の各セクションを、それぞれ個別に表示・非表示できます。"
             fields:
-              - { label: "「代表挨拶」を表示する", name: "greeting", widget: boolean, default: true }
-              - { label: "「会社概要（表形式）」を表示する", name: "companyOverview", widget: boolean, default: true }
-              - { label: "「アクセス」を表示する", name: "access", widget: boolean, default: true }
+              - { label: "「代表挨拶」を表示する", name: "greeting", widget: boolean, default: true, required: false }
+              - { label: "「会社概要（表形式）」を表示する", name: "companyOverview", widget: boolean, default: true, required: false }
+              - { label: "「アクセス」を表示する", name: "access", widget: boolean, default: true, required: false }
           - label: "代表挨拶"
             name: "greeting"
             widget: object
@@ -726,7 +726,7 @@ collections:
                 fields:
                   - { label: "ラベル（例：郵便番号／住所／最寄り駅／駐車場）", name: "label", widget: string, required: false }
                   - { label: "内容（Enterキーで改行可）", name: "value", widget: text, required: false }
-                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
               - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string, required: false }
 
       # --- お問い合わせ・ご予約 ---------------------------------------------
@@ -755,42 +755,42 @@ collections:
                 name: "name"
                 widget: object
                 fields:
-                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
                   - { label: "ラベル", name: "label", widget: string, required: false }
                   - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
-                  - { label: "必須にする", name: "required", widget: boolean, default: true }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true, required: false }
               - label: "会社名"
                 name: "company"
                 widget: object
                 fields:
-                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
                   - { label: "ラベル", name: "label", widget: string, required: false }
                   - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
-                  - { label: "必須にする", name: "required", widget: boolean, default: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: false, required: false }
               - label: "メールアドレス"
                 name: "email"
                 widget: object
                 fields:
-                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
                   - { label: "ラベル", name: "label", widget: string, required: false }
                   - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
-                  - { label: "必須にする", name: "required", widget: boolean, default: true }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true, required: false }
               - label: "連絡先・電話番号"
                 name: "phone"
                 widget: object
                 fields:
-                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
                   - { label: "ラベル", name: "label", widget: string, required: false }
                   - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
-                  - { label: "必須にする", name: "required", widget: boolean, default: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: false, required: false }
               - label: "お問い合わせ内容"
                 name: "message"
                 widget: object
                 fields:
-                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
                   - { label: "ラベル", name: "label", widget: string, required: false }
                   - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
-                  - { label: "必須にする", name: "required", widget: boolean, default: true }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true, required: false }
 
           # --- カスタム追加項目（固定項目の後ろに表示。CMS で自由に追加・削除できる） ---
           - label: "カスタム追加項目"
@@ -820,8 +820,8 @@ collections:
                 widget: list
                 required: false
                 field: { label: "選択肢", name: "option", widget: string, required: false }
-              - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true }
-              - { label: "必須にする", name: "required", widget: boolean, default: false }
+              - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+              - { label: "必須にする", name: "required", widget: boolean, default: false, required: false }
 
           - label: "プライバシーポリシー"
             name: "privacyPolicy"
@@ -886,9 +886,9 @@ collections:
           - { label: "イベント", value: "event" }
           - { label: "実績紹介", value: "works" }
       - { label: "抜粋（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
-      - { label: "この記事を一覧の最上部に固定表示する", name: "pinned", widget: boolean, default: false }
+      - { label: "この記事を一覧の最上部に固定表示する", name: "pinned", widget: boolean, default: false, required: false }
       - { label: "固定時の表示優先度（数字が小さいほど上に表示）", name: "pinOrder", widget: number, value_type: int, default: 1, required: false, hint: "固定表示が有効な記事が複数ある場合に適用されます。" }
-      - { label: "下書き（チェック中はサイトに公開されません）", name: "draft", widget: boolean, default: false }
+      - { label: "下書き（チェック中はサイトに公開されません）", name: "draft", widget: boolean, default: false, required: false }
       - label: "本文"
         name: "body"
         widget: markdown
