@@ -69,8 +69,8 @@ works:
   count: 5
   columns: 3
   order:
-    - sample
     - "-2"
+    - sample
     - lp-package
     - テスト２テスト２テスト２テスト２
 plans:
