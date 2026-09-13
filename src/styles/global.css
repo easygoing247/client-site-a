@@ -349,6 +349,11 @@
     ブラウザ既定のmarginがあるが、Tailwindのpreflightがbase layerで
     全要素のmarginを0にリセットしているため、これを上書きする本文
     専用のスタイルが無いと段落間が完全に密着する）。
+    段落間のmargin-bottomは本文の行送り（leading-[1.9] × 14px =
+    26.6px = 1.9em）と揃え、空行1つぶんが「文中の1行を丸ごと
+    スキップしたのと同じ高さ」に見えるようにしている（2026-09。
+    以前は1.2em＝16.8pxとやや小さく、意図した空行が「多少の余白」
+    程度にしか見えず「行間が詰まっている」という指摘につながった）。
     Slateは「意図的に空けた行」をリッチテキスト内部では空のブロックとして
     扱うが、Markdownへシリアライズする際は他のリッチテキストエディタ
     同様、内容が全く無い行はCommonMarkの仕様上「単なる区切り」として
@@ -360,14 +365,14 @@
     見えるようにしている。
   */
   .prose-content p {
-    margin: 0 0 1.2em;
+    margin: 0 0 1.9em;
   }
   .prose-content p:last-child {
     margin-bottom: 0;
   }
   .prose-content p:empty,
   .prose-content p:has(> br:only-child) {
-    min-height: 1em;
+    min-height: 1.9em;
   }
   .prose-content h1,
   .prose-content h2,
@@ -386,7 +391,7 @@
   }
   .prose-content ul,
   .prose-content ol {
-    margin: 0 0 1.2em;
+    margin: 0 0 1.9em;
     padding-left: 1.4em;
   }
   /* Tailwindのpreflightがul/olのlist-styleを`none`にリセットしている
@@ -406,7 +411,7 @@
     color: inherit;
   }
   .prose-content blockquote {
-    margin: 0 0 1.2em;
+    margin: 0 0 1.9em;
     padding-left: 1em;
     border-left: 3px solid var(--color-surface-border, #e2e5eb);
     color: var(--color-ink-soft, #6b7280);
@@ -425,11 +430,11 @@
     無いことを実機で確認済み。CLAUDE.md 9.21/9.22参照）。
     「余計な改行」に見える主な原因は上記の段落marginと装飾要素自身の
     marginが二重に積み重なることだったため、装飾要素側のmarginを
-    通常の段落間隔（1.2em）に揃えて隣接する段落とのmarginが自然に
+    通常の段落間隔（1.9em）に揃えて隣接する段落とのmarginが自然に
     相殺（CSSのマージン相殺）されるようにし、体感の余白を抑えている。
   */
   .prose-content p:has(> .cms-mark:only-child) {
-    margin: 0 0 1.2em;
+    margin: 0 0 1.9em;
   }
   .prose-content .cms-video-embed {
     position: relative;
@@ -479,7 +484,7 @@
 
   .prose-content .cms-box {
     position: relative;
-    margin: 1.8em 0 1.2em;
+    margin: 1.8em 0 1.9em;
     padding: 18px;
     border: 2px solid;
     border-radius: 12px;
@@ -535,7 +540,7 @@
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    margin: 1.2em 0;
+    margin: 1.9em 0;
   }
   .prose-content .cms-speech--right {
     flex-direction: row-reverse;
@@ -572,7 +577,7 @@
   }
 
   .prose-content .cms-align {
-    margin: 0 0 1.2em;
+    margin: 0 0 1.9em;
   }
   .prose-content .cms-align:last-child {
     margin-bottom: 0;

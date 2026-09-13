@@ -600,7 +600,7 @@ collections:
     format: "frontmatter"
     fields:
       - { label: "タイトル", name: "title", widget: string, required: false }
-      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、ひらがな・カタカナ部分を自動でローマ字に変換して補完します（漢字部分は変換対象外）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: corporate-site-renewal" }
+      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、漢字・ひらがな・カタカナを自動でローマ字（ヘボン式）に変換して補完します（初回は変換辞書の読み込みに少し時間がかかることがあります）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: corporate-site-renewal" }
       - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
       - { label: "メイン画像", name: "image", widget: image, required: false }
       - { label: "概要（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
@@ -885,7 +885,7 @@ collections:
     sortable_fields: ["publishedAt", "title"]
     fields:
       - { label: "記事タイトル", name: "title", widget: string, required: false }
-      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、ひらがな・カタカナ部分を自動でローマ字に変換して補完します（漢字部分は変換対象外）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: new-product-info" }
+      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、漢字・ひらがな・カタカナを自動でローマ字（ヘボン式）に変換して補完します（初回は変換辞書の読み込みに少し時間がかかることがあります）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: new-product-info" }
       - { label: "アイキャッチ画像", name: "image", widget: image, required: false }
       - { label: "アイキャッチ 代替テキスト", name: "imageAlt", widget: string, required: false }
       - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
