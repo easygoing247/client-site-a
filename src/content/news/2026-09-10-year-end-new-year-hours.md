@@ -45,5 +45,3 @@ draft: false
 3. う
 4. え
 5. お
-
-![](../../assets/ceo-image.png)
