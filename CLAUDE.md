@@ -3707,3 +3707,83 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
   不安定でテストスクリプト自体がハングしたため断念し、コード
   レビューでの確実な原因特定（rejectされたPromiseの永続キャッシュ）
   と、そのキャッシュを確実にクリアする修正の妥当性で担保した。
+
+### 9.47 kuromoji.js・辞書をリポジトリ内へローカル化／真因（`Content-Encoding: gzip`の二重解凍問題）を特定・修正
+
+- **9.46だけでは解決しなかった**：9.46の「辞書構築失敗のキャッシュを
+  クリアする」修正自体は正しかったが、**そもそも辞書構築が一度も
+  成功しない**という、より根本的な問題が別に存在していたため、
+  依然として「私は学生です」→「ha-desu」のまま直らなかった。
+- **辞書のローカル化**：外部CDN（jsDelivr）への依存自体を無くすため、
+  kuromoji.js本体・辞書データの両方をこのリポジトリ内に配置した。
+  - npm パッケージ`kuromoji`（`^0.1.2`）を`devDependencies`に追加
+    （ビルドコード上でこのパッケージをimportすることはなく、
+    あくまで辞書ファイル・ライブラリ本体を取得するためだけに使う）。
+  - `node_modules/kuromoji/dict/*.gz`（12ファイル、合計約17MB）を
+    そのまま`public/admin/dict/`へコピーして配置。
+  - `node_modules/kuromoji/build/kuromoji.js`（約300KB）をそのまま
+    `public/admin/kuromoji.js`へコピーして配置。
+  - `kuromoji-worker.js`の`importScripts()`と`dicPath`を、外部CDNの
+    URLからこれらの同一オリジンのローカルパス
+    （`./kuromoji.js`・`./dict/`）へ変更した。
+  - バージョンアップ時は`node_modules/kuromoji/dict/*.gz`・
+    `node_modules/kuromoji/build/kuromoji.js`を同じ場所へ再度
+    コピーし直すこと（自動化するビルドスクリプトは設けていない。
+    辞書自体はkuromoji本体のバージョンに紐づく固定データで頻繁に
+    更新するものではないため、素朴な手動コピーで十分と判断した）。
+- **真因の特定（F12コンソールへの明示的なエラー出力の追加が決め手に
+  なった）**：`kuromoji-worker.js`に`console.error`によるエラー
+  ログ出力を追加したところ、ローカル化した辞書に切り替えた直後の
+  実機検証で`invalid file signature:XX,YY`という例外が大量に
+  記録されているのを発見した。原因を`curl -I`でレスポンスヘッダーを
+  直接確認して特定：`astro dev`（Viteの静的ファイルサーバー）が
+  `.gz`という拡張子を見て**自動的に`Content-Encoding: gzip`
+  ヘッダーを付与していた**。この状態でブラウザがfetchすると、
+  ブラウザ自身が`Content-Encoding`を見て**レスポンスを透過的に
+  自動解凍**してしまう（これは本来、事前に圧縮しておいた通常の
+  静的ファイルをブラウザ側で自動的に伸長して見せるための正しい
+  挙動）。ところがkuromoji.js自身は「まだ圧縮されたままの生の
+  gzipバイト列」を期待して自前の解凍処理（zlib.js相当の内蔵実装）を
+  適用しようとするため、**既に解凍済みのデータをもう一度解凍
+  しようとして失敗する**（＝gzipのマジックバイト`0x1f 0x8b`が
+  見当たらず`invalid file signature`）という「二重解凍問題」だった。
+  外部CDN（jsDelivr）は素のオブジェクトストレージ配信のため
+  この自動`Content-Encoding`付与が起きておらず、9.45〜9.46の
+  時点ではこの問題が顕在化していなかった——ローカル化して初めて
+  露見した、環境依存の新しい問題だったことになる。
+- **修正**：
+  1. **devサーバー対策**：`astro.config.mjs`に新規
+     `kuromojiDictDevMiddleware()`（`astro:server:setup`フック）を
+     追加し、`/admin/dict/*.gz`へのリクエストをViteの既定の静的
+     ファイルミドルウェアより先に横取りして、`fs.readFile`で
+     直接読み出した生のバイト列を`Content-Encoding`ヘッダーを
+     一切付けずに返すようにした（`Content-Type:
+     application/octet-stream`のみ設定）。9.42の`/admin/`
+     ディレクトリインデックス対策と同じ「dev限定ミドルウェアで
+     Viteの既定動作を局所的に上書きする」パターンを踏襲している。
+  2. **本番対策**：`public/_headers`（Cloudflareの静的アセット
+     配信が認識するNetlify形式のヘッダー上書き設定ファイル、
+     9.43の`_redirects`と同じ仕組みのヘッダー版）を新設し、
+     `/admin/dict/*`に対して`Content-Encoding: identity`
+     （＝「変換なし、生のバイト列」を意味するHTTP標準の値）を
+     明示することで、Cloudflare側で同種の自動付与が発生していた
+     場合にも上書きされるよう防御的に対応した（Cloudflareが
+     実際にこの自動付与を行うかは未検証だが、`astro dev`側で
+     現実に発生した以上、同種の静的アセット配信基盤で同じ
+     問題が起きる可能性を無視できないため、コストの低い予防策
+     として追加した）。
+  3. `kuromoji-worker.js`に`console.error`によるエラーログを
+     複数箇所へ追加した（辞書構築失敗時・個別のtokenizeリクエスト
+     失敗時・Worker内の未捕捉例外の3箇所）。今回の調査で
+     このログ出力自体が真因特定の決め手になったため、今後
+     同種の問題が再発した場合の切り分けにも役立つ形で残している。
+- **実機検証**：`curl -I`で`/admin/dict/base.dat.gz`の応答ヘッダーに
+  `Content-Encoding`が含まれなくなったこと、`curl | head -c 4 |
+  xxd`でボディの先頭バイトが`1f 8b`（gzipの正しいマジックバイト）で
+  あることを確認。その上で新規「お知らせ投稿」エントリのタイトルへ
+  「私は学生です」と入力し、`urlSlug`が正しく
+  `watashi-ha-gakusei-desu`に変換されることを確認した。あわせて
+  コンソールに新規のエラーが一切出力されないこと、手動編集の
+  上書き防止が引き続き機能することも確認済み。`npm run build`後、
+  `dist/admin/dict/`（12ファイル）・`dist/admin/kuromoji.js`・
+  `dist/_headers`がいずれも正しく出力されていることも確認した。

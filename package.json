@@ -24,6 +24,7 @@
     "@astrojs/check": "^0.9.10",
     "@types/js-yaml": "^4.0.9",
     "decap-server": "^3.11.0",
+    "kuromoji": "^0.1.2",
     "typescript": "^5.9.3"
   }
 }

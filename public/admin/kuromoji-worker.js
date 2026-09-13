@@ -16,11 +16,28 @@
  * ため、ここでどれだけ重い処理をしてもメインスレッド（＝実際の画面の
  * 描画・入力）は一切ブロックされない。
  *
+ * 【2026-09、9.47】kuromoji.js本体・辞書データともに、外部CDN
+ * （jsDelivr）ではなくこのリポジトリ内（public/admin/kuromoji.js・
+ * public/admin/dict/*.gz）から読み込むように変更した。9.46で
+ * 「辞書構築に一度失敗すると恒久的にフォールバック（ひらがな・
+ * カタカナのみの変換、漢字は脱落）に固定される」バグ自体は修正した
+ * ものの、根本的に「CDNへの依存自体がリスク」（一時的なネットワーク
+ * 不調・CDN障害・企業ネットワークでの外部ドメインブロック等）である
+ * ことに変わりはなかったため、CDNへの依存を完全に排除しリポジトリ
+ * 内で完結させることにした。辞書ファイル自体はnpmパッケージ
+ * `kuromoji`（devDependencies、辞書ファイル取得のためだけに追加。
+ * ビルド時のコード上の依存ではない）の`dict/`フォルダをそのまま
+ * コピーしたもので、`kuromoji.js`本体も同パッケージの`build/
+ * kuromoji.js`をそのままコピーしたもの。バージョンアップ時は
+ * `node_modules/kuromoji/dict/*.gz`・`node_modules/kuromoji/build/
+ * kuromoji.js`を再度この場所へコピーし直すこと（CLAUDE.md 9.47参照）。
+ *
  * classic worker（type: module ではない）のため、importScripts()は
- * <script src="...">タグと同様にクロスオリジンのURLを制限なく読み込める
- * （CORSの対象外）。
+ * 同一オリジンのURLをそのまま読み込める。
  * ============================================================================ */
-importScripts('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js');
+importScripts('./kuromoji.js');
+
+var DIC_PATH = './dict/';
 
 var tokenizer = null;
 var buildPromise = null;
@@ -28,16 +45,10 @@ var buildPromise = null;
 // ⚠️ 辞書構築に一度失敗した場合、`buildPromise`にrejectされたPromiseを
 // キャッシュしたまま放置しない（9.46で発見・修正）。以前の実装は
 // 構築に失敗しても`buildPromise`をそのまま保持し続けていたため、
-// jsDelivrへの一時的な接続不調・タイムアウト等で**最初の1回だけ**
-// 辞書取得（gzip圧縮された辞書ファイル群、複数リクエストに分割）が
-// 失敗すると、そのWorkerインスタンスが生きている間（＝管理画面の
-// タブを開いたままの間）、以後のタイトル入力すべてが恒久的に
-// フォールバック（ひらがな・カタカナのみの変換、漢字はハイフン化）
-// のまま固定されてしまうという重大な不具合があった。「私は学生
-// です」→「ha-desu」のように漢字が脱落したまま二度と正しい変換に
-// 格上げされない、という報告の実体はこれだったと判明した（一度
-// 正常に構築が成功していれば以後は問題なく動作するため、辞書取得の
-// タイミング次第で発生有無が変わる、原因の分かりにくい不具合だった）。
+// 一時的な取得失敗が起きると、そのWorkerインスタンスが生きている間
+// （＝管理画面のタブを開いたままの間）、以後のタイトル入力すべてが
+// 恒久的にフォールバック（ひらがな・カタカナのみの変換、漢字は
+// ハイフン化）のまま固定されてしまうという重大な不具合があった。
 // 修正：構築に失敗した場合は`buildPromise`を`null`に戻し、次回の
 // リクエストで辞書構築を最初からやり直せるようにした。
 function ensureTokenizer() {
@@ -46,7 +57,7 @@ function ensureTokenizer() {
   buildPromise = new Promise(function (resolve, reject) {
     try {
       self.kuromoji
-        .builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
+        .builder({ dicPath: DIC_PATH })
         .build(function (err, builtTokenizer) {
           if (err || !builtTokenizer) {
             reject(err || new Error('kuromoji build failed'));
@@ -59,10 +70,18 @@ function ensureTokenizer() {
       reject(e);
     }
   });
-  buildPromise.catch(function () {
-    // 失敗はここで一旦飲み込み、キャッシュだけをクリアする
-    // （実際のエラー通知は呼び出し元＝onmessage側の.catch()が
-    // 個別のtokenizeリクエストに対して行う）。
+  buildPromise.catch(function (err) {
+    // 失敗をコンソールへ明示的に出力する（9.47。今回のようにCDN・
+    // ネットワーク起因の問題を切り分けやすくするため、ブラウザの
+    // 開発者ツール（F12）のConsoleタブにWorker発の警告として必ず
+    // 記録が残るようにする）。実際のエラー通知（呼び出し元への
+    // フィードバック）は、これとは別にonmessage側の.catch()が
+    // 個別のtokenizeリクエストに対して行う。
+    console.error(
+      '[kuromoji-worker] 辞書の構築に失敗しました（dicPath: ' + DIC_PATH + '）。' +
+        'public/admin/dict/ 配下の辞書ファイルが正しく配置・配信されているか確認してください。',
+      err
+    );
     buildPromise = null;
   });
   return buildPromise;
@@ -82,6 +101,15 @@ self.onmessage = function (e) {
       self.postMessage({ id: id, readings: readings });
     })
     .catch(function (err) {
-      self.postMessage({ id: id, error: String(err && err.message ? err.message : err) });
+      var message = String(err && err.message ? err.message : err);
+      console.error('[kuromoji-worker] タイトル「' + title + '」の形態素解析に失敗しました:', message, err);
+      self.postMessage({ id: id, error: message });
     });
+};
+
+self.onerror = function (event) {
+  // importScripts自体の失敗（ファイルが見つからない等）や、上記の
+  // try/catchで捕捉しきれない同期エラーをすべてコンソールへ出力する
+  // 最後の砦。
+  console.error('[kuromoji-worker] Worker内で未捕捉のエラーが発生しました:', event && event.message ? event.message : event);
 };

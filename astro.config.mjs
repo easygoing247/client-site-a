@@ -2,6 +2,8 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import remarkBreaks from 'remark-breaks';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // 本番公開時は実際のドメインに差し替えてください（sitemap生成に使用されます）
 const SITE_URL = 'https://master-template-multi.easygoing247.workers.dev';
@@ -42,6 +44,56 @@ function adminDirectoryIndexDevMiddleware() {
   };
 }
 
+// kuromoji.jsの辞書ファイル（public/admin/dict/*.gz）を`astro dev`が
+// 配信する際に、Viteの静的ファイルサーバー（sirv）が拡張子`.gz`を
+// 見て自動的に`Content-Encoding: gzip`ヘッダーを付与してしまう問題を
+// 回避するdev限定ミドルウェア（2026-09、9.47）。
+//
+// 背景：kuromoji.jsは辞書ファイルを生のgzip圧縮バイト列としてfetchし、
+// 自前で（zlib.js相当の内蔵実装で）解凍する設計になっている。ところが
+// `Content-Encoding: gzip`が付いたレスポンスは、ブラウザ自身が
+// **transparent decompression**（fetch/XHRの結果を返す前に自動で
+// 解凍してしまう）を行うため、kuromoji.js側は「既に解凍済みの生データ」
+// を「まだ圧縮されたバイト列のはず」として誤って再解凍しようとし、
+// 実機で`invalid file signature:XX,YY`という例外を出して失敗していた
+// （F12コンソールへの明示的なエラー出力を追加したことで発覚。9.47）。
+// これが、外部CDNをやめてリポジトリ内へ辞書を配置したにも関わらず、
+// 依然として「私は学生です」→「ha-desu」のまま格上げされない
+// （＝kuromojiの辞書構築が常に失敗し続ける）原因になっていた。
+//
+// 対処：`/admin/dict/*.gz`へのリクエストをViteの既定の静的ファイル
+// ミドルウェアより先に横取りし、`fs.readFile`で直接読み出した生の
+// バイト列を、`Content-Encoding`ヘッダーを一切付与せずに返す
+// （`Content-Type: application/octet-stream`のみ設定）。これにより
+// ブラウザ側の自動解凍が発生せず、kuromoji.js自身が期待どおり
+// 生のgzipバイト列を受け取って自前で解凍できるようになる。
+function kuromojiDictDevMiddleware() {
+  return {
+    name: 'kuromoji-dict-dev-middleware',
+    hooks: {
+      'astro:server:setup': ({ server }) => {
+        server.middlewares.use((req, res, next) => {
+          var m = req.url && req.url.match(/^\/admin\/dict\/([a-zA-Z0-9_.-]+\.gz)(?:\?.*)?$/);
+          if (!m) {
+            next();
+            return;
+          }
+          var filePath = path.join(process.cwd(), 'public', 'admin', 'dict', m[1]);
+          fs.readFile(filePath, function (err, data) {
+            if (err) {
+              next();
+              return;
+            }
+            res.setHeader('Content-Type', 'application/octet-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.end(data);
+          });
+        });
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: SITE_URL,
   integrations: [
@@ -50,6 +102,7 @@ export default defineConfig({
     }),
     sitemap(),
     adminDirectoryIndexDevMiddleware(),
+    kuromojiDictDevMiddleware(),
   ],
   image: {
     // astro:assets のデフォルト画像最適化（sharp）を使用
