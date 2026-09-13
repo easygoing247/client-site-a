@@ -32,10 +32,6 @@ draft: false
 </div></div>
 あああ
 
-
-
-
-
 あああ
 
 * あ
@@ -44,10 +40,10 @@ draft: false
 * え
 * お
 
-
-
 1. あ
 2. い
 3. う
 4. え
 5. お
+
+![](../../assets/ceo-image.png)
