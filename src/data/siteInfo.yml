@@ -69,11 +69,12 @@ works:
   count: 10
   columns: 3
   order:
+    - lp-package
     - "-2"
     - sample
-    - ""
-    - lp-package
+    - url-slug-test
     - テスト２テスト２テスト２テスト２
+    - テスト１テスト１テスト１テスト１
 plans:
   eyebrow: PLAN
   heading: 料金プラン
