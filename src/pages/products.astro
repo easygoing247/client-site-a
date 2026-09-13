@@ -30,7 +30,7 @@ const regularColumns = resolveProductColumns(productsPage.regularColumns);
 async function withResolvedImage<T extends { image?: string }>(item: T) {
   const resolvedImage = resolveImageOrNull(item.image);
   const lightbox = resolvedImage
-    ? await getImage({ src: resolvedImage, width: 1200, format: 'webp' })
+    ? await getImage({ src: resolvedImage, width: 1200, format: 'webp', quality: 80 })
     : null;
   return { ...item, resolvedImage, lightboxSrc: lightbox?.src };
 }
@@ -84,6 +84,7 @@ const regularItems = await Promise.all(
                         width={600}
                         height={360}
                         format="webp"
+                        quality={80}
                         loading="lazy"
                       />
                     </div>
@@ -153,6 +154,7 @@ const regularItems = await Promise.all(
                       width={450}
                       height={253}
                       format="webp"
+                      quality={80}
                       loading="lazy"
                     />
                   )}

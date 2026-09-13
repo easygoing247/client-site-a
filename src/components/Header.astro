@@ -24,7 +24,7 @@ const textLogo = site.company.textLogo || site.company.name;
       <a href="/" aria-label="トップページへ戻る" class="flex items-center">
         {showTextLogo
           ? (textLogo && <span class="text-[20px] font-bold text-secondary leading-none">{textLogo}</span>)
-          : (logo && <Image src={logo} alt={`${site.company.name} ロゴ`} class="h-7 w-auto object-contain" width={161} height={63} />)
+          : (logo && <Image src={logo} alt={`${site.company.name} ロゴ`} class="h-7 w-auto object-contain" width={161} height={63} format="webp" quality={80} />)
         }
       </a>
     )}

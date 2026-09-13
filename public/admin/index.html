@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913j" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260913k" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913j"></script>
+    <script src="./preview.js?v=20260913k"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913j"></script>
+    <script src="./editor-components.js?v=20260913k"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2106,6 +2106,26 @@
               }, 300);
               return;
             }
+            // 画像メタデータ（メディア管理）の編集画面から「公開する」を
+            // 実行した場合：保存後にこの画面へ留まり続けると、他ページへの
+            // 導線が無いまま閉じ込められてしまう（9.40で報告された不具合）。
+            // ジャンプ元の画面（sessionStorageに退避済み）へ戻り、かつ
+            // ヘッダーの「メディア」ボタンを自動で再度開いて、実際に
+            // メディアライブラリの一覧へ戻ったことが視覚的に分かるように
+            // する（`pendingMediaMetaReturn`フラグをリロード後の`load`
+            // イベントハンドラ側で検知し、ハッシュの書き換え＋モーダルの
+            // 再オープンを行う。9.19で確立した「postSave発火時点では
+            // 未保存の入力が存在しないため、いつでも安全にreloadできる」
+            // 原則をそのまま踏襲）。
+            if (/^#\/collections\/mediaLibrary\/entries\//.test(location.hash)) {
+              try {
+                sessionStorage.setItem('cms-media-meta-return-pending', '1');
+              } catch (e) {}
+              setTimeout(function () {
+                location.reload();
+              }, 300);
+              return;
+            }
             // 通常の「公開する」実行後（＝新規作成への遷移を伴わない場合）。
             saveScrollPositionForReload();
             setTimeout(function () {
@@ -2114,6 +2134,28 @@
           },
         });
         window.addEventListener('load', restoreScrollPositionAfterReload);
+        window.addEventListener('load', function () {
+          var pending;
+          try {
+            pending = sessionStorage.getItem('cms-media-meta-return-pending');
+            sessionStorage.removeItem('cms-media-meta-return-pending');
+          } catch (e) {
+            pending = null;
+          }
+          if (!pending) return;
+          var returnHash = popMediaMetaReturnHash() || '#/collections/mediaLibrary';
+          location.hash = returnHash;
+          // フォーム（メディアライブラリを開いていた側の画面）が再マウント
+          // されるのを待ってから、ヘッダーの「メディア」ボタンを自動的に
+          // クリックしてモーダルを開き直す。
+          var attempts = 0;
+          var timer = setInterval(function () {
+            attempts++;
+            if (openMediaLibraryButton() || attempts > 25) {
+              clearInterval(timer);
+            }
+          }, 200);
+        });
 
         // ==================================================================
         // 11) メディアライブラリへのドラッグ&ドロップアップロード対応。
@@ -2318,8 +2360,44 @@
         //      自動的にクリックして新規行を追加するところまで代行する
         //      （画像の選択自体は、既存の画像ピッカーUIをそのまま
         //      使うため、ユーザーの最後の一手だけ残す）。
+        // ジャンプ元の画面（メディアライブラリの背後にあった元のハッシュ）を
+        // 記録しておき、後で「メディア一覧へ戻る」操作（保存後の自動遷移・
+        // ×ボタンでの手動キャンセル）の戻り先として使う。sessionStorageにも
+        // 保存しておくことで、保存後の`location.reload()`（9章参照）を
+        // 挟んでも戻り先を見失わない。
+        var MEDIA_META_RETURN_KEY = 'cms-media-meta-return-hash';
+        function saveMediaMetaReturnHash() {
+          try {
+            sessionStorage.setItem(MEDIA_META_RETURN_KEY, location.hash || '');
+          } catch (e) {}
+        }
+        function popMediaMetaReturnHash() {
+          try {
+            var v = sessionStorage.getItem(MEDIA_META_RETURN_KEY);
+            sessionStorage.removeItem(MEDIA_META_RETURN_KEY);
+            return v || '';
+          } catch (e) {
+            return '';
+          }
+        }
+        // ヘッダーの「メディア」ボタンをプログラム的にクリックし、既定の
+        // メディアライブラリ（アセットピッカー）モーダルを開き直す。
+        function openMediaLibraryButton() {
+          try {
+            var buttons = document.querySelectorAll('button');
+            for (var i = 0; i < buttons.length; i++) {
+              if ((buttons[i].textContent || '').trim() === 'メディア') {
+                buttons[i].click();
+                return true;
+              }
+            }
+          } catch (e) {}
+          return false;
+        }
+
         function jumpToMediaLibraryEntry(filename) {
           try {
+            saveMediaMetaReturnHash();
             var modal = findOpenMediaLibraryModal();
             if (modal) {
               var closeBtn = modal.querySelector('button[aria-label="Close"]');
@@ -2455,13 +2533,50 @@
         function updateMediaMetaPopoverMode() {
           var isMediaMetaEntry = /^#\/collections\/mediaLibrary\/entries\//.test(location.hash);
           document.body.classList.toggle('cms-media-meta-popover', isMediaMetaEntry);
-          if (isMediaMetaEntry) ensureMediaMetaPopoverBackdrop();
+          if (isMediaMetaEntry) {
+            ensureMediaMetaPopoverBackdrop();
+            ensureMediaMetaPopoverCloseButton();
+          } else {
+            var backdrop = document.querySelector('.cms-media-popover-backdrop');
+            if (backdrop) backdrop.remove();
+            var closeBtn = document.querySelector('.cms-media-popover-close');
+            if (closeBtn) closeBtn.remove();
+          }
         }
         function ensureMediaMetaPopoverBackdrop() {
           if (document.querySelector('.cms-media-popover-backdrop')) return;
           var backdrop = document.createElement('div');
           backdrop.className = 'cms-media-popover-backdrop';
           document.body.appendChild(backdrop);
+        }
+        // 保存せずにこの画面から離れたい場合のための「×（閉じる）」ボタン。
+        // ジャンプ元の画面（sessionStorageに退避済み。無ければメディア
+        // ライブラリの一覧）へ戻り、続けてヘッダーの「メディア」ボタンを
+        // 自動的に開き直す（9.40で報告された「閉じ込め」問題への対応）。
+        // クリックしても保存処理は一切呼び出さない＝未保存の入力は
+        // Decap自身の「保存されていません」警告の対象外にはならないが、
+        // これは元々「公開する」ボタンを押さない限りDecapが持つ標準的な
+        // 離脱確認の挙動であり、本ボタン固有の問題ではない。
+        function ensureMediaMetaPopoverCloseButton() {
+          if (document.querySelector('.cms-media-popover-close')) return;
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cms-media-popover-close';
+          btn.title = 'メディア一覧へ戻る（保存せずに閉じる）';
+          btn.setAttribute('aria-label', 'メディア一覧へ戻る');
+          btn.textContent = '×';
+          btn.addEventListener('click', function () {
+            var returnHash = popMediaMetaReturnHash() || '#/collections/mediaLibrary';
+            location.hash = returnHash;
+            var attempts = 0;
+            var timer = setInterval(function () {
+              attempts++;
+              if (openMediaLibraryButton() || attempts > 25) {
+                clearInterval(timer);
+              }
+            }, 200);
+          });
+          document.body.appendChild(btn);
         }
         window.addEventListener('hashchange', updateMediaMetaPopoverMode);
         updateMediaMetaPopoverMode();
@@ -2783,14 +2898,66 @@
         //     へのフォールバックは設けていない（万一どちらかが未読込の
         //     場合は、既定のDecap表示順のまま＝安全側に倒れる）。
         // ==================================================================
-        function getSiteWorksOrderList() {
+        // 「サイト全体設定」エントリがReduxに未ロードの場合（このセッションで
+        // 一度も開いていない場合）に備えたフォールバック。works-titles.json
+        // と同じ「ビルド時静的生成データをfetchする」パターン
+        // （src/pages/works-order.json.ts）。Reduxから取得できた場合は
+        // 常にそちらを優先し、取得できなかった場合のみこのキャッシュを使う。
+        var cmsWorksOrderCache = null;
+        var cmsWorksOrderFetching = false;
+
+        function loadWorksOrderOnce(callback) {
+          if (cmsWorksOrderCache) {
+            callback(cmsWorksOrderCache);
+            return;
+          }
+          if (cmsWorksOrderFetching) return;
+          cmsWorksOrderFetching = true;
+          fetch('/works-order.json')
+            .then(function (res) {
+              return res.ok ? res.json() : [];
+            })
+            .then(function (json) {
+              cmsWorksOrderCache = Array.isArray(json) ? json : [];
+              cmsWorksOrderFetching = false;
+              callback(cmsWorksOrderCache);
+              // 取得完了時点で既に一覧画面が開いていれば、フォールバック
+              // データを反映した並び順で即座に再描画する。
+              applyWorksListOrder();
+            })
+            .catch(function () {
+              cmsWorksOrderCache = [];
+              cmsWorksOrderFetching = false;
+            });
+        }
+
+        // Reduxに「サイト全体設定」エントリがロード済みかどうかを判定する
+        // （ロード自体は試みたが `order` が未入力で空配列、というケースと
+        // 「そもそもエントリ自体が無い」ケースを区別するため）。
+        function getSiteInfoEntryFromRedux() {
           try {
             var store = findDecapReduxStore();
-            if (!store) return [];
+            if (!store) return null;
             var state = store.getState();
             var entities = state && state.entries && state.entries.get && state.entries.get('entities');
-            var siteInfo = entities && entities.get('settings.siteInfo');
-            var data = siteInfo && siteInfo.get('data');
+            return (entities && entities.get('settings.siteInfo')) || null;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function getSiteWorksOrderList() {
+          try {
+            var siteInfo = getSiteInfoEntryFromRedux();
+            if (!siteInfo) {
+              // Reduxに未ロード：静的JSONへのフォールバックを非同期で
+              // 開始しつつ（結果は次回の再描画で反映される）、今回は
+              // キャッシュ済みならそれを、無ければ空配列を返す。
+              if (cmsWorksOrderCache) return cmsWorksOrderCache;
+              loadWorksOrderOnce(function () {});
+              return [];
+            }
+            var data = siteInfo.get('data');
             var works = data && data.get('works');
             var order = works && works.get('order');
             if (!order || typeof order.toJS !== 'function') return [];
@@ -2872,6 +3039,202 @@
             setTimeout(watchStoreForWorksListOrder, 500);
           }
         })();
+
+        // ==================================================================
+        // 21) タイトル入力からURL用識別子（slug）へのヘボン式ローマ字
+        //     自動変換（9.40）。
+        //
+        //     対象：「お知らせ投稿」「実績・活用事例作成」の`title`→
+        //     `urlSlug`フィールド（config.ymlのpattern: ^[a-z0-9-]+$）。
+        //     `preSave`（9.3）は空欄のまま保存された場合にランダムな
+        //     識別子で穴埋めするだけの安全策で、入力中のリアルタイム
+        //     補完は行っていなかった。ここでは「タイトル入力のたびに、
+        //     まだ手で編集されていないurlSlugへローマ字変換した値を
+        //     自動反映する」補助機能を追加する。
+        //
+        //     漢字の読み変換について：ひらがな・カタカナ→ローマ字の
+        //     変換表（下記KANA_ROMAJI）は静的な文字対応表のみで実現できる
+        //     が、漢字の読み（音訓・熟字訓）を機械的に一意特定するには
+        //     形態素解析＋辞書（kuromoji等、数MB規模の辞書データを含む）
+        //     が必要で、この管理画面の軽量なJS構成（外部ライブラリを
+        //     読み込まない既存方針に近い形を維持したい）にはそぐわない。
+        //     そのため本機能は「ひらがな・カタカナ部分のみヘボン式で
+        //     変換し、漢字・記号など変換できない文字はハイフンとして
+        //     除去する」設計にした（例：「ご挨拶」→「挨拶」部分は漢字の
+        //     ため除去され「go」のみ残る、「今年もお世話になりました」の
+        //     ような漢字混じりタイトルは断片的なローマ字になる）。
+        //     あくまで「叩き台の自動入力」であり、要件どおり保存前に
+        //     手動で微調整できる（このフィールドへユーザーが一度でも
+        //     直接入力すると、以後はそのエントリでは自動上書きを止める）。
+        // ==================================================================
+        var KANA_DIGRAPHS = {
+          きゃ: 'kya', きゅ: 'kyu', きょ: 'kyo',
+          しゃ: 'sha', しゅ: 'shu', しょ: 'sho',
+          ちゃ: 'cha', ちゅ: 'chu', ちょ: 'cho',
+          にゃ: 'nya', にゅ: 'nyu', にょ: 'nyo',
+          ひゃ: 'hya', ひゅ: 'hyu', ひょ: 'hyo',
+          みゃ: 'mya', みゅ: 'myu', みょ: 'myo',
+          りゃ: 'rya', りゅ: 'ryu', りょ: 'ryo',
+          ぎゃ: 'gya', ぎゅ: 'gyu', ぎょ: 'gyo',
+          じゃ: 'ja', じゅ: 'ju', じょ: 'jo',
+          びゃ: 'bya', びゅ: 'byu', びょ: 'byo',
+          ぴゃ: 'pya', ぴゅ: 'pyu', ぴょ: 'pyo',
+          ぢゃ: 'ja', ぢゅ: 'ju', ぢょ: 'jo',
+          キャ: 'kya', キュ: 'kyu', キョ: 'kyo',
+          シャ: 'sha', シュ: 'shu', ショ: 'sho',
+          チャ: 'cha', チュ: 'chu', チョ: 'cho',
+          ニャ: 'nya', ニュ: 'nyu', ニョ: 'nyo',
+          ヒャ: 'hya', ヒュ: 'hyu', ヒョ: 'hyo',
+          ミャ: 'mya', ミュ: 'myu', ミョ: 'myo',
+          リャ: 'rya', リュ: 'ryu', リョ: 'ryo',
+          ギャ: 'gya', ギュ: 'gyu', ギョ: 'gyo',
+          ジャ: 'ja', ジュ: 'ju', ジョ: 'jo',
+          ビャ: 'bya', ビュ: 'byu', ビョ: 'byo',
+          ピャ: 'pya', ピュ: 'pyu', ピョ: 'pyo',
+          ファ: 'fa', フィ: 'fi', フェ: 'fe', フォ: 'fo',
+          ティ: 'ti', ディ: 'di', トゥ: 'tu', ドゥ: 'du',
+          ウィ: 'wi', ウェ: 'we', ウォ: 'wo',
+          チェ: 'che', シェ: 'she', ジェ: 'je',
+        };
+        var KANA_SINGLE = {
+          あ: 'a', い: 'i', う: 'u', え: 'e', お: 'o',
+          か: 'ka', き: 'ki', く: 'ku', け: 'ke', こ: 'ko',
+          さ: 'sa', し: 'shi', す: 'su', せ: 'se', そ: 'so',
+          た: 'ta', ち: 'chi', つ: 'tsu', て: 'te', と: 'to',
+          な: 'na', に: 'ni', ぬ: 'nu', ね: 'ne', の: 'no',
+          は: 'ha', ひ: 'hi', ふ: 'fu', へ: 'he', ほ: 'ho',
+          ま: 'ma', み: 'mi', む: 'mu', め: 'me', も: 'mo',
+          や: 'ya', ゆ: 'yu', よ: 'yo',
+          ら: 'ra', り: 'ri', る: 'ru', れ: 're', ろ: 'ro',
+          わ: 'wa', を: 'o', ん: 'n',
+          が: 'ga', ぎ: 'gi', ぐ: 'gu', げ: 'ge', ご: 'go',
+          ざ: 'za', じ: 'ji', ず: 'zu', ぜ: 'ze', ぞ: 'zo',
+          だ: 'da', ぢ: 'ji', づ: 'zu', で: 'de', ど: 'do',
+          ば: 'ba', び: 'bi', ぶ: 'bu', べ: 'be', ぼ: 'bo',
+          ぱ: 'pa', ぴ: 'pi', ぷ: 'pu', ぺ: 'pe', ぽ: 'po',
+          ア: 'a', イ: 'i', ウ: 'u', エ: 'e', オ: 'o',
+          カ: 'ka', キ: 'ki', ク: 'ku', ケ: 'ke', コ: 'ko',
+          サ: 'sa', シ: 'shi', ス: 'su', セ: 'se', ソ: 'so',
+          タ: 'ta', チ: 'chi', ツ: 'tsu', テ: 'te', ト: 'to',
+          ナ: 'na', ニ: 'ni', ヌ: 'nu', ネ: 'ne', ノ: 'no',
+          ハ: 'ha', ヒ: 'hi', フ: 'fu', ヘ: 'he', ホ: 'ho',
+          マ: 'ma', ミ: 'mi', ム: 'mu', メ: 'me', モ: 'mo',
+          ヤ: 'ya', ユ: 'yu', ヨ: 'yo',
+          ラ: 'ra', リ: 'ri', ル: 'ru', レ: 're', ロ: 'ro',
+          ワ: 'wa', ヲ: 'o', ン: 'n',
+          ガ: 'ga', ギ: 'gi', グ: 'gu', ゲ: 'ge', ゴ: 'go',
+          ザ: 'za', ジ: 'ji', ズ: 'zu', ゼ: 'ze', ゾ: 'zo',
+          ダ: 'da', ヂ: 'ji', ヅ: 'zu', デ: 'de', ド: 'do',
+          バ: 'ba', ビ: 'bi', ブ: 'bu', ベ: 'be', ボ: 'bo',
+          パ: 'pa', ピ: 'pi', プ: 'pu', ペ: 'pe', ポ: 'po',
+        };
+        var KANA_SMALL_TSU = { っ: true, ッ: true };
+
+        function kanaToRomaji(input) {
+          var out = '';
+          var chars = Array.from(String(input || ''));
+          for (var i = 0; i < chars.length; i++) {
+            var ch = chars[i];
+            var next = chars[i + 1];
+            var pair = next ? ch + next : null;
+            if (pair && KANA_DIGRAPHS[pair]) {
+              out += KANA_DIGRAPHS[pair];
+              i++;
+              continue;
+            }
+            if (KANA_SMALL_TSU[ch]) {
+              // 促音（っ/ッ）：直後の子音を重ねる。次の1文字（または
+              // 直後が拗音の場合はその変換結果）の先頭子音を複製する。
+              var followingPair = next && chars[i + 2] ? next + chars[i + 2] : null;
+              var followingRomaji = (followingPair && KANA_DIGRAPHS[followingPair]) || (next && KANA_SINGLE[next]) || '';
+              var firstConsonant = followingRomaji.replace(/^([^aiueo]).*$/, '$1');
+              if (firstConsonant && firstConsonant !== followingRomaji) out += firstConsonant;
+              continue;
+            }
+            if (ch === 'ー') {
+              // 長音記号：直前の母音を繰り返す（無ければ何もしない）。
+              var lastVowelMatch = out.match(/([aiueo])[^aiueo]*$/);
+              if (lastVowelMatch) out += lastVowelMatch[1];
+              continue;
+            }
+            if (KANA_SINGLE[ch]) {
+              out += KANA_SINGLE[ch];
+              continue;
+            }
+            // 変換できない文字（漢字・記号・半角英数字など）はそのまま
+            // 残す（半角英数字はslugifyステップでそのまま使われ、それ
+            // 以外はハイフンに正規化される）。
+            out += ch;
+          }
+          return out;
+        }
+
+        function titleToSlug(title) {
+          var romaji = kanaToRomaji(title || '').toLowerCase();
+          return romaji
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .replace(/-{2,}/g, '-');
+        }
+
+        // Reactの管理下にある<input>へ、Reactのイベントハンドラが正しく
+        // 検知できる形で値を書き込む（直接 .value に代入するだけでは
+        // Reactの内部トラッキングをすり抜けて表示が更新されない・保存
+        // 内容に反映されないため、ネイティブのsetterを経由してから
+        // 'input'イベントを発火させる必要がある。React管理下のフォーム
+        // 要素を外部から操作する際の定石）。
+        function setReactInputValue(input, value) {
+          var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+          setter.call(input, value);
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        var SLUG_AUTOFILL_COLLECTIONS = ['works', 'news'];
+
+        function wireTitleToSlugAutoFill() {
+          try {
+            var m = location.hash.match(/^#\/collections\/([^/]+)/);
+            var collectionName = m ? m[1] : null;
+            if (!collectionName || SLUG_AUTOFILL_COLLECTIONS.indexOf(collectionName) === -1) return;
+            var titleWrap = document.querySelector('[id^="title-field-"]');
+            var slugWrap = document.querySelector('[id^="urlSlug-field-"]');
+            if (!titleWrap || !slugWrap) return;
+            var titleInput = titleWrap.tagName === 'INPUT' ? titleWrap : titleWrap.querySelector('input');
+            var slugInput = slugWrap.tagName === 'INPUT' ? slugWrap : slugWrap.querySelector('input');
+            if (!titleInput || !slugInput) return;
+            if (titleInput.dataset.cmsSlugAutofillWired) return;
+            titleInput.dataset.cmsSlugAutofillWired = '1';
+
+            // 既にurlSlugへ値が入っている状態で開いた場合（既存エントリの
+            // 編集等）は、その時点の値を「最後の自動入力値」として扱う
+            // ことで、無関係な既存の手動入力を上書きしないようにする。
+            var lastAutoSlug = slugInput.value || '';
+
+            slugInput.addEventListener('input', function () {
+              if (slugInput.dataset.cmsSlugAutofilling === '1') {
+                delete slugInput.dataset.cmsSlugAutofilling;
+                return;
+              }
+              // ユーザー自身がurlSlugを直接編集した＝以後は自動上書きを
+              // 停止する（「手動で微修正できる」という要件を満たす）。
+              lastAutoSlug = null;
+            });
+
+            titleInput.addEventListener('input', function () {
+              if (lastAutoSlug === null) return;
+              if (slugInput.value !== '' && slugInput.value !== lastAutoSlug) return;
+              var newSlug = titleToSlug(titleInput.value);
+              if (newSlug === slugInput.value) return;
+              slugInput.dataset.cmsSlugAutofilling = '1';
+              setReactInputValue(slugInput, newSlug);
+              lastAutoSlug = newSlug;
+            });
+          } catch (e) {}
+        }
+
+        wireTitleToSlugAutoFill();
+        setInterval(wireTitleToSlugAutoFill, 1000);
+        window.addEventListener('hashchange', wireTitleToSlugAutoFill);
       })();
     </script>
     <style>
@@ -2984,6 +3347,29 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      }
+      /* 保存せずに閉じるための×ボタン（9.40。カード右上に固定配置し、
+         カード自体の内部スクロールに巻き込まれないよう画面座標基準にする） */
+      .cms-media-popover-close {
+        position: fixed;
+        z-index: 92;
+        top: calc(50% - min(360px, calc(50vh - 24px)) - 18px);
+        left: calc(50% + min(450px, calc(50vw - 24px)) - 18px);
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        border: none;
+        background: #1e2330;
+        color: #fff;
+        font-size: 18px;
+        line-height: 36px;
+        text-align: center;
+        padding: 0;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      }
+      .cms-media-popover-close:hover {
+        background: #dc2626;
       }
       /* 20) 画像メタデータ編集画面：ファイル名の「複製保存」ミニUI（9.39） */
       .cms-media-rename-ui {

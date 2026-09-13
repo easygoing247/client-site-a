@@ -112,9 +112,29 @@
   // ==========================================================================
   function collapseDecorationBlankLines(body) {
     if (typeof body !== 'string' || !body) return body;
+    // ⚠️ 末尾側（装飾ブロックの直後）の圧縮は`</mark>`のみに限定すること。
+    // `<div>`はCommonMarkの「HTMLブロック開始タグ（type 6）」に該当し、
+    // ブロックは直後の空行で終端する仕様のため、`</div>`直後の空行を
+    // 1個の改行に圧縮すると、続く内容（リストや見出し等、装飾とは無関係の
+    // 本文）が空行区切りを失って同じHTMLブロックに飲み込まれ、Markdown
+    // として一切パースされない生テキストとして表示される重大な不具合を
+    // 引き起こす（実機で「</div>の直後にリストを書くと箇条書きが
+    // 「* あ」のようにベタ書き表示される」現象として確認済み。2026-09、
+    // 9.40）。`<mark>`はHTMLブロック開始タグに該当しないため、この問題は
+    // 起きない（CLAUDE.md 9.25参照）。
+    //
+    // ⚠️ 先頭側（装飾ブロックの直前）の圧縮対象から`<video class=
+    // "cms-video-file"`（アップロード動画）は除外している。CommonMarkの
+    // HTMLブロックtype 6タグ一覧に`video`は含まれない（type 7＝
+    // 「その他の任意タグ」扱いで、**直前に空行が無いと段落へ割り込めない**
+    // 仕様）ため、直前の空行を単一改行に圧縮してしまうと、逆に
+    // 段落の続き（lazy continuation）として`<video ...>`タグそのものが
+    // 生テキストとして飲み込まれてしまう。`<div class="cms-align"|
+    // "cms-video-embed"`はtype 6のため空行が無くても段落へ割り込めるので
+    // 圧縮して問題ない。
     return body
-      .replace(/\n{2,}(?=<mark class="cms-mark|<!--cms-box:|<!--cms-speech:|<div class="cms-align|<div class="cms-video-embed|<video class="cms-video-file)/g, '\n')
-      .replace(/(<\/mark>|<\/div>|<\/video>)\n{2,}/g, '$1\n');
+      .replace(/\n{2,}(?=<mark class="cms-mark|<!--cms-box:|<!--cms-speech:|<div class="cms-align|<div class="cms-video-embed)/g, '\n')
+      .replace(/(<\/mark>)\n{2,}/g, '$1\n');
   }
 
   // urlSlug（works / news が持つ「URL用識別子」）を空欄のまま保存した

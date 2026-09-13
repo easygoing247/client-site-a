@@ -389,8 +389,21 @@
     margin: 0 0 1.2em;
     padding-left: 1.4em;
   }
+  /* Tailwindのpreflightがul/olのlist-styleを`none`にリセットしている
+     ため、本文専用スタイルとして明示的に復元する（2026-09。以前は
+     この指定が無く、箇条書き・番号付きリストとも見た目上マーカーが
+     一切表示されず「インデントだけで番号が付かない」状態だった）。 */
+  .prose-content ul {
+    list-style: disc;
+  }
+  .prose-content ol {
+    list-style: decimal;
+  }
   .prose-content li {
     margin-bottom: 0.4em;
+  }
+  .prose-content li::marker {
+    color: inherit;
   }
   .prose-content blockquote {
     margin: 0 0 1.2em;

@@ -424,12 +424,32 @@
   // アイコン画像は他の画像フィールドと違い、複数記事間で使い回す「話者
   // アバター」用途のため、works/newsの記事ごとのmedia_folder（../../assets）
   // ではなく、メディアライブラリ全体（既定のグローバル設定）から選ぶ。
+  //
+  // ⚠️ ただし既定のグローバル設定（media_folder: "src/assets" /
+  // public_folder: "/src/assets"）をそのまま使うと、保存される値が
+  // `/src/assets/xxx.jpg`という「サイトのソースディレクトリ基準の
+  // 絶対パス」になる。この値は`toBlock()`で本文中に生の`<img src="...">`
+  // タグとしてそのまま埋め込まれるが、`<img>`タグはAstroのMarkdown画像
+  // 最適化パイプライン（`![]()`構文専用）の対象外のため一切変換されず、
+  // ビルド後の`dist/`には`src/`ディレクトリ自体が存在しないため本番で
+  // 404になる（実機確認済み。2026-09、9.40）。video-fileコンポーネント
+  // （このファイル内の2番目のコンポーネント）と同じ理由・同じ対処で、
+  // `public/uploads/editor/`という専用フォルダに保存し、常にビルド後も
+  // そのまま配信可能な絶対URLパス（`/uploads/editor/xxx.jpg`）になる
+  // ようにしている。
   // ==========================================================================
   window.CMS.registerEditorComponent({
     id: 'speech-bubble',
     label: '吹き出し（アイコン付き）',
     fields: [
-      { name: 'avatar', label: 'アイコン画像（話者アバター）', widget: 'image', required: false },
+      {
+        name: 'avatar',
+        label: 'アイコン画像（話者アバター）',
+        widget: 'image',
+        required: false,
+        media_folder: '/public/uploads/editor',
+        public_folder: '/uploads/editor',
+      },
       { name: 'name', label: '名前（未入力なら非表示）', widget: 'string', required: false },
       {
         name: 'align',
