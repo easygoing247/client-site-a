@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913l" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260913m" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913l"></script>
+    <script src="./preview.js?v=20260913m"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913l"></script>
+    <script src="./editor-components.js?v=20260913m"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -3208,28 +3208,38 @@
           kuromojiReadyCallbacks.push(onReady);
           if (kuromojiLoadStarted) return;
           kuromojiLoadStarted = true;
-          try {
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js';
-            script.onload = function () {
-              try {
-                window.kuromoji
-                  .builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
-                  .build(function (err, tokenizer) {
-                    if (err || !tokenizer) return;
-                    kuromojiTokenizer = tokenizer;
-                    kuromojiReadyCallbacks.forEach(function (cb) {
-                      try {
-                        cb(tokenizer);
-                      } catch (e) {}
+          // 辞書の構築（gzip圧縮された数MB規模のバイナリをメインスレッド上で
+          // 解凍・パースしてダブル配列Trieを組み立てる、CPUバウンドな重い
+          // 処理）がエントリ編集画面自体の初期描画と競合してカクつき・
+          // 一時的な無応答を招かないよう、`requestIdleCallback`
+          // （非対応ブラウザでは`setTimeout`）でメインスレッドが
+          // 一段落してから読み込みを開始する。
+          var schedule =
+            window.requestIdleCallback || function (cb) { setTimeout(cb, 200); };
+          schedule(function () {
+            try {
+              var script = document.createElement('script');
+              script.src = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js';
+              script.onload = function () {
+                try {
+                  window.kuromoji
+                    .builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
+                    .build(function (err, tokenizer) {
+                      if (err || !tokenizer) return;
+                      kuromojiTokenizer = tokenizer;
+                      kuromojiReadyCallbacks.forEach(function (cb) {
+                        try {
+                          cb(tokenizer);
+                        } catch (e) {}
+                      });
+                      kuromojiReadyCallbacks = [];
                     });
-                    kuromojiReadyCallbacks = [];
-                  });
-              } catch (e) {}
-            };
-            script.onerror = function () {};
-            document.head.appendChild(script);
-          } catch (e) {}
+                } catch (e) {}
+              };
+              script.onerror = function () {};
+              document.head.appendChild(script);
+            } catch (e) {}
+          });
         }
 
         // タイトルをkuromojiで単語（形態素）に分割し、各単語ごとの
@@ -3297,13 +3307,31 @@
             var m = location.hash.match(/^#\/collections\/([^/]+)/);
             var collectionName = m ? m[1] : null;
             if (!collectionName || SLUG_AUTOFILL_COLLECTIONS.indexOf(collectionName) === -1) return;
+            var titleWrap = document.querySelector('[id^="title-field-"]');
+            var slugWrap = document.querySelector('[id^="urlSlug-field-"]');
+            // ⚠️ 辞書の読み込み開始は、実際にタイトル・urlSlugの両方の
+            // フィールドが存在する画面（＝エントリの新規作成・編集画面）
+            // まで遅らせること。以前は「works/newsコレクションの画面を
+            // 開いた時点」（一覧画面を含む）で無条件に読み込みを
+            // 開始していたため、kuromoji.jsの辞書構築処理（gzip圧縮
+            // された数MB規模のバイナリ辞書をメインスレッド上で解凍・
+            // パースしてダブル配列Trieを構築する、CPUバウンドな重い
+            // 処理）が「実績・活用事例作成」「お知らせ投稿」の
+            // **一覧画面を開いただけ**で走ってしまい、その間メイン
+            // スレッドが専有されて画面全体が応答不能になり、「エントリ
+            // 一覧の読み込みでフリーズする」という不具合として
+            // 報告される原因になっていた（実機で、一覧画面の
+            // ハッシュだけでもタイトル・urlSlugフィールド存在チェックの
+            // 前に辞書読み込みが起動してしまっていたことをコードレビューで
+            // 確認済み）。実際にタイトル入力欄が必要なのはエントリの
+            // 新規作成・編集画面のみのため、この存在チェックより後ろに
+            // 読み込み開始処理を移動し、一覧画面では一切辞書を読み込ま
+            // ないようにした。
+            if (!titleWrap || !slugWrap) return;
             // 画面を開いた時点で辞書の読み込みを裏で開始しておく
             // （ユーザーが実際にタイトルを打ち始める頃には読み込みが
             // 済んでいる可能性を高めるため）。
             loadKuromojiTokenizer(function () {});
-            var titleWrap = document.querySelector('[id^="title-field-"]');
-            var slugWrap = document.querySelector('[id^="urlSlug-field-"]');
-            if (!titleWrap || !slugWrap) return;
             var titleInput = titleWrap.tagName === 'INPUT' ? titleWrap : titleWrap.querySelector('input');
             var slugInput = slugWrap.tagName === 'INPUT' ? slugWrap : slugWrap.querySelector('input');
             if (!titleInput || !slugInput) return;
