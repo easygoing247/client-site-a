@@ -25,6 +25,21 @@ importScripts('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js');
 var tokenizer = null;
 var buildPromise = null;
 
+// ⚠️ 辞書構築に一度失敗した場合、`buildPromise`にrejectされたPromiseを
+// キャッシュしたまま放置しない（9.46で発見・修正）。以前の実装は
+// 構築に失敗しても`buildPromise`をそのまま保持し続けていたため、
+// jsDelivrへの一時的な接続不調・タイムアウト等で**最初の1回だけ**
+// 辞書取得（gzip圧縮された辞書ファイル群、複数リクエストに分割）が
+// 失敗すると、そのWorkerインスタンスが生きている間（＝管理画面の
+// タブを開いたままの間）、以後のタイトル入力すべてが恒久的に
+// フォールバック（ひらがな・カタカナのみの変換、漢字はハイフン化）
+// のまま固定されてしまうという重大な不具合があった。「私は学生
+// です」→「ha-desu」のように漢字が脱落したまま二度と正しい変換に
+// 格上げされない、という報告の実体はこれだったと判明した（一度
+// 正常に構築が成功していれば以後は問題なく動作するため、辞書取得の
+// タイミング次第で発生有無が変わる、原因の分かりにくい不具合だった）。
+// 修正：構築に失敗した場合は`buildPromise`を`null`に戻し、次回の
+// リクエストで辞書構築を最初からやり直せるようにした。
 function ensureTokenizer() {
   if (tokenizer) return Promise.resolve(tokenizer);
   if (buildPromise) return buildPromise;
@@ -43,6 +58,12 @@ function ensureTokenizer() {
     } catch (e) {
       reject(e);
     }
+  });
+  buildPromise.catch(function () {
+    // 失敗はここで一旦飲み込み、キャッシュだけをクリアする
+    // （実際のエラー通知は呼び出し元＝onmessage側の.catch()が
+    // 個別のtokenizeリクエストに対して行う）。
+    buildPromise = null;
   });
   return buildPromise;
 }
