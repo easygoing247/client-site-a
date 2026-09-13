@@ -39,7 +39,7 @@ const { Content } = await work.render();
         </nav>
 
         {work.data.image && (
-          <div class="rounded-2xl overflow-hidden border border-surface-border mb-8">
+          <div class="rounded-2xl overflow-hidden border border-surface-border mb-8 md:max-w-[67%] md:mx-auto">
             <Image
               src={work.data.image}
               alt={work.data.title ?? ''}

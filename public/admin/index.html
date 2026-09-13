@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913b" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260913c" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913b"></script>
+    <script src="./preview.js?v=20260913c"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913b"></script>
+    <script src="./editor-components.js?v=20260913c"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2145,7 +2145,15 @@
         function findOpenMediaLibraryModal() {
           var modals = document.querySelectorAll('[class*="StyledModal"]');
           for (var i = 0; i < modals.length; i++) {
-            if (modals[i].querySelector('input[type="file"]')) return modals[i];
+            if (modals[i].querySelector('input[type="file"]')) {
+              // CSS側で `:has()`（大きなDOM上での再計算コストが高い）を
+              // 使わずにこのモーダルだけへ幅調整を適用できるよう、
+              // 目印のクラスを付与しておく（14章のCSS参照）。
+              if (!modals[i].classList.contains('cms-is-media-library')) {
+                modals[i].classList.add('cms-is-media-library');
+              }
+              return modals[i];
+            }
           }
           return null;
         }
@@ -2222,7 +2230,46 @@
         var cmsMediaMetaCache = null;
         var cmsMediaMetaFetching = false;
 
+        // ビルド時静的データ（/media-library.json）は「最後にデプロイした
+        // 時点」のスナップショットのため、同一セッション内で「メディア
+        // 管理」を編集・公開した直後にこの絞り込みを確認しても反映されない
+        // （＝再ビルド待ちに見えて「動作していない」と誤認されやすい）。
+        // Reduxストアに`mediaLibrary.mediaLibrary`エントリが既にロード
+        // 済み（＝このセッション内でメディア管理を一度でも開いていれば
+        // 保存直後の最新値を保持している）場合はそちらを優先して使う
+        // （読み取り専用、9.26-Bと同じ安全原則）。ロードされていない
+        // 場合のみ、従来どおり静的JSONへフォールバックする。
+        function getMediaMetaFromRedux() {
+          try {
+            var store = findDecapReduxStore();
+            if (!store) return null;
+            var state = store.getState();
+            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
+            if (!entities) return null;
+            var entry = entities.get('mediaLibrary.mediaLibrary');
+            if (!entry) return null;
+            var data = entry.get ? entry.get('data') : null;
+            if (!data || typeof data.get !== 'function') return null;
+            var items = data.get('items');
+            if (!items || typeof items.toJS !== 'function') return null;
+            var map = {};
+            items.toJS().forEach(function (item) {
+              if (!item || !item.image) return;
+              var filename = String(item.image).split('/').pop();
+              if (filename) map[filename] = { category: item.category, title: item.title, alt: item.alt };
+            });
+            return map;
+          } catch (e) {
+            return null;
+          }
+        }
+
         function loadMediaMetaOnce(callback) {
+          var reduxMeta = getMediaMetaFromRedux();
+          if (reduxMeta) {
+            callback(reduxMeta);
+            return;
+          }
           if (cmsMediaMetaCache) {
             callback(cmsMediaMetaCache);
             return;
@@ -2308,6 +2355,124 @@
 
         var mediaCategoryFilterObserver = new MutationObserver(ensureMediaCategoryFilter);
         mediaCategoryFilterObserver.observe(document.body, { childList: true, subtree: true });
+
+        // ==================================================================
+        // 13) 「サイト全体設定 ＞ 実績 ＞ 表示順序」リストの各行に、
+        //     選択中の実績の「タイトル」を表示する。
+        //
+        //     config.yml の summary（"{{fields.item}}"）は、relation
+        //     ウィジェットが保存するvalue_field（＝URL用識別子/slug）を
+        //     そのまま表示するのが限界（Decap公式のmoustacheテンプレートは
+        //     そのフィールド自身の値しか参照できず、他コレクションの
+        //     エントリを検索して埋め込む機能を持たない）。ここでは
+        //     9.26-Bと同じ「Reduxストアの読み取り専用参照」の手法で、
+        //     `works.<slug>` エントリの`title`フィールドへ実際にアクセス
+        //     できる場合はそちらへ表示を差し替える。
+        //
+        //     ただしReduxの`entities`は、そのコレクション（today's
+        //     セッションで一度も開いていない実績エントリ）が未ロードの
+        //     ままだと参照できない（9.26-B・9.32-Bと同じ制約）。その
+        //     ためRedux参照が失敗した場合のみ、`works-titles.json`
+        //     （src/pages/works-titles.json.ts、ビルド時に全実績の
+        //     slug→titleを静的生成したもの）へフォールバックする
+        //     （9.32-Bのメディアメタデータと同じ「本番公開済みデータの
+        //     流用」パターン）。
+        //
+        //     置換前の生のslug文字列は`data-cms-order-slug`属性に
+        //     保持しておく——一度置換した後に再度このパッチ関数が走った
+        //     際、既にタイトルへ書き換え済みのtextContentを「slugだ」と
+        //     誤認して再解決してしまうのを防ぐため。
+        // ==================================================================
+        var cmsWorksTitleCache = null;
+        var cmsWorksTitleFetching = false;
+
+        function getWorksTitleFromRedux(slug) {
+          try {
+            var store = findDecapReduxStore();
+            if (!store) return null;
+            var state = store.getState();
+            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
+            if (!entities) return null;
+            var entry = entities.get('works.' + slug);
+            if (!entry) return null;
+            var data = entry.get ? entry.get('data') : null;
+            if (!data || typeof data.get !== 'function') return null;
+            var title = data.get('title');
+            return typeof title === 'string' && title.trim() ? title : null;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function loadWorksTitleMapOnce(callback) {
+          if (cmsWorksTitleCache) {
+            callback(cmsWorksTitleCache);
+            return;
+          }
+          if (cmsWorksTitleFetching) return;
+          cmsWorksTitleFetching = true;
+          fetch('/works-titles.json')
+            .then(function (res) {
+              return res.ok ? res.json() : {};
+            })
+            .then(function (json) {
+              cmsWorksTitleCache = json || {};
+              cmsWorksTitleFetching = false;
+              callback(cmsWorksTitleCache);
+            })
+            .catch(function () {
+              cmsWorksTitleCache = {};
+              cmsWorksTitleFetching = false;
+            });
+        }
+
+        function patchWorksOrderListLabels() {
+          try {
+            var orderFieldEl = document.querySelector('[id^="order-field-"]');
+            if (!orderFieldEl || !orderFieldEl.closest('[id^="works-field-"]')) return;
+            var labels = orderFieldEl.querySelectorAll('[class*="NestedObjectLabel"]');
+            if (!labels.length) return;
+            labels.forEach(function (labelEl) {
+              var slug = labelEl.getAttribute('data-cms-order-slug');
+              if (!slug) {
+                slug = (labelEl.textContent || '').trim();
+                if (!slug) return;
+                labelEl.setAttribute('data-cms-order-slug', slug);
+              }
+              var reduxTitle = getWorksTitleFromRedux(slug);
+              if (reduxTitle) {
+                if (labelEl.textContent !== reduxTitle) labelEl.textContent = reduxTitle;
+                return;
+              }
+              loadWorksTitleMapOnce(function (map) {
+                var title = map[slug];
+                if (title && labelEl.textContent === slug) {
+                  labelEl.textContent = title;
+                }
+              });
+            });
+          } catch (e) {}
+        }
+
+        // ⚠️ MutationObserver（document.body全体監視）は使わない：実機検証で
+        // 「サイト全体設定」エントリ画面自体が、常時バックグラウンドで
+        // 秒間十数回程度のDOM変化（スクロール同期・クイックナビ等、他の
+        // 既存機能が持つ定期処理由来）を起こしていることを確認しており、
+        // ここで textContent を書き換える処理をdocument.body監視の
+        // MutationObserverに直結すると、その書き換え自体が新たな
+        // mutationとして観測されて再度ハンドラを呼び、さらに書き換えが
+        // 起きる…という共鳴的なループに陥り、実機でタブが完全に応答
+        // 不能になることを確認した（`patchFilesCollectionListLabels`
+        // 9.26-Bが同じ手法でも問題ないのは、そちらは「下層ページ編集」
+        // 一覧画面のような書き換え対象が見つからない場面が大半で、
+        // 実際にDOM書き込みが起きないため共鳴が発生しないため。今回は
+        // 「サイト全体設定」エントリ内での書き換えが常に発生するため
+        // 事情が異なる）。そのため、mutationに反応する方式ではなく、
+        // 一定間隔（1秒）でポーリングする方式に変更し、書き換えイベント
+        // 自体が次の呼び出しの引き金にならないようにしている。
+        patchWorksOrderListLabels();
+        setInterval(patchWorksOrderListLabels, 1000);
+        window.addEventListener('hashchange', patchWorksOrderListLabels);
       })();
     </script>
     <style>
@@ -2325,6 +2490,42 @@
         font-size: 13px;
         background: #fff;
         color: #1e2330;
+      }
+      /*
+        14) メディアライブラリの横スクロール解消・5列グリッド調整。
+
+        メディア一覧は react-virtualized の Grid（AutoSizer付き）で
+        描画されており、列数・グリッド全体の幅はモーダルの実測幅を
+        マウント時に1度だけ測定して決まる（開いている最中のリサイズには
+        追従しない。実機検証で確認済み）。カード1枚 = 280px、列間隔
+        300px（280px + 20pxガター）換算で、モーダル幅を1600px前後
+        （内側コンテンツ幅で1480〜1780pxの範囲）に確保すると、
+        常に5列（4*300+280=1480px）でぴったり収まることを実測で
+        確認済み。ワイドディスプレイ（1600px超）ではこの固定値が
+        そのまま使われ、それより狭い画面では `max-width: 96vw` により
+        比例縮小し、結果的に列数が4列・3列と自動的に減る（横スクロール
+        は発生しない）。
+
+        加えて、react-virtualized側の既知の不具合として、列幅の計算が
+        「縦スクロールバー分の幅」を差し引かずに行われるため、
+        コンテンツの行数が多く縦スクロールバーが出る状況では、列数に
+        関わらず常にスクロールバー幅（実測15px前後）ぶんだけ横方向にも
+        はみ出し、それが不要な横スクロールとして現れることを実機検証で
+        特定した（decap-cms本体側の既知の制約で、公開APIの範囲では
+        列幅計算自体は直せない）。実際のカード内容が失われるわけでは
+        なく、最終列の右端がスクロールバー幅ぶんだけ僅かに切れるだけの
+        ため、`overflow-x: hidden` で見た目上の横スクロールバー自体を
+        消してこの端数を隠す方式で対処する。
+      */
+      /* :has() でメディアライブラリのモーダル（内部に input[type=file] を
+         持つ StyledModal）だけに絞り込み、他の確認ダイアログ等の幅には
+         影響しないようにする。 */
+      [class*='StyledModal'].cms-is-media-library {
+        width: 1600px !important;
+        max-width: 96vw !important;
+      }
+      [class*='CardGridContainer'] > div > div {
+        overflow-x: hidden !important;
       }
     </style>
   </body>

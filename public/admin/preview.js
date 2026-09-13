@@ -1640,7 +1640,7 @@
               imageUrl &&
                 h(
                   'div',
-                  { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8' },
+                  { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8 md:max-w-[67%] md:mx-auto' },
                   h('img', { src: imageUrl, alt: data.title || '', className: 'w-full h-auto object-cover block' })
                 ),
               data.title &&
