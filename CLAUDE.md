@@ -2162,3 +2162,132 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
     ハンバーガーメニュー・画面下部固定バー表示／手動ドラッグ：
     どのプリセットにも属さない自由な幅に追従し、その幅なりの
     レスポンシブ表示になる）。
+
+### 9.31 プレビューのハンバーガーメニュー開閉を全画面で復元／「サイト全体設定」プレビューの完全ビジュアル化／お知らせのトップ固定機能を実装（2026-09）
+
+**A. スマホプレビューのハンバーガーメニューが開閉しない不具合の修正**
+
+- **原因の切り分け**：「サイト全体設定」（`SiteInfoPreview`）の
+  ハンバーガーは9.21で実装済みの本物のReact state（`mobileNavOpen`）＋
+  `onClick`ハンドラのため、実機検証でも問題なく開閉した。一方、
+  「下層ページ編集」「商品作成」「実績・活用事例作成」「お知らせ投稿」
+  の各プレビュー（`pagePreviewShell`／`WorkPreview`が使う
+  `publishedHeaderHtml`＝本番`/`から取得した`<header>`の生HTMLを
+  `dangerouslySetInnerHTML`でそのまま挿入する方式）は、7章・9.21で
+  「埋め込まれた`<script>`は実行されないため見た目には影響しないが
+  ハンバーガーはクリック不可のまま」と**既知の制約として記録済み**
+  だったが、今回はこれを実際に解消できることが分かった。
+- **修正**：`src/components/MobileMenuButton.astro` /
+  `MobileNavDrawer.astro`が持つ安定したID（`#menu-btn` /
+  `#mobile-nav` / `#bar1`〜`#bar3`）を使い、挿入後のDOMに対して
+  `MobileNavDrawer.astro`の`<script>`と全く同じ開閉ロジック
+  （`setMenu()`）を手動で再アタッチする`activateStaticHeaderMenu()`を
+  追加した。二重アタッチ防止に`data-menu-wired`属性を使う。
+  - **実装上のハマりどころ（reactのrefが効かない）**：当初は
+    Reactの`ref`コールバックで挿入先のDOMノードを受け取る設計にしたが、
+    実機検証で`ref`が一度も発火しないことが判明した。原因を
+    `window.h`（Decapが公開している`React.createElement`）の実体を
+    直接ダンプして確認したところ、`ref`を特別扱いせず通常のprops
+    として扱っているだけの実装であることが分かった（本ファイルの
+    どの既存コードも`ref`を使っていなかったのはこれが理由と考えられる）。
+    そのため、挿入先のDOMを取得する手段として`ref`は使わず、
+    代わりに（onClickハンドラ等の通常のReactイベント委譲は問題なく
+    動作することを別途確認済みの上で）呼び出し元のクラスコンポーネントの
+    `componentDidMount`/`componentDidUpdate`から、管理画面側の
+    `document.querySelector('.Pane2 iframe')`を辿って
+    プレビューiframeの`contentDocument`を取得し、そこから
+    `#menu-btn`等をIDで検索する方式にした。この処理自体は
+    `WorkPreview`・`makePagePreview`（内部的に`pagePreviewShell`を
+    使う`ProductsCatalogPreview`/`ServicesPagePreview`/
+    `AboutPagePreview`/`ContactPagePreview`/`NewsListPagePreview`/
+    `NewsPreview`が共通利用）の両方に追加した。
+  - 実機検証：`npm run dev`（`astro dev`）・`npm run build && npm run
+    preview`の両モードで、実績・活用事例／下層ページ編集（サービス
+    内容・料金）の各プレビューをスマホ幅に切り替え、ハンバーガーを
+    クリックすると`aria-expanded`が`true`に変わり、ドロワーが実際に
+    開く（ナビ項目・お問い合わせボタンまで表示される）ことを確認した。
+  - **教訓**：「埋め込んだ`<script>`が実行されないため機能を諦める」
+    という過去の結論（7章・9.21）は、`<script>`自体を動かす方法が
+    無いことは事実だが、**挿入後のDOMに対して同じロジックを手動で
+    再アタッチすれば同等の機能を実現できる**ケースがある、という
+    より一般的な教訓として記録する。9.26（`type:'inline'`の発見）や
+    9.26-B（React Fiber経由のRedux参照）と同様、「公式に用意された
+    手段が無い＝実現不可能」と早期に断定せず、実際のDOM構造・
+    バンドル内部実装を調べることで解決できる場合がある。
+
+**B. 「サイト全体設定」プレビューの完全ビジュアル化（省略テキストの廃止）**
+
+- **実装**：ヘッダー・フッター・画面下部固定バーで既に確立していた
+  「本番`/`から取得した公開済みHTMLをそのまま流用する」方式
+  （7章・9.22参照）を、トップページの「サービス内容」「商品一覧」
+  「実績・活用事例」「お知らせ」の4セクションのカード本体にも拡張した。
+  `loadSiteStylesheetAndTheme()`が取得済みの`parsed`（本番`/`の
+  DOM）から、共通ヘルパー`extractCardsHtml(parsed, sectionId)`で
+  各セクションの`[data-slider-root]`（カードのグリッド／スライダー
+  本体）と、その外側の兄弟要素`[data-slider-dots]`（9.16で確立した
+  「dotsはrootの外」規約）を抜き出し、`publishedServicesCardsHtml`
+  `publishedProductsCardsHtml`（商品一覧トップセクション）
+  `publishedWorksCardsHtml`にそれぞれ保持する。お知らせは
+  `<ul>`要素を`publishedNewsListEl`（DOM参照のまま保持）として
+  取得し、レンダー時に編集中の「トップページに表示する件数」
+  （`data.newsSection.count`）で`<li>`単位に再スライスしてから
+  `<ul>`を組み立て直す（他の3セクションと異なり、件数フィールドの
+  変更を即座にプレビューへ反映できたほうが実用的なため）。
+- **見出し・リンク文言との住み分け**：`eyebrow`/`heading`/
+  `linkLabel`/`linkHref`は引き続き「今まさに編集中の値」を
+  このファイル側で再現し、カード本体（別CMSエントリのデータ）だけを
+  公開済みHTMLに置き換える。見出しまで公開済みHTMLに含めてしまうと、
+  編集中の値と古い公開済みの値が混在して混乱を招くため、意図的に
+  カード部分（`[data-slider-root]`＋`[data-slider-dots]`）だけを
+  抽出している。
+  取得できなかった場合（`astro dev`でCSSがJS注入される等の理由で
+  `/`の取得自体に失敗した場合）のみ、内容の薄い案内文にフォールバック
+  する（「省略しています」という表現はやめ、「取得できませんでした」
+  に変更——恒常的な仕様ではなく異常系であることを明確にするため）。
+  実機検証（`npm run build && npm run preview`）で、「サイト全体設定」
+  プレビューをスクロールし、4セクションすべてに実際のカード
+  （画像・タイトル・価格等を含む）が表示されることを確認した。
+- **未対応（意図的に見送った）：サイト全体設定からのドラッグ&ドロップ
+  並び替え**：ユーザーからは「サービス」「商品一覧」の掲載順序も
+  `works.order`（9.9参照）と同じ`relation`ベースの並び替えリストを
+  「サイト全体設定」に追加してほしいという要望があったが、**Decap
+  CMSの`relation`ウィジェットの仕様上、安全に実装できないことを
+  確認した**：`relation`は`collection:`で指定した**コレクションの
+  個々のエントリ（＝ファイル）**を選択肢として列挙する仕組みであり、
+  `works`（1実績＝1ファイルの`folder`コレクション）のように
+  各アイテムが独立したファイルである場合にのみ機能する。一方
+  「サービス詳細」（`services.yml`の`items`）・商品（`products.yml`の
+  `items`）は、**1つのファイル（`files`コレクションのエントリ）の
+  中のリストフィールド**であり、リストの各項目は独立したエントリ
+  ではないため、`relation`の選択肢として列挙する対象にならない
+  （`collection: "services"`と指定しても、選べるのは「services.yml
+  という1ファイルそのもの」だけで、その中の個々の「サービス詳細」
+  項目までは辿れない）。この制約は`works`が意図的に`folder`
+  コレクションとして設計されている理由そのものであり（§4参照）、
+  回避するには「サービス」「商品」も`works`と同様に1項目＝1ファイルの
+  `folder`コレクションへ設計変更する必要があるが、これは既存データ・
+  `/services`／`/products`ページの実装（§4・9.4参照）に及ぶ大きな
+  構成変更となるため、今回は見送った。**サービス・商品の掲載順序は
+  従来どおり、各データファイル（`services.yml`の「サービス詳細」／
+  `products.yml`の商品リスト）自体が持つ`widget: list`のドラッグ&
+  ドロップで変更する**（Decapの`list`ウィジェットは元々どのコレクション
+  でも項目の並び替えに対応済みのため、これ自体は既に機能している。
+  Service.astro／Products.astroともに、この保存済みの並び順を
+  そのまま反映するだけで独自の並び替えロジックは持たない）。
+
+**C. 「お知らせ投稿」のトップ固定（ピン留め）機能**
+
+- **実装**：`src/content/config.ts`の`news`スキーマに
+  `pinned`（`boolean`、既定`false`）・`pinOrder`（`number`、既定`1`。
+  `works.price`等と同じ`cmsNumberWithDefault`ヘルパー経由——Decapの
+  numberウィジェットは空欄だと`frontmatter`に`""`を書き出すため、
+  素の`z.number()`だとビルドが落ちる、既知の型ゆれ対策）を追加。
+  `public/admin/config.yml`の`news`コレクションに対応する2フィールド
+  （「この記事を一覧の最上部に固定表示する」「固定時の表示優先度」）を
+  追加した。
+- **ソートロジック**：`src/lib/news.ts`の`getPublishedNews()`
+  （トップページ`News.astro`・一覧ページ`news/index.astro`の両方が
+  経由する唯一の取得関数）を、(1)`pinned: true`を常に最優先、
+  (2)固定記事同士は`pinOrder`昇順、(3)非固定記事は従来どおり
+  `publishedAt`降順、の3段階ソートに変更した。取得関数がこの1箇所に
+  集約されているため、他のページ側のコードは一切変更不要だった。

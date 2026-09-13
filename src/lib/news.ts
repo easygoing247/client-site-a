@@ -43,12 +43,26 @@ export function formatNewsDate(date: Date | undefined): string {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
-/** 下書き（draft: true）を除外し、公開日の新しい順に並べた記事一覧を返す。 */
+/**
+ * 下書き（draft: true）を除外した記事一覧を、以下の優先順位で並べて返す：
+ *   1. `pinned: true` の記事を常に最優先（最上部）に配置。
+ *   2. 固定記事が複数ある場合は `pinOrder`（数値が小さいほど上）の昇順。
+ *   3. 固定されていない記事は、従来どおり公開日の新しい順（降順）。
+ * トップページ（News.astro）・一覧ページ（news/index.astro）の両方が
+ * この関数経由で取得するため、ソート順の変更はここ1箇所で完結する。
+ */
 export async function getPublishedNews(): Promise<NewsEntry[]> {
   const entries = await getCollection('news', ({ data }) => data.draft !== true);
-  return entries.sort(
-    (a, b) => (b.data.publishedAt?.getTime() ?? 0) - (a.data.publishedAt?.getTime() ?? 0),
-  );
+  return entries.sort((a, b) => {
+    const aPinned = a.data.pinned === true;
+    const bPinned = b.data.pinned === true;
+    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+    if (aPinned && bPinned) {
+      const orderDiff = (a.data.pinOrder ?? 1) - (b.data.pinOrder ?? 1);
+      if (orderDiff !== 0) return orderDiff;
+    }
+    return (b.data.publishedAt?.getTime() ?? 0) - (a.data.publishedAt?.getTime() ?? 0);
+  });
 }
 
 /**

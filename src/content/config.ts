@@ -95,6 +95,13 @@ const news = defineCollection({
       publishedAt: cmsDateOptional,
       category: z.enum(['info', 'blog', 'event', 'works']).optional(),
       summary: z.string().optional(),
+      // 記事の固定表示（トップ／一覧の最上部への固定）。複数の記事を固定
+      // した場合の並び順は pinOrder（数値が小さいほど上）で決める。
+      // cmsNumberWithDefault(1) を使う理由は works.price 等と同じ
+      // （Decapのnumberウィジェットは空欄だと frontmatter に "" を
+      // 書き出すため、素の z.number() だとビルドが落ちる）。
+      pinned: z.boolean().default(false),
+      pinOrder: cmsNumberWithDefault(1),
       draft: z.boolean().default(false),
     }),
 });

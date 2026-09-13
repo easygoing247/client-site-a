@@ -25,10 +25,12 @@
  * 使い回す（works コレクションのプレビューは別エントリのため、
  * siteInfo.yml側の"未保存の編集中の値"までは参照できない＝直近に公開
  * 済みの内容が表示される）。
- * トップページの「実績・活用事例」「商品一覧」の各セクションは、カード本体が
- * ビルド時にしか取得できない別エントリのデータのためプレビュー対象外
- * （プレースホルダー表示。カード自体は works／products.yml 側の
- * プレビューテンプレートで確認する）。
+ * トップページの「サービス内容」「商品一覧」「実績・活用事例」「お知らせ」の
+ * 各セクションも同様に、カード本体は別CMSエントリ（services.yml／
+ * products.yml／worksコレクション／newsコレクション）のデータで
+ * ビルド時にしか取得できないため、直近に公開済みのカード群・一覧のHTMLを
+ * そのまま流用する（見出し・リンク文言など siteInfo.yml 側の値は
+ * 編集中の最新値をこのファイル側で再現する）。
  * ============================================================================ */
 (function () {
   var h = window.h;
@@ -118,6 +120,35 @@
   var publishedHeaderHtml = '';
   var publishedFooterHtml = '';
   var publishedStickyBarHtml = '';
+  var publishedServicesCardsHtml = '';
+  var publishedProductsCardsHtml = '';
+  var publishedWorksCardsHtml = '';
+  var publishedNewsListEl = null;
+
+  // 「サービス内容」「商品一覧」「実績・活用事例」のトップページ用カード群は、
+  // すべて同一の構成（`[data-slider-root]` の中にカードのグリッド／
+  // スライダー、その外側の兄弟要素として `[data-slider-dots]` ＝9.16で
+  // 確立した規約）を共有しているため、共通のヘルパーで抽出できる。
+  // 見出し（eyebrow/heading）・下部のリンクボタンは「サイト全体設定」側の
+  // 現在編集中の値（data.services.heading等）を使って別途このファイル側で
+  // 再現しているため、ここでは意図的に含めない（公開済みの古い見出しと
+  // 混在させないため）。カード自体は別CMSエントリ（services.yml／
+  // products.yml／worksコレクション）のデータのため、このプレビューからは
+  // 編集中の値を参照できず、直近に公開済みの内容がそのまま表示される
+  // （ヘッダー・フッター・画面下部固定バーと同じ制約・同じ方針）。
+  function extractCardsHtml(parsed, sectionId) {
+    if (!parsed) return '';
+    try {
+      var root = parsed.querySelector('#' + sectionId + ' [data-slider-root]');
+      if (!root) return '';
+      var html = root.outerHTML;
+      var dots = root.parentElement && root.parentElement.querySelector('[data-slider-dots]');
+      if (dots) html += dots.outerHTML;
+      return html;
+    } catch (e) {
+      return '';
+    }
+  }
   function loadSiteStylesheetAndTheme() {
     return fetch('/')
       .then(function (res) {
@@ -199,6 +230,11 @@
             if (headerEl) publishedHeaderHtml = headerEl.outerHTML;
             if (footerEl) publishedFooterHtml = footerEl.outerHTML;
             if (stickyBarEl) publishedStickyBarHtml = stickyBarEl.outerHTML;
+
+            publishedServicesCardsHtml = extractCardsHtml(parsed, 'services');
+            publishedProductsCardsHtml = extractCardsHtml(parsed, 'products');
+            publishedWorksCardsHtml = extractCardsHtml(parsed, 'works');
+            publishedNewsListEl = parsed.querySelector('#news ul');
           }
         } catch (e) {
           /* DOMParser非対応環境等では諦め、ヘッダー無しのプレビューにフォールバックする */
@@ -265,6 +301,69 @@
 
   function htmlProp(str) {
     return { dangerouslySetInnerHTML: { __html: str || '' } };
+  }
+
+  // ==========================================================================
+  // 「公開済みの実HTML」として流用しているヘッダー（publishedHeaderHtml、
+  // 下層ページ／商品／実績詳細の各プレビューで使用）は、
+  // dangerouslySetInnerHTML でDOMに挿入するため、埋め込まれた
+  // <script>（src/components/MobileNavDrawer.astro のハンバーガー開閉
+  // ロジック）は一切実行されない（7章・9.21で既知の制約として記載済み。
+  // 実サイトのマークアップ自体は正しく含まれているため、見た目には影響
+  // しないが「ハンバーガーをクリックしてもメニューが開閉しない」原因に
+  // なっていた）。
+  // MobileMenuButton.astro / MobileNavDrawer.astro が持つ安定したID
+  // （#menu-btn / #mobile-nav / #bar1-3）を使い、挿入後のDOMに対して
+  // 同じ開閉ロジックを手動で再アタッチすることで、実サイトと同じ
+  // クリック挙動を復元する。
+  // ⚠️ 実装上の注意：`window.h`（このファイル冒頭でDecapから受け取る
+  // React.createElement）は実機解析の結果、`ref`プロパティを
+  // 通常のpropsとして扱うだけで特別扱いしない（＝ref callbackが
+  // 一切発火しない）ことを確認した。そのため挿入先のDOMノードへは
+  // reactのrefではなく、このプレビューiframe自体（`.Pane2 iframe`）を
+  // 呼び出し元の`componentDidMount`/`componentDidUpdate`から
+  // 都度querySelectorで辿って取得する方式にしている（このファイル内の
+  // 他の箇所が最初からrefを一切使っていないのも同じ理由と考えられる）。
+  // 二重アタッチ防止のため、対象ボタンに `data-menu-wired` を立てる。
+  // ==========================================================================
+  function activateStaticHeaderMenu() {
+    try {
+      var iframe = document.querySelector('.Pane2 iframe');
+      var doc = iframe && iframe.contentDocument;
+      if (!doc) return;
+      var btn = doc.getElementById('menu-btn');
+      var nav = doc.getElementById('mobile-nav');
+      if (!btn || !nav || btn.getAttribute('data-menu-wired')) return;
+      btn.setAttribute('data-menu-wired', '1');
+      var bar1 = doc.getElementById('bar1');
+      var bar2 = doc.getElementById('bar2');
+      var bar3 = doc.getElementById('bar3');
+
+      function setMenu(open) {
+        btn.setAttribute('aria-expanded', String(open));
+        if (open) {
+          nav.style.maxHeight = nav.scrollHeight + 'px';
+          nav.classList.add('nav-open');
+        } else {
+          nav.style.maxHeight = '0px';
+          nav.classList.remove('nav-open');
+        }
+        if (bar1) bar1.style.transform = open ? 'translateY(8px) rotate(45deg)' : '';
+        if (bar2) bar2.style.opacity = open ? '0' : '1';
+        if (bar3) bar3.style.transform = open ? 'translateY(-8px) rotate(-45deg)' : '';
+      }
+
+      btn.addEventListener('click', function () {
+        setMenu(btn.getAttribute('aria-expanded') !== 'true');
+      });
+      doc.querySelectorAll('.mobile-nav-link').forEach(function (link) {
+        link.addEventListener('click', function () {
+          setMenu(false);
+        });
+      });
+    } catch (e) {
+      /* iframeが未マウント・クロスオリジン等で参照できない場合は諦める */
+    }
   }
 
   // ==========================================================================
@@ -559,7 +658,10 @@
   // カード個別項目（画像・タイトル・説明）は siteInfo.yml には無く、
   // 「下層ページ ＞ サービス内容・料金」（別CMSエントリ）の「サービス詳細」を
   // 実サイトが直接参照する。このプレビューからは編集中のそのエントリの値を
-  // 参照できないため、products と同様プレースホルダー表示に留める。
+  // 参照できないため、直近に公開済みのカード群（`publishedServicesCardsHtml`。
+  // ヘッダー・フッターと同じ「公開済みHTMLの流用」方式）をそのまま表示する。
+  // 取得できなかった場合（`astro dev`でCSSがJS注入される等、7章参照）のみ
+  // 案内テキストにフォールバックする。
   // ==========================================================================
   function renderServices(h, data, getAsset, muted) {
     var section = data.services || {};
@@ -570,11 +672,13 @@
         'div',
         { className: 'max-w-[1100px] mx-auto' },
         renderSectionHeading(h, section.eyebrow, section.heading),
-        h(
-          'p',
-          { className: 'text-center text-[13px] text-ink-faint' },
-          '（サービス項目一覧は「下層ページ ＞ サービス内容・料金」の「サービス詳細」から表示されるため、このプレビューでは省略しています）'
-        ),
+        publishedServicesCardsHtml
+          ? h('div', htmlProp(publishedServicesCardsHtml))
+          : h(
+              'p',
+              { className: 'text-center text-[13px] text-ink-faint' },
+              '（サービス項目一覧を取得できませんでした。「下層ページ ＞ サービス内容・料金」の「サービス詳細」を確認してください）'
+            ),
         section.linkLabel &&
           section.linkHref &&
           h(
@@ -596,11 +700,30 @@
 
   // ==========================================================================
   // お知らせセクション（トップページ／ヒーロー直下）
-  // 実際の記事はビルド時取得のため、プレビューでは案内のみ表示する。
+  // 記事本体は別コレクション（news）のデータのため、直近に公開済みの一覧
+  // （`publishedNewsListHtml`）をそのまま表示する（services/products/works
+  // と同じ「公開済みHTMLの流用」方式）。取得できなかった場合のみ案内文に
+  // フォールバックする。
   // ==========================================================================
   function renderNewsSectionPreview(h, data) {
     var section = data.newsSection || {};
     var count = Number(section.count) > 0 ? Math.floor(Number(section.count)) : 3;
+    // 「トップページに表示する件数」は今まさに編集中の値のため、公開済みの
+    // 一覧HTMLをそのまま流用するのではなく、<li>単位で先頭count件だけを
+    // 切り出して再構成する（他のセクションのカード群と違い、件数の反映を
+    // 即座に確認できたほうが実用的なため）。
+    var newsListHtml = '';
+    if (publishedNewsListEl) {
+      var items = Array.prototype.slice.call(publishedNewsListEl.children, 0, count);
+      if (items.length) {
+        newsListHtml =
+          '<ul class="' +
+          publishedNewsListEl.className +
+          '">' +
+          items.map(function (li) { return li.outerHTML; }).join('') +
+          '</ul>';
+      }
+    }
     return h(
       'section',
       { id: 'news', className: 'py-16 px-5' },
@@ -608,11 +731,13 @@
         'div',
         { className: 'max-w-[820px] mx-auto' },
         renderSectionHeading(h, section.eyebrow, section.heading),
-        h(
-          'p',
-          { className: 'text-center text-[13px] text-ink-faint' },
-          '（トップページには最新のお知らせ ' + count + ' 件がリスト表示されます。実際の記事はビルド時に取得されるため、このプレビューでは省略しています）'
-        ),
+        newsListHtml
+          ? h('div', htmlProp(newsListHtml))
+          : h(
+              'p',
+              { className: 'text-center text-[13px] text-ink-faint' },
+              '（お知らせ一覧を取得できませんでした。トップページには最新の記事が ' + count + ' 件表示されます）'
+            ),
         section.linkLabel &&
           h(
             'div',
@@ -683,8 +808,8 @@
 
   // ==========================================================================
   // 実績・活用事例 — カード本体は型化ページ（Content Collections: works、
-  // 別のCMSエントリ）のデータで、ビルド時にしか取得できないため、
-  // このプレビューでは見出しのみ反映し案内を表示する。
+  // 別のCMSエントリ）のデータのため、直近に公開済みのカード群
+  // （`publishedWorksCardsHtml`）をそのまま表示する（servicesと同じ方式）。
   // ==========================================================================
   function renderWorksPlaceholder(h, data, muted) {
     var section = data.works || {};
@@ -695,18 +820,21 @@
         'div',
         { className: 'max-w-[1100px] mx-auto' },
         renderSectionHeading(h, section.eyebrow, section.heading),
-        h(
-          'p',
-          { className: 'text-center text-[13px] text-ink-faint' },
-          '（実績カードは「実績・活用事例一覧（型化ページ）」コレクションのデータを元に表示されるため、このプレビューでは省略しています）'
-        )
+        publishedWorksCardsHtml
+          ? h('div', htmlProp(publishedWorksCardsHtml))
+          : h(
+              'p',
+              { className: 'text-center text-[13px] text-ink-faint' },
+              '（実績カードを取得できませんでした。「実績・活用事例作成」コレクションを確認してください）'
+            )
       )
     );
   }
 
   // ==========================================================================
   // 商品一覧 — カード本体は「商品作成」コレクション（別のCMSエントリ）の
-  // データのため、このプレビューでは見出しのみ反映し案内を表示する。
+  // データのため、直近に公開済みのカード群（`publishedProductsCardsHtml`）
+  // をそのまま表示する（services/worksと同じ方式）。
   // ==========================================================================
   function renderProductsPlaceholder(h, data, muted) {
     var section = data.productsSection || {};
@@ -717,11 +845,13 @@
         'div',
         { className: 'max-w-[1100px] mx-auto' },
         renderSectionHeading(h, section.eyebrow, section.heading),
-        h(
-          'p',
-          { className: 'text-center text-[13px] text-ink-faint' },
-          '（商品カードは「商品作成」コレクションのデータを元に表示されるため、このプレビューでは省略しています）'
-        )
+        publishedProductsCardsHtml
+          ? h('div', htmlProp(publishedProductsCardsHtml))
+          : h(
+              'p',
+              { className: 'text-center text-[13px] text-ink-faint' },
+              '（商品カードを取得できませんでした。「商品作成」コレクションを確認してください）'
+            )
       )
     );
   }
@@ -1456,6 +1586,10 @@
       stylesReady.then(function () {
         if (!self._unmounted) self.forceUpdate();
       });
+      activateStaticHeaderMenu();
+    },
+    componentDidUpdate: function () {
+      activateStaticHeaderMenu();
     },
     componentWillUnmount: function () {
       this._unmounted = true;
@@ -1770,6 +1904,10 @@
         stylesReady.then(function () {
           if (!self._unmounted) self.forceUpdate();
         });
+        activateStaticHeaderMenu();
+      },
+      componentDidUpdate: function () {
+        activateStaticHeaderMenu();
       },
       componentWillUnmount: function () {
         this._unmounted = true;

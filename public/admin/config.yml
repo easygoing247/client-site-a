@@ -852,6 +852,8 @@ collections:
           - { label: "イベント", value: "event" }
           - { label: "実績紹介", value: "works" }
       - { label: "抜粋（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
+      - { label: "この記事を一覧の最上部に固定表示する", name: "pinned", widget: boolean, default: false }
+      - { label: "固定時の表示優先度（数字が小さいほど上に表示）", name: "pinOrder", widget: number, value_type: int, default: 1, required: false, hint: "固定表示が有効な記事が複数ある場合に適用されます。" }
       - { label: "下書き（チェック中はサイトに公開されません）", name: "draft", widget: boolean, default: false }
       - label: "本文"
         name: "body"
