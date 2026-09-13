@@ -6,6 +6,42 @@ import remarkBreaks from 'remark-breaks';
 // 本番公開時は実際のドメインに差し替えてください（sitemap生成に使用されます）
 const SITE_URL = 'https://master-template-multi.easygoing247.workers.dev';
 
+// `/admin`・`/admin/`（末尾スラッシュ無し・有り）へのアクセス時、
+// `astro dev`の開発サーバーに限り`/admin/index.html`へ内部的に書き換える
+// 軽量ミドルウェア。Decap CMS本体（index.html/config.yml等）は
+// `public/admin/`にプレーンな静的ファイルとして配置しているが、
+// Astroの開発サーバーは`public/`配下のサブディレクトリに対して
+// 「ディレクトリ名だけのURLをindex.htmlへ解決する」機能を持たないため、
+// `http://localhost:4321/admin/`のようにファイル名を省略したURLで
+// アクセスすると404になる（`/admin/index.html`と明記すれば正常に
+// 表示される。5章参照）。この既知の制約はファイルの欠落によるものでは
+// なく（`public/admin/`にはconfig.yml・index.html等が実在する）、
+// 開発時の利便性の問題のため、`astro:server:setup`フックでdevサーバー
+// にのみ介入して解消する。
+// ⚠️ 一度Astro標準の`redirects`設定（ビルド時に実ファイルとして
+// リダイレクトページを生成する機能）で同じことを試みたが、`/admin`・
+// `/admin/`の出力先ファイルパスが`dist/admin/index.html`となり、
+// 本物のDecap CMS本体（`public/admin/index.html`がそのままコピーされる
+// 場所）と完全に衝突して上書きしてしまう重大な不具合を実機ビルドで
+// 確認したため、その方式は採用していない（本番ビルド・
+// `public/`配下の静的ファイルコピーには一切影響しない、dev限定の
+// ミドルウェア方式に変更した経緯）。
+function adminDirectoryIndexDevMiddleware() {
+  return {
+    name: 'admin-directory-index-dev-middleware',
+    hooks: {
+      'astro:server:setup': ({ server }) => {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === '/admin' || req.url === '/admin/') {
+            req.url = '/admin/index.html';
+          }
+          next();
+        });
+      },
+    },
+  };
+}
+
 export default defineConfig({
   site: SITE_URL,
   integrations: [
@@ -13,6 +49,7 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
     sitemap(),
+    adminDirectoryIndexDevMiddleware(),
   ],
   image: {
     // astro:assets のデフォルト画像最適化（sharp）を使用

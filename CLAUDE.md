@@ -3378,3 +3378,60 @@ Git 連携なら push で自動再デプロイされる。Git 未連携の場合
     の単語区切りローマ字）に自動補完されることを確認。続けて
     `urlSlug`を`manual-override`に手動書き換えした後、タイトルへ
     追記しても`urlSlug`が上書きされず保持され続けることも確認した。
+
+### 9.42 `astro dev`での`/admin/`（末尾スラッシュ）404の解消（dev専用ミドルウェア）（2026-09）
+
+- **前提の確認**：報告された「`http://localhost:4321/admin/`が404に
+  なる」不具合を調査したが、`public/admin/`配下のファイル
+  （`index.html`・`config.yml`・`preview.js`・`editor-components.js`）は
+  すべて実在しており（`git status`もクリーン）、ファイルの欠落や
+  破損は無かった。また本プロジェクトには`src/admin/`ディレクトリや
+  `prebuild`スクリプトは存在しない（Decap CMSの設定は
+  `public/admin/config.yml`という単一の静的YAMLファイルのみで完結する
+  構成。5章・9.36参照）。
+- **真因**：5章に既に記載のとおり、`astro dev`は`public/`配下の
+  サブディレクトリに対して「ディレクトリ名だけのURL
+  （`/admin/`）をそのディレクトリの`index.html`へ解決する」機能を
+  持たない。`curl`での実機確認でも`/admin/`は404、`/admin/index.html`
+  （拡張子まで明記）は200 OKと、この既知の制約どおりの挙動を
+  再現した。ファイルは最初から存在しており「復元」の必要は無く、
+  URLの書き方（末尾スラッシュ有無）に起因する既知のdev限定の
+  制約だった。
+- **最初に試みて失敗した方法（記録として残す）**：Astro標準の
+  `redirects`設定（`redirects: { '/admin': '/admin/index.html',
+  '/admin/': '/admin/index.html' }`）で解決を試みたが、実機ビルドで
+  重大な副作用を確認した——Astroの`redirects`は静的ビルド時に
+  実ファイルとしてリダイレクト用HTMLページを生成する仕様のため、
+  `/admin`・`/admin/`という送信元パスの出力先が、Astroのルーティング
+  規約上どちらも`dist/admin/index.html`になり、**本物のDecap CMS本体
+  （`public/admin/index.html`がそのままコピーされる場所）と完全に
+  衝突してリダイレクト用の596バイトの空ページで上書きしてしまう**
+  ことを`npm run build`の実行結果（`dist/admin/index.html`のサイズが
+  199,370バイト→596バイトに減少）で確認した。本番の管理画面
+  そのものを破壊しかねない重大な不具合だったため、この方式は
+  採用せず、変更を完全に取り消した。
+- **採用した方法**：`astro:server:setup`統合フック（Astro
+  integrationのAPI）を使い、**`astro dev`の開発サーバーにのみ**
+  介入する軽量なConnectミドルウェアを追加した
+  （`astro.config.mjs`の`adminDirectoryIndexDevMiddleware()`）。
+  リクエストURLが`/admin`または`/admin/`と完全一致する場合のみ
+  `req.url`を`/admin/index.html`へ書き換えてから`next()`を呼ぶ、
+  という最小限の実装。この方式は**ビルド時に一切干渉しない**
+  （`npm run build`の成果物には何の変更も生じない）ため、9.42で
+  最初に試みた`redirects`方式のような実ファイル衝突のリスクが
+  構造的に存在しない。本番環境（Cloudflare Workers の静的アセット
+  配信）でこの`/admin/`アクセス時の404が実際に問題になるかどうかは
+  未検証だが、一般的な静的アセット配信はディレクトリ→
+  `index.html`解決を標準でサポートしていることが多く、これは
+  `astro dev`固有の制約に対するdev体験改善という位置づけで
+  実装した。
+- **検証**：`npm run dev`（ポート3000で起動）に対し、`curl`で
+  `/admin`・`/admin/`・`/admin/index.html`の3パターンすべてが200 OK
+  で、レスポンスボディが実際のDecap CMS本体（199,370バイト、
+  `Decap CMS`という文字列を含む）であることを確認。ブラウザでも
+  `http://localhost:3000/admin/`にアクセスして実際の管理画面
+  （コレクション一覧）が正しく表示されることを確認した。あわせて
+  `npm run build`を実行し、`dist/admin/index.html`が引き続き
+  199,370バイトの本物のCMS本体のままであること（＝dev用
+  ミドルウェアが本番ビルドの成果物に影響していないこと）も
+  確認済み。
