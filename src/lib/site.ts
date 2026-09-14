@@ -10,6 +10,24 @@ import yaml from 'js-yaml';
 import raw from '../data/siteInfo.yml?raw';
 import { servicesPage, aboutPage, contactPage, newsPage } from './pages';
 
+/**
+ * 「画面下部固定バー」の1ボタン分の設定（2026-09、左右ボタンで重複していた
+ * 型定義をYAMLアンカー（config.yml側）と対になる形で1箇所へ集約）。
+ * 左右で異なるのは既定値（config.yml側の `default`）だけで、構造自体は
+ * 完全に共通。将来3つ目以降のボタンを追加する場合も、この型と
+ * `StickyContactBar.astro` の `resolveButton()` をそのまま再利用できる。
+ */
+export interface StickyButtonConfig {
+  label: string;
+  show: boolean;
+  /** "primary"=デザインテーマ設定のテーマカラーに連動／"accent"=LINE風グリーン */
+  color?: 'primary' | 'accent';
+  /** 未入力時の解釈は StickyContactBar.astro 側の既定値に委ねる */
+  actionType?: 'tel' | 'url' | 'form';
+  /** 入力があれば、対応する共通設定（連絡先の電話番号／SNS設定のLINE URL等）より優先される個別リンク先 */
+  customLink?: string;
+}
+
 export interface SiteInfo {
   company: {
     name: string;
@@ -189,25 +207,10 @@ export interface SiteInfo {
    * 電話番号・LINEのURL自体は `contact` / `sns` を参照する（このオブジェクトは
    * 文言・表示トグルのみを持つ）。 */
   stickyContactBar: {
-    leftButton: {
-      label: string;
-      show: boolean;
-      /** "primary"=デザインテーマ設定のテーマカラーに連動／"accent"=LINE風グリーン */
-      color?: 'primary' | 'accent';
-      /** 未入力（既定 "tel"）時の解釈は StickyContactBar.astro 側の既定値に委ねる */
-      actionType?: 'tel' | 'url' | 'form';
-      /** 入力があれば「連絡先」の電話番号より優先される個別リンク先 */
-      customLink?: string;
-    };
-    rightButton: {
-      label: string;
-      show: boolean;
-      /** "primary"=デザインテーマ設定のテーマカラーに連動／"accent"=LINE風グリーン（既定） */
-      color?: 'primary' | 'accent';
-      actionType?: 'tel' | 'url' | 'form';
-      /** 入力があれば「SNS設定」のLINE URLより優先される個別リンク先 */
-      customLink?: string;
-    };
+    /** 既定：「連絡先」の電話番号へ発信するボタン */
+    leftButton: StickyButtonConfig;
+    /** 既定：「SNS設定」のLINE URLへ遷移するボタン */
+    rightButton: StickyButtonConfig;
   };
   copyright: string;
 }

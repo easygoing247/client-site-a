@@ -4247,3 +4247,57 @@ B-8/B-10/C-12（小粒な改善）を実装した。
   元の値（`useHeaderNav: false`）へ戻し、コミットには含めていない。
   `npx astro check`は0エラー。`preview.js`/`config.yml`を変更したため
   キャッシュバスターを`20260914c`へ更新した。
+
+### 9.54 「画面下部固定バー」の設定構造・描画ロジックのリファクタリング（2026-09-14）
+
+`stickyContactBar`の`leftButton`/`rightButton`（9.36で`required: false`
+一括修正、9.52-A-4で他の重複箇所をYAMLアンカー化した際に「未着手」として
+残していた箇所）を、保守性・将来の拡張性向上のためリファクタリングした。
+実際に保存される`siteInfo.yml`のデータ構造（`leftButton`/`rightButton`
+オブジェクトそれぞれが`label`/`show`/`color`/`actionType`/`customLink`を
+持つ）自体は変更していないため、既存データ・実サイトの見た目は一切
+変わらない（本番ビルドのHTML出力が改修前後で完全に一致することを確認済み、
+後述）。
+
+- **`config.yml`（CMSスキーマ）**：`leftButton`/`rightButton`で重複していた
+  「ボタン文言」「表示する」「アクション種別」の3フィールド定義に
+  YAMLアンカー（`&stickyButtonLabel` / `&stickyButtonShow` /
+  `&stickyButtonActionType`）を付け、`rightButton`側は全く同じ内容の
+  フィールドはそのまま別名参照（`*stickyButtonLabel`等）、`default`
+  だけが異なる`actionType`はマージキー（`{ <<: *stickyButtonActionType,
+  default: "url" }`）で上書きする、9.52-A-4と同じ手法で共通化した。
+  「背景カラー」（`color`）と「個別リンク先」（`customLink`）は、
+  既定値・案内文言（フォールバック先の説明文）が左右で本質的に異なる
+  （色：primary⇄accent、customLinkのhint：連絡先の電話番号／SNS設定の
+  LINE URL）ため、あえてアンカー化せず個別定義のまま維持した——
+  「共通化できるものだけを共通化し、意味の異なる文言は無理に統一しない」
+  という判断。
+- **`src/lib/site.ts`（型定義）**：`leftButton`/`rightButton`で重複していた
+  インライン型定義を、新規`export interface StickyButtonConfig`
+  （`label`/`show`/`color`/`actionType`/`customLink`）に1本化し、
+  `stickyContactBar.leftButton`/`.rightButton`の両方がこの型を参照する
+  形に変更した。
+- **`src/components/StickyContactBar.astro`（描画ロジック）**：
+  「表示可否の判定」「リンク先の解決」という左右で重複していたロジックを
+  `resolveButton(config: StickyButtonConfig, fallbackHref, icon)`という
+  1つの関数に統合し、`const buttons = [resolveButton(left, ...), 
+  resolveButton(right, ...)].filter(b => b.show)`という配列ベースの
+  設計に変更した。アイコン（電話／LINE）は意味が異なるため
+  `button.icon === 'line' ? <LINEのsvg> : <電話のsvg>`という分岐で
+  個別描画するが、それ以外（表示制御・色・レイアウト・grid-cols算出）は
+  完全共通のロジックが両ボタンに適用される。将来3つ目以降のボタンを
+  追加したくなった場合も、`buttons`配列に`resolveButton()`の呼び出しを
+  1件足し、アイコンのcase分岐を1つ増やすだけで済む設計になった
+  （ただし実際に3つ目を追加するには、`config.yml`側のスキーマ
+  （現状`leftButton`/`rightButton`の2枠固定）の拡張も別途必要）。
+- **`public/admin/preview.js`**：`renderStickyContactBarPreview()`も
+  同じ設計（`resolveStickyButton()`関数＋`buttons`配列のfilter・map）に
+  揃え、アイコン描画を`renderStickyButtonIcon()`という共通関数に切り出した。
+- **検証**：`npm run build`（22ページ・エラー0件）・`npx astro check`
+  （0エラー・0警告）を確認。リファクタリング前後で本番ページの
+  「お問い合わせショートカット」（`aria-label`で特定）のHTML出力
+  （`grid-cols-2`・両ボタンのhref・class・アイコンpath・label文言）が
+  完全に一致することを、`dist/index.html`を直接読んで実測比較した
+  （構造上の変更が実際の見た目に一切影響していないことの裏付け）。
+  `config.yml`/`preview.js`を変更したため、キャッシュバスターを
+  `20260914d`へ更新した。

@@ -592,57 +592,72 @@
       : 'bg-gradient-to-br from-primary to-primary-dark';
   }
 
+  // ボタンの色・アイコン以外の解決ロジック（表示可否・href）を左右で
+  // 共通化した1関数にまとめ、`buttons`配列をfilterするだけで表示制御
+  // できるようにしている（2026-09、StickyContactBar.astroの
+  // resolveButton()と同じ設計。将来ボタンを追加する場合もこの配列に
+  // resolveStickyButton()の戻り値を1件足すだけで済む）。
+  function resolveStickyButton(config, fallbackHref, icon) {
+    config = config || {};
+    var href = resolveStickyHrefForPreview(config.actionType, config.customLink, fallbackHref || '');
+    return { href: href, show: !!config.show && !!href, label: config.label, color: config.color, icon: icon };
+  }
+
+  // src/components/StickyContactBar.astro のインラインSVG（電話／LINE）と
+  // 一致させること。
+  function renderStickyButtonIcon(h, icon) {
+    if (icon === 'line') {
+      return h(
+        'svg',
+        { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none' },
+        h('path', {
+          d: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
+          fill: '#fff',
+        })
+      );
+    }
+    return h(
+      'svg',
+      { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none' },
+      h('path', {
+        d: 'M6.62 10.79a15.09 15.09 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z',
+        fill: '#fff',
+      })
+    );
+  }
+
   function renderStickyContactBarPreview(h, data) {
     var bar = data.stickyContactBar || {};
-    var left = bar.leftButton || {};
-    var right = bar.rightButton || {};
     var contact = data.contact || {};
     var lineUrl = orderedSnsForPreview(data).reduce(function (acc, link) {
       return link.id === 'line' ? link.href : acc;
     }, '');
-    var phoneHref = resolveStickyHrefForPreview(left.actionType, left.customLink, contact.phoneHref || '');
-    var lineHref = resolveStickyHrefForPreview(right.actionType, right.customLink, lineUrl || '');
-    var showPhone = left.show && !!phoneHref;
-    var showLine = right.show && !!lineHref;
-    if (!showPhone && !showLine) return null;
+    var buttons = [
+      resolveStickyButton(bar.leftButton, contact.phoneHref, 'phone'),
+      resolveStickyButton(bar.rightButton, lineUrl, 'line'),
+    ].filter(function (b) {
+      return b.show;
+    });
+    if (!buttons.length) return null;
 
     return h(
       'div',
       { className: 'fixed left-0 right-0 bottom-0 z-[60] md:hidden' },
       h(
         'div',
-        { className: cx('grid', showPhone && showLine ? 'grid-cols-2' : 'grid-cols-1') },
-        showPhone &&
-          h(
+        { className: cx('grid', buttons.length >= 2 ? 'grid-cols-2' : 'grid-cols-1') },
+        buttons.map(function (btn, i) {
+          return h(
             'a',
             {
-              href: phoneHref,
-              className: cx('flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', stickyButtonColorClass(left.color)),
+              key: i,
+              href: btn.href,
+              className: cx('flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', stickyButtonColorClass(btn.color)),
             },
-            h(
-              'svg',
-              { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none' },
-              h('path', {
-                d: 'M6.62 10.79a15.09 15.09 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z',
-                fill: '#fff',
-              })
-            ),
-            h('span', {}, left.label || 'お電話')
-          ),
-        showLine &&
-          h(
-            'a',
-            { href: lineHref, className: cx('flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', stickyButtonColorClass(right.color)) },
-            h(
-              'svg',
-              { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none' },
-              h('path', {
-                d: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
-                fill: '#fff',
-              })
-            ),
-            h('span', {}, right.label || 'LINEで相談')
-          )
+            renderStickyButtonIcon(h, btn.icon),
+            h('span', {}, btn.label || (btn.icon === 'line' ? 'LINEで相談' : 'お電話'))
+          );
+        })
       )
     );
   }

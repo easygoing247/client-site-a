@@ -375,15 +375,22 @@ collections:
           - label: "画面下部固定バー"
             name: "stickyContactBar"
             widget: object
-            hint: "スマホ表示時、画面下部に常時表示される固定バー（左右2ボタン）の設定です（PC表示では非表示）。個別リンク先を入力した場合はそちらが最優先で使われ、未入力の場合のみ上の「連絡先」「SNS設定」の共通情報にフォールバックします。"
+            hint: "スマホ表示時、画面下部に常時表示される固定バー（左右2ボタン）の設定です（PC表示では非表示）。個別リンク先を入力した場合はそちらが最優先で使われ、未入力の場合のみ上の「連絡先」「SNS設定」の共通情報にフォールバックします。左右のボタンは同じ構造（ボタン文言／表示する／背景カラー／アクション種別／個別リンク先）を持ち、既定値（色・アクション種別・フォールバック先）だけが異なります（新しいボタンを増やす場合の設計はCLAUDE.md参照）。"
             fields:
+              # 左右ボタンで共通のフィールド定義（label/show/actionType）は
+              # 最初の出現（leftButton）にYAMLアンカーを付け、rightButton側は
+              # マージキー（`<<:`）で共通部分を継承しつつ default/options だけ
+              # 上書きする（9.52で確立した pageIdentityName 等と同じ手法）。
+              # color・customLink は既定値・案内文言（フォールバック先の説明）が
+              # 左右で本質的に異なる（色：primary⇄accent、customLink：連絡先の
+              # 電話番号／SNS設定のLINE URL）ため、それぞれ個別に定義している。
               - label: "左ボタン"
                 name: "leftButton"
                 widget: object
                 hint: "既定では「連絡先」の電話番号へ発信するボタンです。"
                 fields:
-                  - { label: "ボタン文言", name: "label", widget: string, required: false }
-                  - { label: "表示する", name: "show", widget: boolean, default: true, required: false, hint: "左右どちらのボタンも、このスイッチと対応するリンク先（個別設定または共通の連絡先／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
+                  - &stickyButtonLabel { label: "ボタン文言", name: "label", widget: string, required: false }
+                  - &stickyButtonShow { label: "表示する", name: "show", widget: boolean, default: true, required: false, hint: "左右どちらのボタンも、このスイッチと対応するリンク先（個別設定または共通の連絡先／LINE URL）の両方が揃っている場合のみ表示されます。両方表示なら半分ずつ、片方のみなら全幅、両方非表示ならバー自体が表示されません。" }
                   - label: "背景カラー"
                     name: "color"
                     widget: select
@@ -393,7 +400,8 @@ collections:
                     options:
                       - { label: "テーマカラー（デザインテーマ設定に連動）", value: "primary" }
                       - { label: "LINE風グリーン", value: "accent" }
-                  - label: "アクション種別"
+                  - &stickyButtonActionType
+                    label: "アクション種別"
                     name: "actionType"
                     widget: select
                     default: "tel"
@@ -408,8 +416,8 @@ collections:
                 widget: object
                 hint: "既定では「SNS設定」のLINE URLへ遷移するボタンです。"
                 fields:
-                  - { label: "ボタン文言", name: "label", widget: string, required: false }
-                  - { label: "表示する", name: "show", widget: boolean, default: true, required: false }
+                  - *stickyButtonLabel
+                  - *stickyButtonShow
                   - label: "背景カラー"
                     name: "color"
                     widget: select
@@ -419,15 +427,7 @@ collections:
                     options:
                       - { label: "LINE風グリーン", value: "accent" }
                       - { label: "テーマカラー（デザインテーマ設定に連動）", value: "primary" }
-                  - label: "アクション種別"
-                    name: "actionType"
-                    widget: select
-                    default: "url"
-                    required: false
-                    options:
-                      - { label: "電話発信", value: "tel" }
-                      - { label: "URLへ遷移", value: "url" }
-                      - { label: "フォームへ遷移", value: "form" }
+                  - { <<: *stickyButtonActionType, default: "url" }
                   - { label: "個別リンク先", name: "customLink", widget: string, required: false, hint: "入力すると「SNS設定」のLINE URLより優先されます。アクション種別が「電話発信」の場合は電話番号、それ以外はURL（例: /contact や https://line.me/...）を入力してください。未入力の場合は共通のLINE URLを使用します。" }
 
           # --- 7. コピーライト表記 -------------------------------------------

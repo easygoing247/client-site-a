@@ -20,9 +20,31 @@
 // "accent"（LINE公式ブランドカラーに準じたグリーン）から選べる
 // （buttonColorClass()で共通化。既定値は左="primary"・右="accent"＝
 // これまでの固定配色と同じ見た目になるようconfig.yml側のdefaultで担保）。
+//
+// 【2026-09 リファクタリング】左右ボタンで重複していた「表示可否・リンク先の
+// 解決」ロジックを resolveButton()（共通の StickyButtonConfig 型、
+// src/lib/site.ts 参照）に1本化し、`buttons` 配列をフィルタして
+// 描画する設計に変更した（config.yml側もYAMLアンカー＋マージキーで
+// leftButton/rightButtonのフィールド定義を共通化済み）。アイコン
+// （電話／LINE）だけは意味が異なるためボタンごとに個別に描画するが、
+// 表示制御・色・レイアウトのロジックは完全に共通。将来3つ目以降の
+// ボタンを追加する場合は、`buttons` 配列に resolveButton() の
+// 呼び出しを1件足し、アイコンのケース分岐を増やすだけで対応できる
+// （ただし現状 config.yml のスキーマは leftButton/rightButtonの
+// 2枠固定のため、実際に3つ目を追加する際はスキーマ側の拡張も必要）。
 // ============================================================================
-import { site } from '../lib/site';
+import { site, type StickyButtonConfig } from '../lib/site';
 import { snsUrl } from '../lib/sns';
+
+type StickyButtonIcon = 'phone' | 'line';
+
+interface ResolvedStickyButton {
+  href: string;
+  show: boolean;
+  label: string;
+  color?: 'primary' | 'accent';
+  icon: StickyButtonIcon;
+}
 
 function resolveHref(actionType: 'tel' | 'url' | 'form' | undefined, customLink: string | undefined, fallbackHref: string): string {
   if (!customLink) return fallbackHref;
@@ -40,56 +62,58 @@ function buttonColorClass(color: 'primary' | 'accent' | undefined): string {
     : 'bg-gradient-to-br from-primary to-primary-dark';
 }
 
-const left = site.stickyContactBar.leftButton;
-const right = site.stickyContactBar.rightButton;
-const phoneHref = resolveHref(left.actionType, left.customLink, site.contact.phoneHref);
-const lineHref = resolveHref(right.actionType, right.customLink, snsUrl('line') ?? '');
-const showPhone = left.show && !!phoneHref;
-const showLine = right.show && !!lineHref;
+// 表示可否・リンク先解決のロジックを左右で共通化した1関数にまとめている
+// （2026-09）。将来3つ目以降のボタンを追加する場合も、この関数を呼んで
+// `buttons` 配列に1件足すだけで済む（アイコン・共通のフォールバック先
+// だけを個別に用意すればよい）。
+function resolveButton(config: StickyButtonConfig, fallbackHref: string, icon: StickyButtonIcon): ResolvedStickyButton {
+  const href = resolveHref(config.actionType, config.customLink, fallbackHref);
+  return { href, show: config.show && !!href, label: config.label, color: config.color, icon };
+}
+
+const buttons: ResolvedStickyButton[] = [
+  resolveButton(site.stickyContactBar.leftButton, site.contact.phoneHref, 'phone'),
+  resolveButton(site.stickyContactBar.rightButton, snsUrl('line') ?? '', 'line'),
+].filter((button) => button.show);
 ---
 
-{(showPhone || showLine) && (
+{buttons.length > 0 && (
   <div
     class="fixed left-0 right-0 bottom-0 z-[60] md:hidden"
     role="complementary"
     aria-label="お問い合わせショートカット"
   >
-    <div class:list={['grid', showPhone && showLine ? 'grid-cols-2' : 'grid-cols-1']}>
-      {showPhone && (
+    <div class:list={['grid', buttons.length >= 2 ? 'grid-cols-2' : 'grid-cols-1']}>
+      {buttons.map((button) => (
         <a
-          href={phoneHref}
-          class:list={['flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', buttonColorClass(left.color)]}
+          href={button.href}
+          class:list={['flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', buttonColorClass(button.color)]}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M6.62 10.79a15.09 15.09 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z"
-              fill="#fff"
-            />
-          </svg>
-          <span>{left.label}</span>
+          {button.icon === 'line' ? (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+              class="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
+            >
+              <path
+                d="M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z"
+                fill="#ffffff"
+              />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6.62 10.79a15.09 15.09 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z"
+                fill="#fff"
+              />
+            </svg>
+          )}
+          <span>{button.label}</span>
         </a>
-      )}
-      {showLine && (
-        <a
-          href={lineHref}
-          class:list={['flex items-center justify-center gap-2 text-white font-bold text-[14px] py-4', buttonColorClass(right.color)]}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-            class="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
-          >
-            <path
-              d="M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z"
-              fill="#ffffff"
-            />
-          </svg>
-          <span class="text-white">{right.label}</span>
-        </a>
-      )}
+      ))}
     </div>
   </div>
 )}
