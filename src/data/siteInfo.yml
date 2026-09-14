@@ -71,11 +71,10 @@ works:
   columns: 3
   order:
     - item: lp-package
-    - item: "-2"
     - item: sample
-    - item: url-slug-test
-    - item: テスト２テスト２テスト２テスト２
-    - item: テスト１テスト１テスト１テスト１
+    - item: sanpuru-toukou-ichi
+    - item: sanpuru-toukou-ni
+    - item: sanpuru-toukou-san
 plans:
   eyebrow: PLAN
   heading: 料金プラン
