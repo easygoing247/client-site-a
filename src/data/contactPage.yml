@@ -33,13 +33,7 @@ formFields:
     label: お問い合わせ内容
     placeholder: お問い合わせ内容をご記入ください
     required: true
-custom_fields:
-  - type: text
-    enabled: true
-    required: false
-    label: テストフィールド
-    name: test-field
-    placeholder: テストフィールドです
+custom_fields: []
 privacyPolicy:
   heading: プライバシーポリシー
   body: |-
