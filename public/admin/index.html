@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260914h" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260914i" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -351,18 +351,33 @@
 
       /*
         デバイス幅切替ボタン（PC／タブレット／スマホ）。プレビュー枠には
-        一切重ねず、画面最上部のヘッダー内（既存のViewControls＝
-        プレビュー切替／スクロール同期ボタンのすぐ左）に並べて表示する。
-        Decap本体（React）が管理するノードの中には追加せず、独立した
-        要素としてdocument.bodyへ追加し、position:fixedでViewControlsの
-        getBoundingClientRect()を基準に位置合わせする（9)節のViewControls
-        移設と同じ理由＝React管理下のノードへの物理的な子要素追加・
-        親付け替えを避けるため）。
+        一切重ねず、独立した要素としてdocument.bodyへ追加し、position:fixedで
+        座標を直接指定する（Decap本体・React管理下のノードへは物理的な
+        子要素追加・親付け替えを一切行わない。9)節のViewControls移設と
+        同じ理由）。
+        【2026-09・配置場所を変更】以前は画面最上部のメインヘッダー内
+        （[class*="ToolbarSectionMeta"]＝「サイトを表示」リンク＋
+        アカウントアイコンのすぐ左）に配置していたが、画面幅が狭い
+        （実測850px前後）場合、メインヘッダーの「公開する」「エントリを
+        削除」ボタンとこのツールバーの表示領域が重なり、クリックできなく
+        なる不具合が繰り返し報告された。実機調査の結果、「プレビュー
+        表示を切り替える」「スクロール同期を切り替える」ボタン
+        （[class*="ViewControls"]）を囲む行が、メインヘッダーとは別の、
+        画面幅いっぱいの独立した行（サブヘッダー行、メインヘッダーの
+        すぐ下）として常に描画されている（9)節で試みていた
+        「ViewControls自体をメインヘッダー内へposition:fixedで
+        ピン留めする」処理が、現在のDecapバージョンでは対象
+        （[class*="ToolbarSubSectionLast"]）が常に幅0のため実質的に
+        何もしていない＝ViewControlsは常にこのサブヘッダー行に留まる
+        ことを実機確認済み）ことが判明したため、デバイス幅切替ボタンの
+        配置先をこのサブヘッダー行の【右端】に変更した
+        （relocateDeviceToolbar()参照）。メインヘッダーのボタン群とは
+        完全に別の行になるため、画面幅を問わず重複が原理的に発生しない。
         以前はプレビューiframeの右上に直接重ねて配置していたが、
         サイトのハンバーガーメニュー（多くの場合ヘッダー右上に配置）と
         座標が重なり、クリックがこのツールバーに奪われてiframe側の
-        ハンバーガーボタンを押せなくなる不具合があったため、ヘッダー内
-        配置に変更した。
+        ハンバーガーボタンを押せなくなる不具合があったため、現在の
+        ヘッダー外（サブヘッダー行）配置に変更した経緯がある。
       */
       #cms-device-toolbar {
         display: none;
@@ -673,14 +688,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260914h"></script>
+    <script src="./preview.js?v=20260914i"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260914h"></script>
+    <script src="./editor-components.js?v=20260914i"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -1511,9 +1526,12 @@
         //    <style>内の #cms-device-toolbar / .SplitPane[data-cms-device] と
         //    対になる実装。ボタン自体はDecap（React）管理下のノードには
         //    一切追加せず、document.bodyへの独立した要素として追加し、
-        //    position:fixedでViewControls（7)節で算出済みの位置）の
-        //    すぐ左に並べて表示する（プレビューiframeには一切重ねない＝
-        //    サイト側のハンバーガーボタン等のクリックを奪わないため）。
+        //    position:fixedで「プレビュー表示を切り替える」「スクロール
+        //    同期を切り替える」ボタン（[class*="ViewControls"]）を囲む
+        //    サブヘッダー行の右端に並べて表示する（2026-09、メインヘッダー
+        //    の「公開する」「エントリを削除」ボタンとの重複を解消するため
+        //    ここへ変更。プレビューiframeには一切重ねない＝サイト側の
+        //    ハンバーガーボタン等のクリックを奪わないため）。
         //    幅の変更自体は.SplitPane側のCSS（data-cms-device属性）が
         //    Pane1/Pane2の実際の分割幅を書き換える方式のため、切替を
         //    繰り返してもスクロール不能や管理画面のフリーズは起きない。
@@ -1658,21 +1676,40 @@
 
         function relocateDeviceToolbar() {
           var pane2 = document.querySelector('.Pane2');
-          // [class*="ViewControls"] は「ToolbarSubSectionLast」内にピン留め
-          // される前は幅0または画面全幅のままの不安定な状態を取り得る
-          // （実測で確認済み）ため位置の基準にしない。ヘッダー右側の
-          // 「本番URLリンク＋アカウントアイコン」を包む
-          // [class*="ToolbarSectionMeta"] は常に実寸を持つ安定した目印
-          // のため、これを基準にその左隣へ配置する。
-          var acctSection = document.querySelector('[class*="ToolbarSectionMeta"]');
+          // 【2026-09・基準を変更】以前はヘッダー右側の「本番URLリンク＋
+          // アカウントアイコン」を包む[class*="ToolbarSectionMeta"]を
+          // 基準にしていたが、メインヘッダーの「公開する」「エントリを
+          // 削除」ボタンと重なる不具合があったため、「プレビュー表示を
+          // 切り替える」「スクロール同期を切り替える」ボタンを囲む
+          // [class*="ViewControls"]の行（メインヘッダーとは別の、
+          // 画面幅いっぱいのサブヘッダー行）を基準にするよう変更した
+          // （<style>内の同名クラスに対するコメント参照）。
+          // ただし将来Decap本体の内部構造が変わり、9)節の
+          // relocateViewControls()が実際にViewControls自体を
+          // メインヘッダー内へposition:fixedでピン留めできるように
+          // なった場合（`cms-view-controls-pinned`クラスが付与されて
+          // いる場合）は、ViewControlsはもうサブヘッダー行には存在しない
+          // ため、その場合だけ旧来どおりViewControls自体（＝ヘッダー内に
+          // 固定表示されている）のすぐ左に配置するようフォールバックする。
+          var viewControls = document.querySelector('[class*="ViewControls"]');
+          var pinned = !!viewControls && viewControls.classList.contains('cms-view-controls-pinned');
           var visible =
-            !!pane2 && !!acctSection && getComputedStyle(pane2).display !== 'none' && pane2.getBoundingClientRect().width > 0;
+            !!pane2 &&
+            !!viewControls &&
+            getComputedStyle(pane2).display !== 'none' &&
+            pane2.getBoundingClientRect().width > 0;
+          if (visible) {
+            var checkRect = viewControls.getBoundingClientRect();
+            visible = pinned || checkRect.width > 0;
+          }
           deviceToolbar.classList.toggle('visible', visible);
           if (!visible) return;
-          var acctRect = acctSection.getBoundingClientRect();
+          var anchorRect = viewControls.getBoundingClientRect();
           var toolbarRect = deviceToolbar.getBoundingClientRect();
-          var left = acctRect.left - toolbarRect.width - 10;
-          var top = acctRect.top + (acctRect.height - toolbarRect.height) / 2;
+          var left = pinned
+            ? anchorRect.left - toolbarRect.width - 10 // ヘッダー内固定時：ViewControlsの左隣
+            : anchorRect.right - toolbarRect.width - 12; // 通常時：サブヘッダー行の右端
+          var top = anchorRect.top + (anchorRect.height - toolbarRect.height) / 2;
           deviceToolbar.style.left = Math.max(8, left) + 'px';
           deviceToolbar.style.top = Math.max(8, top) + 'px';
           // プレビューiframe自体が再読み込み（エントリ切替・保存後の

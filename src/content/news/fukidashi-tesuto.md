@@ -8,7 +8,15 @@ pinOrder: 1
 draft: false
 ---
 <!--cms-speech:%7B%22avatar%22%3A%22..%2F..%2Fassets%2Fceo-image.png%22%2C%22name%22%3A%22%E4%BB%A3%E8%A1%A8%E5%B1%B1%E7%94%B0%22%2C%22align%22%3A%22left%22%2C%22text%22%3A%22%E3%81%84%E3%81%84%E3%81%A7%E3%81%99%E3%81%AD%EF%BC%81%22%7D-->
-<div class="cms-speech cms-speech--left"><div class="cms-speech-avatar-col"><img class="cms-speech-avatar" src="../../assets/ceo-image.png" alt="代表山田" /><div class="cms-speech-name">代表山田</div></div><div class="cms-speech-bubble">
+<div class="cms-speech cms-speech--left">
+<div class="cms-speech-avatar-col">
+
+![代表山田](../../assets/ceo-image.png)
+
+<div class="cms-speech-name">代表山田</div>
+
+</div>
+<div class="cms-speech-bubble">
 
 いいですね！
 
