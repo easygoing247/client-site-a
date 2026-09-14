@@ -231,9 +231,9 @@ navCta:
   label: お問い合わせ
   href: /contact
 footerNav:
-  useHeaderNav: false
+  useHeaderNav: true
   items:
-    - label: サービス
+    - label: サービス内容
       href: /services
     - label: 商品
       href: /products
