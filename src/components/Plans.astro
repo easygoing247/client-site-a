@@ -12,7 +12,7 @@
 // 描画する。画像では実現できないテーマカラー連動が必要なため（/services
 // ページの料金表チェックリストと同じアイコン・実装）。
 // ============================================================================
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 import Button from './Button.astro';
 
 interface Props {
@@ -30,7 +30,7 @@ const initialSlideIndex =
 ---
 
 {
-  site.features.enablePlans && (
+  isSectionEnabled('plans') && (
     <section id="plans" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="plans-heading">
       <div class="max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5">
         <div class="text-center mb-10">

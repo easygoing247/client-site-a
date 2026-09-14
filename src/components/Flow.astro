@@ -2,7 +2,7 @@
 // ============================================================================
 // Flow.astro — 「ご相談から納品までの流れ」（型化しやすいステップ配列駆動）
 // ============================================================================
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 
 interface Props {
   muted?: boolean;
@@ -10,7 +10,7 @@ interface Props {
 
 const { muted = false } = Astro.props;
 const steps = site.flow.steps;
-const enabled = site.features.enableFlow;
+const enabled = isSectionEnabled('flow');
 ---
 
 {enabled && (

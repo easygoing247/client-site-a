@@ -4031,3 +4031,107 @@ Decap CMS（Slateエディタ）で意図的に作った空行が、保存時の
   非表示」注記など、複数の小粒な入力操作性向上案。
 - 詳細は本セッションの提案一覧（会話ログ）を参照。実装に着手した際は、
   対応内容をこのセクションの追記または新規セクションとして記録すること。
+
+### 9.51 管理画面改善ロードマップの実装：セクション表示ON/OFFの統合・Altメタデータ再構築・カスタム項目名の自動slug化（2026-09-14）
+
+9.50-Cで提案したロードマップのうち、A-1（画像メタデータ再構築）・A-2（表示
+ON/OFFと並び順の統合）・B-9（custom_fields送信キーの自動slug化）・
+B-8/B-10/C-12（小粒な改善）を実装した。
+
+**A-2：「セクションの表示・非表示」と「セクション表示順序」の統合**
+
+- `sectionOrder`の各項目に`enable`（boolean、既定true）を追加し、
+  「並び替え」と「表示ON/OFF」を1つの画面で完結させた。旧・独立した
+  `features.enableXxx`（9項目）は`config.yml`・`siteInfo.yml`から
+  丸ごと廃止。トップページの`Hero`直下に固定配置される「お知らせ」
+  セクションのみ`sectionOrder`の対象外（並び替え不可）のため、
+  `newsSection.enabled`として独立管理を継続する。
+- `src/lib/site.ts`に`isSectionEnabled(id)` / `orderedSectionIds()`
+  （`sectionOrder`に項目が無ければ既定で全セクション表示扱い）を新設し、
+  `index.astro`・各セクションコンポーネント（Access/Faq/Features/Flow/
+  Contact/Service/Products/Works/Plans）・`llms.txt.ts`の
+  `site.features.enableXxx`参照をすべてこちらへ置き換えた。ヘッダー・
+  フッターのナビ連動（`navHrefToFeatureFlag`）も`navHrefToSectionId`
+  （href→セクションID）へ設計変更し、`isSectionEnabled()`を経由する形に
+  統一。`preview.js`の`FEATURE_FLAG_MAP`/`NAV_HREF_TO_FLAG`も同じ考え方の
+  `sectionEnabledMap()`/`NAV_HREF_TO_SECTION`へ置き換えた。
+- 既存データ（`siteInfo.yml`）は、旧`features.enableXxx`の値（全項目
+  true）をそのまま`sectionOrder`各項目の`enable: true`へ機械的に移植し、
+  `newsSection.enabled: true`を追加。挙動に変化が無いことを
+  `npm run build`で確認済み。
+
+**A-1：画像Altメタデータの再構築（独立コレクション撤去→画像フィールド直下方式）**
+
+- 9.32〜9.39で作り込んだ独立コレクション「画像メタデータ」
+  （`mediaLibrary`、`src/data/mediaLibrary.yml`）を、9.50-Cの精査で
+  「実際には`src/`のどこからも参照されず保存内容が反映されない死んだ
+  機能」と確認した通り、config.yml・データファイルごと完全撤去した。
+  あわせて`public/admin/index.html`内でこのコレクションを支えていた
+  一連のJS（✎ショートカット・ポップオーバー編集画面・ドラッグ&ドロップ
+  アップロード・ファイル名複製保存・postSave/loadイベントの分岐等、
+  9.32-B〜9.39で積み上げた実装）も丸ごと削除した。ただし、メディア
+  ライブラリ（既定のアセットピッカー）自体の5列グリッド調整・横スクロール
+  解消CSS（9.33-D。`mediaLibrary`コレクションと無関係な汎用UX改善）は
+  存続させ、対象モーダルを判定するための最小限の関数
+  （`tagOpenMediaLibraryModal()`）だけを新設して残した。
+- 代わりに、Alt属性を実際に使う画像フィールドの直下へ`alt`（`works`・
+  `services.yml`のサービス詳細・`products.yml`の商品項目）または
+  既存の`imageAlt`命名規則に合わせたフィールド（`works.imageAlt`。
+  `news`/`hero`/`access.store`は既に`imageAlt`を持っていたため変更なし）
+  を追加した。`about.yml`の代表挨拶写真は`alt`を追加。
+  - `src/content/config.ts`：`works`スキーマに`imageAlt: z.string()
+    .optional()`を追加。
+  - `src/lib/pages.ts`：`ServicesPage.items[].alt`・
+    `AboutPage.greeting.alt`・`ProductItemConfig.alt`・
+    `ResolvedProductItem.alt`を追加し、`resolveProductItems()`/
+    `resolveAllProductItems()`が`alt`を素通しするよう修正。
+  - 本番テンプレート（`Works.astro`・`works/[slug].astro`・
+    `Service.astro`・`services.astro`・`about.astro`・`Products.astro`・
+    `products.astro`）の`<Image alt={...}>`を、いずれも
+    「入力されたAlt文字列があればそれを最優先し、無ければ従来どおりの
+    自動生成文言（タイトル名＋『のイメージ』等）へフォールバックする」
+    形に統一。CMSプレビュー（`preview.js`の`WorkPreview`・
+    `ProductsCatalogPreview`・`ServicesPagePreview`・
+    `AboutPagePreview`）も同じフォールバック順で追従修正した。
+
+**B-9：お問い合わせフォーム「カスタム追加項目」の項目名（name）自動slug化**
+
+- 9.40〜9.47で確立したkuromoji Web Worker基盤（タイトル→urlSlug変換）を
+  そのまま転用し、`contactPage.yml`の`custom_fields[].label`（項目名）
+  入力に連動して`custom_fields[].name`（送信データ用の半角英数キー）を
+  自動でヘボン式ローマ字スラグ化する`wireCustomFieldsNameAutoFill()`を
+  `public/admin/index.html`に追加した。
+  - urlSlugとの違いは、`custom_fields`が単一フィールドではなく
+    ドラッグ&ドロップで自由に行を追加・削除できる`list`ウィジェットで
+    あること。各行は既存の「表示順序」リスト等と同じDecap内部クラス
+    `[class*="SortableListItem"]`で囲まれているため、その中から
+    `label-field-*`/`name-field-*`を1組ずつ取り出してペアリングし、
+    行ごとに個別配線する。
+  - `name`フィールドは半角英数字と`_`のみ許容（ハイフン不可）のため、
+    既存の`slugifyRomaji()`が生成するハイフン区切りの結果をそのまま
+    使わず、アンダースコアへ変換してから反映する
+    （`fallbackLabelToFieldName()`/`readingTokensToFieldName()`）。
+  - 「手動編集を上書きしない」既存の仕組み（`lastAutoName`を`null`に
+    して以後のlabel入力イベントを無視する）・IME変換確定前の中間状態を
+    スキップする仕組みは、urlSlug版と全く同じロジックをそのまま踏襲。
+
+**その他の小粒な改善**
+
+- B-8：`works`コレクションに`sortable_fields: ["publishedAt", "title"]`
+  を追加（`news`と同様、一覧画面での並び替えに対応）。
+- B-10：「SNS設定」リストの`summary`を`{{fields.id}}（{{fields.url}}）`
+  から`{{fields.id}}`のみへ簡素化し、長いURLによる折りたたみ表示の
+  崩れを解消。
+- C-12：`works`の「価格」フィールドに「未入力の場合、カードに価格は
+  表示されません。」の`hint`を追加。
+
+**検証**：`npm run build`（22ページ、エラー0件）・`npx astro check`
+（0エラー・0警告）を確認。`config.yml`はAstroのビルド対象外
+（ブラウザ上のDecap CMSがfetchして解釈する静的YAML）のため、`js-yaml`で
+別途構文検証（`mediaLibrary`コレクションが正しく除去され、
+`settings`/`productsCatalog`/`works`/`pages`/`news`の5コレクションのみ
+残っていることを確認）。`public/admin/index.html`の巨大な削除・追記が
+構文を壊していないことも、実際の`<script>`タグ本体を抽出して
+`node --check`で個別に検証した。管理画面アセットのキャッシュバスター
+（`config.yml`/`preview.js`/`editor-components.js`の`?v=`、9.24参照）は
+今回の変更に合わせて`20260914a`へ統一した。

@@ -1,7 +1,7 @@
 // ============================================================================
 // src/content/config.ts — Content Collections スキーマ定義
 // 型化ページ（1件=1ファイル）用の works コレクション＝「実績・活用事例」。
-// features.enableWorks が true の間、トップページ「実績・活用事例」セクション
+// 「セクション表示順序」の works が表示ONの間、トップページ「実績・活用事例」セクション
 // （src/components/Works.astro）に一覧表示され、各カードは /works/[slug] の
 // 個別ページへリンクする。
 // ※「商品一覧」トップセクション・/products ページは型化ページではなく、
@@ -60,6 +60,7 @@ const works = defineCollection({
       // サムネイルを自動表示するために内部で認識する名前（image等）に
       // 合わせている（"mainImage"のような任意の名前では認識されない）。
       image: image().optional(),
+      imageAlt: z.string().optional(),
       summary: z.string().optional(),
       specs: z.array(z.string()).default([]),
       publishedAt: cmsDateOptional,

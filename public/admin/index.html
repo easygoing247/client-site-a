@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260913r" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260914a" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -615,14 +615,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260913r"></script>
+    <script src="./preview.js?v=20260914a"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260913r"></script>
+    <script src="./editor-components.js?v=20260914a"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2106,26 +2106,6 @@
               }, 300);
               return;
             }
-            // 画像メタデータ（メディア管理）の編集画面から「公開する」を
-            // 実行した場合：保存後にこの画面へ留まり続けると、他ページへの
-            // 導線が無いまま閉じ込められてしまう（9.40で報告された不具合）。
-            // ジャンプ元の画面（sessionStorageに退避済み）へ戻り、かつ
-            // ヘッダーの「メディア」ボタンを自動で再度開いて、実際に
-            // メディアライブラリの一覧へ戻ったことが視覚的に分かるように
-            // する（`pendingMediaMetaReturn`フラグをリロード後の`load`
-            // イベントハンドラ側で検知し、ハッシュの書き換え＋モーダルの
-            // 再オープンを行う。9.19で確立した「postSave発火時点では
-            // 未保存の入力が存在しないため、いつでも安全にreloadできる」
-            // 原則をそのまま踏襲）。
-            if (/^#\/collections\/mediaLibrary\/entries\//.test(location.hash)) {
-              try {
-                sessionStorage.setItem('cms-media-meta-return-pending', '1');
-              } catch (e) {}
-              setTimeout(function () {
-                location.reload();
-              }, 300);
-              return;
-            }
             // 通常の「公開する」実行後（＝新規作成への遷移を伴わない場合）。
             saveScrollPositionForReload();
             setTimeout(function () {
@@ -2134,618 +2114,29 @@
           },
         });
         window.addEventListener('load', restoreScrollPositionAfterReload);
-        window.addEventListener('load', function () {
-          var pending;
-          try {
-            pending = sessionStorage.getItem('cms-media-meta-return-pending');
-            sessionStorage.removeItem('cms-media-meta-return-pending');
-          } catch (e) {
-            pending = null;
-          }
-          if (!pending) return;
-          var returnHash = popMediaMetaReturnHash() || '#/collections/mediaLibrary';
-          location.hash = returnHash;
-          // フォーム（メディアライブラリを開いていた側の画面）が再マウント
-          // されるのを待ってから、ヘッダーの「メディア」ボタンを自動的に
-          // クリックしてモーダルを開き直す。
-          var attempts = 0;
-          var timer = setInterval(function () {
-            attempts++;
-            if (openMediaLibraryButton() || attempts > 25) {
-              clearInterval(timer);
-            }
-          }, 200);
-        });
 
         // ==================================================================
-        // 11) メディアライブラリへのドラッグ&ドロップアップロード対応。
-        //
-        //     decap-cms@3.16.2 本体バンドルを解析した結果、メディア
-        //     ライブラリのモーダルには react-dropzone 等のドラッグ&
-        //     ドロップアップロード機構が組み込まれておらず（"Dropzone"
-        //     文字列自体がバンドル中に存在しない）、既定では「アップロード
-        //     する」ボタン経由の `<input type="file">` からの選択のみが
-        //     アップロード手段であることを確認した。
-        //
-        //     実装方針：ドロップされたファイルをこちらで直接GitHubへ
-        //     アップロードする（＝Decap本体の保存処理を再実装する）のは
-        //     リスクが高いため行わない。代わりに、モーダル内の既存の
-        //     `<input type="file">`（"アップロードする"ボタンの実体）に
-        //     対して、ドロップされたファイル群を `DataTransfer` 経由で
-        //     セットし、`change` イベントを発火させることで、Decap自身の
-        //     既存のアップロード処理をそのまま起動させる（安全性は
-        //     ボタンをクリックして手動でファイルを選択した場合と完全に
-        //     同一）。
-        //
-        //     対象の判定：開いているモーダル（`[class*="StyledModal"]`。
-        //     ハッシュ化されたクラス名のため前方一致で判定する既存の
-        //     `findScrollContainer()` 等と同じ方式）の中に
-        //     `input[type="file"]` が存在する場合のみ、そのモーダルを
-        //     ドロップ対象として扱う（メディアライブラリ以外のモーダルを
-        //     誤って対象にしないためのガード）。
+        // 11) メディアライブラリ（既定のアセットピッカー）の横スクロール
+        //     解消・5列グリッド調整（後述14章のCSS）を適用する対象を
+        //     絞り込むため、開いているモーダルのうち `input[type="file"]`
+        //     を持つもの（＝メディアライブラリ本体、他の確認ダイアログ等
+        //     ではない）にだけ目印クラスを付与する。
         // ==================================================================
-        function findOpenMediaLibraryModal() {
-          var modals = document.querySelectorAll('[class*="StyledModal"]');
-          for (var i = 0; i < modals.length; i++) {
-            if (modals[i].querySelector('input[type="file"]')) {
-              // CSS側で `:has()`（大きなDOM上での再計算コストが高い）を
-              // 使わずにこのモーダルだけへ幅調整を適用できるよう、
-              // 目印のクラスを付与しておく（14章のCSS参照）。
-              if (!modals[i].classList.contains('cms-is-media-library')) {
+        function tagOpenMediaLibraryModal() {
+          try {
+            var modals = document.querySelectorAll('[class*="StyledModal"]');
+            for (var i = 0; i < modals.length; i++) {
+              if (modals[i].querySelector('input[type="file"]') && !modals[i].classList.contains('cms-is-media-library')) {
                 modals[i].classList.add('cms-is-media-library');
               }
-              return modals[i];
-            }
-          }
-          return null;
-        }
-
-        var mediaDropHighlightClass = 'cms-media-drop-active';
-
-        document.addEventListener('dragover', function (e) {
-          if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') === -1) return;
-          var modal = findOpenMediaLibraryModal();
-          if (!modal) return;
-          e.preventDefault();
-          modal.classList.add(mediaDropHighlightClass);
-        });
-
-        document.addEventListener('dragleave', function (e) {
-          var modal = findOpenMediaLibraryModal();
-          if (modal && e.target === modal) modal.classList.remove(mediaDropHighlightClass);
-        });
-
-        document.addEventListener('drop', function (e) {
-          if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
-          var modal = findOpenMediaLibraryModal();
-          if (!modal) return;
-          e.preventDefault();
-          modal.classList.remove(mediaDropHighlightClass);
-          var input = modal.querySelector('input[type="file"]');
-          if (!input) return;
-          try {
-            var dt = new DataTransfer();
-            Array.prototype.forEach.call(e.dataTransfer.files, function (file) {
-              dt.items.add(file);
-            });
-            input.files = dt.files;
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-          } catch (err) {
-            // DataTransfer未対応の古いブラウザ等では、ドラッグ&ドロップは
-            // 諦め、従来どおり「アップロードする」ボタンでの選択を促す
-            // （例外を投げず静かにフォールバックする）。
-          }
-        });
-
-        // アップロード直後にカテゴリ・タイトル・Altの登録を案内する
-        // トースト。Decap本体のアップロード処理自体（GitHubへの実際の
-        // コミット）にフックできる公開APIが無いため「アップロードが
-        // 完了したこと」を正確には検知できないが、`input[type="file"]`
-        // の`change`イベント（ボタン経由の手動選択・上記ドラッグ&
-        // ドロップの両方で発火）を「アップロードを開始したタイミング」
-        // の代理指標として使い、案内を表示する（多少タイミングが早くても
-        // 実害は無い簡易な通知のため、この近似で十分と判断した）。
-        // ⚠️ このトーストを`modal`の子要素として追加すると、実機検証で
-        // 「アップロード完了に伴うメディア一覧の再描画で、Decap側が
-        // モーダルの子要素ツリーを丸ごと作り直し、こちらが追加した
-        // 要素だけが一瞬で消えてしまう」ことを確認した（モーダル要素
-        // 自身は再利用される＝付与した目印クラスは残るが、中身は
-        // Reactの再レンダーで置き換わる）。そのため`document.body`
-        // 直下（React管理下の外）に配置し、`position: fixed`で
-        // モーダルの実測位置に重ねて表示することで、この消失を回避する。
-        function showUploadMetadataToast(modal) {
-          if (document.querySelector('.cms-media-upload-toast')) return;
-          var toast = document.createElement('div');
-          toast.className = 'cms-media-upload-toast';
-          var text = document.createElement('span');
-          text.textContent = 'アップロードした画像のAlt属性・キャプションを設定しますか？';
-          toast.appendChild(text);
-          var actionBtn = document.createElement('button');
-          actionBtn.type = 'button';
-          actionBtn.className = 'cms-media-upload-toast-action';
-          actionBtn.textContent = '今すぐ設定する →';
-          actionBtn.addEventListener('click', function () {
-            toast.remove();
-            jumpToMediaLibraryEntry(null);
-          });
-          toast.appendChild(actionBtn);
-          var closeBtn = document.createElement('button');
-          closeBtn.type = 'button';
-          closeBtn.className = 'cms-media-upload-toast-close';
-          closeBtn.textContent = '×';
-          closeBtn.setAttribute('aria-label', '閉じる');
-          closeBtn.addEventListener('click', function () {
-            toast.remove();
-          });
-          toast.appendChild(closeBtn);
-          var rect = modal.getBoundingClientRect();
-          toast.style.position = 'fixed';
-          toast.style.left = rect.left + 24 + 'px';
-          toast.style.right = window.innerWidth - rect.right + 24 + 'px';
-          toast.style.bottom = window.innerHeight - rect.bottom + 16 + 'px';
-          document.body.appendChild(toast);
-          setTimeout(function () {
-            if (toast.parentElement) toast.remove();
-          }, 10000);
-        }
-
-        function wireUploadInputOnce(modal) {
-          var input = modal.querySelector('input[type="file"]');
-          if (!input || input.dataset.cmsUploadHintWired) return;
-          input.dataset.cmsUploadHintWired = '1';
-          input.addEventListener('change', function () {
-            showUploadMetadataToast(modal);
-          });
-        }
-
-        // ==================================================================
-        // 12) メディアライブラリの✎ボタン：Alt属性・キャプション編集への
-        //     ショートカット（9.39でカテゴリ機能を全廃し、この用途に集中）。
-        //
-        //     画像ごとのAlt属性・キャプションはこれまで「メディア管理」
-        //     という独立したコレクションで管理していたが、9.39で
-        //     サイドバー上の独立項目としての見た目を廃止し、ヘッダーの
-        //     「メディア」ボタン1つに導線を一本化した。実体（コレクション
-        //     自体）はconfig.yml上に存続させている——Decap自身の安全な
-        //     保存機構（本物のフォーム＋本物の「公開する」ボタン）を
-        //     使う唯一の方法が、コレクションのエントリとして保存する
-        //     ことだから（9.26-Bで確立した「Reduxへの書き込みdispatch
-        //     は一切行わない」という安全原則は今回も維持している）。
-        // ==================================================================
-        function findCardAncestor(el) {
-          var node = el.parentElement;
-          while (node && node.classList) {
-            for (var i = 0; i < node.classList.length; i++) {
-              if (/-Card$/.test(node.classList[i])) return node;
-            }
-            node = node.parentElement;
-          }
-          return null;
-        }
-
-        // メディアライブラリを開くたびに、Alt属性・キャプションの
-        // 設定場所を案内する常設バナーを1行追加する。
-        function ensureMediaLibraryHint(modal, searchContainer) {
-          if (modal.querySelector('.cms-media-library-hint')) return;
-          var hint = document.createElement('div');
-          hint.className = 'cms-media-library-hint';
-          hint.textContent = '画像のAlt属性・キャプションは、各カード右上の✎ボタンから設定できます。';
-          searchContainer.parentElement.parentElement.insertBefore(hint, searchContainer.parentElement.nextSibling);
-        }
-
-        // 「編集」ショートカット：カードの✎ボタンから、画像メタデータの
-        // 該当行へ直接ジャンプする。
-        //
-        // 実際に保存を成立させるにはDecap本体の非公開の内部処理
-        // （persistEntry相当のReduxストアへのdispatch）を呼び出す必要が
-        // あり、これは9.26-Bで確立した「Reduxストアは読み取り専用でのみ
-        // 参照し、状態変更のdispatchは一切行わない」という安全原則に
-        // 反する（公開APIの外側にある非公開の内部実装に書き込み処理を
-        // 依存させることになり、decap-cms本体のバージョンアップで動作
-        // しなくなった場合に、単に機能が止まるだけでなく保存内容が壊れる
-        // 形で失敗するおそれがある）。そのため、実際の保存は必ずDecap
-        // 本体の正規の「公開する」ボタンを経由させることを維持しつつ、
-        // (a) 遷移先の画面を9.39でポップオーバー風の見た目に再構成し、
-        // (b) 目的の行を自動的に展開・スクロールすることで、体感として
-        // 「メディアライブラリの上に浮かぶ編集パネル」に近い操作感を
-        // 実現している：
-        //   1. メディアライブラリのモーダルを閉じ、画像メタデータの
-        //      エントリへ遷移する。
-        //   2. Reduxストア（読み取り専用）から`items`配列を参照し、
-        //      クリックした画像のファイル名と一致する既存項目があれば、
-        //      そのインデックスに対応するリスト行（DOM上の並び順は
-        //      Reduxの配列順と一致する）を自動的に展開し、画面中央へ
-        //      スクロールする。
-        //   3. 一致する項目が無い場合は「Add 画像一覧」ボタンを
-        //      自動的にクリックして新規行を追加するところまで代行する
-        //      （画像の選択自体は、既存の画像ピッカーUIをそのまま
-        //      使うため、ユーザーの最後の一手だけ残す）。
-        // ジャンプ元の画面（メディアライブラリの背後にあった元のハッシュ）を
-        // 記録しておき、後で「メディア一覧へ戻る」操作（保存後の自動遷移・
-        // ×ボタンでの手動キャンセル）の戻り先として使う。sessionStorageにも
-        // 保存しておくことで、保存後の`location.reload()`（9章参照）を
-        // 挟んでも戻り先を見失わない。
-        var MEDIA_META_RETURN_KEY = 'cms-media-meta-return-hash';
-        function saveMediaMetaReturnHash() {
-          try {
-            sessionStorage.setItem(MEDIA_META_RETURN_KEY, location.hash || '');
-          } catch (e) {}
-        }
-        function popMediaMetaReturnHash() {
-          try {
-            var v = sessionStorage.getItem(MEDIA_META_RETURN_KEY);
-            sessionStorage.removeItem(MEDIA_META_RETURN_KEY);
-            return v || '';
-          } catch (e) {
-            return '';
-          }
-        }
-        // ヘッダーの「メディア」ボタンをプログラム的にクリックし、既定の
-        // メディアライブラリ（アセットピッカー）モーダルを開き直す。
-        function openMediaLibraryButton() {
-          try {
-            var buttons = document.querySelectorAll('button');
-            for (var i = 0; i < buttons.length; i++) {
-              if ((buttons[i].textContent || '').trim() === 'メディア') {
-                buttons[i].click();
-                return true;
-              }
-            }
-          } catch (e) {}
-          return false;
-        }
-
-        function jumpToMediaLibraryEntry(filename) {
-          try {
-            saveMediaMetaReturnHash();
-            var modal = findOpenMediaLibraryModal();
-            if (modal) {
-              var closeBtn = modal.querySelector('button[aria-label="Close"]');
-              if (closeBtn) closeBtn.click();
-            }
-            location.hash = '#/collections/mediaLibrary/entries/mediaLibrary';
-            var attempts = 0;
-            var timer = setInterval(function () {
-              attempts++;
-              var itemsField = document.querySelector('[id^="items-field-"]');
-              if (itemsField) {
-                clearInterval(timer);
-                focusMediaLibraryItem(itemsField, filename);
-              } else if (attempts > 25) {
-                clearInterval(timer);
-              }
-            }, 200);
-          } catch (e) {}
-        }
-
-        function focusMediaLibraryItem(itemsField, filename) {
-          try {
-            var index = -1;
-            var store = findDecapReduxStore();
-            if (store && filename) {
-              var state = store.getState();
-              var entities = state && state.entries && state.entries.get && state.entries.get('entities');
-              var entry = entities && entities.get('mediaLibrary.mediaLibrary');
-              var data = entry && entry.get('data');
-              var items = data && data.get('items');
-              if (items && typeof items.toJS === 'function') {
-                var arr = items.toJS();
-                for (var i = 0; i < arr.length; i++) {
-                  if (arr[i] && arr[i].image && String(arr[i].image).split('/').pop() === filename) {
-                    index = i;
-                    break;
-                  }
-                }
-              }
-            }
-            var rows = itemsField.querySelectorAll('[class*="SortableListItem"]');
-            if (index >= 0 && rows[index]) {
-              var toggle = rows[index].querySelector('[class*="TopBarButton"]');
-              if (toggle) toggle.click();
-              rows[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
-              return;
-            }
-            // 一致する項目が無い＝この画像はまだ画像メタデータに
-            // 未登録。新規行の追加まで代行する（画像選択は手動）。
-            var addButtons = document.querySelectorAll('button');
-            for (var j = 0; j < addButtons.length; j++) {
-              if ((addButtons[j].textContent || '').indexOf('Add 画像一覧') !== -1) {
-                addButtons[j].click();
-                addButtons[j].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                break;
-              }
             }
           } catch (e) {}
         }
-
-        // カードに、上記ショートカットを起動する✎ボタンを重ねて表示する。
-        function addEditShortcutButton(card, filename) {
-          if (!card || card.querySelector('.cms-media-edit-shortcut')) return;
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'cms-media-edit-shortcut';
-          btn.title = 'Alt属性・キャプションを編集';
-          btn.textContent = '✎';
-          btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            jumpToMediaLibraryEntry(filename);
-          });
-          var style = getComputedStyle(card);
-          if (style.position === 'static') card.style.position = 'relative';
-          card.appendChild(btn);
-        }
-
-        function addEditShortcutsToGrid(modal) {
-          var textEls = modal.querySelectorAll('[class*="CardText"]');
-          textEls.forEach(function (textEl) {
-            var card = findCardAncestor(textEl);
-            if (!card) return;
-            addEditShortcutButton(card, (textEl.textContent || '').trim());
-          });
-        }
-
-        function ensureMediaLibraryExtras() {
-          try {
-            var modal = findOpenMediaLibraryModal();
-            if (!modal) return;
-            var searchContainer = modal.querySelector('[class*="SearchContainer"]');
-            if (!searchContainer) return;
-            ensureMediaLibraryHint(modal, searchContainer);
-            addEditShortcutsToGrid(modal);
-            wireUploadInputOnce(modal);
-          } catch (e) {}
-        }
-
-        var mediaLibraryExtrasObserver = new MutationObserver(ensureMediaLibraryExtras);
-        mediaLibraryExtrasObserver.observe(document.body, { childList: true, subtree: true });
+        var mediaLibraryModalTagObserver = new MutationObserver(tagOpenMediaLibraryModal);
+        mediaLibraryModalTagObserver.observe(document.body, { childList: true, subtree: true });
 
         // ==================================================================
-        // 12b) 画像メタデータコレクションのサイドバー項目を非表示にし、
-        //      ヘッダーの「メディア」ボタン1つに導線を一本化する（9.39）。
-        //      コレクション自体はconfig.yml上に存続させている（12章の
-        //      コメント参照）が、サイドバーからは見えなくする。
-        // ==================================================================
-        function hideMediaLibrarySidebarLink() {
-          try {
-            var link = document.querySelector('a[href="#/collections/mediaLibrary"]');
-            if (!link) return;
-            var li = link.closest('li');
-            (li || link).style.display = 'none';
-          } catch (e) {}
-        }
-        var mediaLibrarySidebarObserver = new MutationObserver(hideMediaLibrarySidebarLink);
-        mediaLibrarySidebarObserver.observe(document.body, { childList: true, subtree: true });
-        hideMediaLibrarySidebarLink();
-
-        // ==================================================================
-        // 12c) 画像メタデータのエントリ編集画面を、ポップオーバー風の
-        //      見た目に再構成する（9.39）。
-        //
-        //      実際にはDecapの通常のエントリ編集画面（フォーム・
-        //      「公開する」ボタンはすべて本物）だが、✎ショートカットで
-        //      ここに遷移した際に「別ページに飛ばされた」という体感を
-        //      与えないよう、この画面に限りCSSで中央フローティング
-        //      カード＋背景を暗くするオーバーレイに再構成する。保存の
-        //      仕組み自体は一切変更していない（＝本物のDecap保存フローが
-        //      そのまま動く。安全性は1ミリも損なわれていない）。
-        // ==================================================================
-        function updateMediaMetaPopoverMode() {
-          var isMediaMetaEntry = /^#\/collections\/mediaLibrary\/entries\//.test(location.hash);
-          document.body.classList.toggle('cms-media-meta-popover', isMediaMetaEntry);
-          if (isMediaMetaEntry) {
-            ensureMediaMetaPopoverBackdrop();
-            ensureMediaMetaPopoverCloseButton();
-          } else {
-            var backdrop = document.querySelector('.cms-media-popover-backdrop');
-            if (backdrop) backdrop.remove();
-            var closeBtn = document.querySelector('.cms-media-popover-close');
-            if (closeBtn) closeBtn.remove();
-          }
-        }
-        function ensureMediaMetaPopoverBackdrop() {
-          if (document.querySelector('.cms-media-popover-backdrop')) return;
-          var backdrop = document.createElement('div');
-          backdrop.className = 'cms-media-popover-backdrop';
-          document.body.appendChild(backdrop);
-        }
-        // 保存せずにこの画面から離れたい場合のための「×（閉じる）」ボタン。
-        // ジャンプ元の画面（sessionStorageに退避済み。無ければメディア
-        // ライブラリの一覧）へ戻り、続けてヘッダーの「メディア」ボタンを
-        // 自動的に開き直す（9.40で報告された「閉じ込め」問題への対応）。
-        // クリックしても保存処理は一切呼び出さない＝未保存の入力は
-        // Decap自身の「保存されていません」警告の対象外にはならないが、
-        // これは元々「公開する」ボタンを押さない限りDecapが持つ標準的な
-        // 離脱確認の挙動であり、本ボタン固有の問題ではない。
-        function ensureMediaMetaPopoverCloseButton() {
-          if (document.querySelector('.cms-media-popover-close')) return;
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'cms-media-popover-close';
-          btn.title = 'メディア一覧へ戻る（保存せずに閉じる）';
-          btn.setAttribute('aria-label', 'メディア一覧へ戻る');
-          btn.textContent = '×';
-          btn.addEventListener('click', function () {
-            var returnHash = popMediaMetaReturnHash() || '#/collections/mediaLibrary';
-            location.hash = returnHash;
-            var attempts = 0;
-            var timer = setInterval(function () {
-              attempts++;
-              if (openMediaLibraryButton() || attempts > 25) {
-                clearInterval(timer);
-              }
-            }, 200);
-          });
-          document.body.appendChild(btn);
-        }
-        window.addEventListener('hashchange', updateMediaMetaPopoverMode);
-        updateMediaMetaPopoverMode();
-
-        // ==================================================================
-        // 12d) 画像メタデータ編集画面（ポップオーバー）に、選択中の画像を
-        //      「新しいファイル名で複製保存」するミニUIを追加する（9.39）。
-        //
-        //      ファイル名そのものを安全に「改名」する方法は無い（Decapの
-        //      画像ウィジェットは選択中のファイルパスを保持するだけで、
-        //      実ファイルをリネームするAPIを持たない）。そこで「同じ内容を
-        //      新しいファイル名でアップロードし、このエントリの画像欄を
-        //      その新しいファイルに差し替える」という安全な代替手段を
-        //      実装した。元のファイルは自動では削除しない——他のページ・
-        //      エントリが元のファイル名をまだ参照している可能性があり、
-        //      ここで機械的に削除すると、そちらの画像がサイト上でリンク
-        //      切れになる重大なリスクがあるため。複製後、元のファイルが
-        //      本当に不要になったことをユーザー自身が確認した上で、通常の
-        //      メディアライブラリの「削除する」から手動で削除する運用と
-        //      する（アップロード自体は9.32-Bで確立した「実際のファイル
-        //      入力へDataTransfer経由でファイルを流し込みchangeイベントを
-        //      発火させる」安全な手法をそのまま使い、選択もDecap本体の
-        //      実際のクリック操作を模倣するだけで、保存・選択ロジック
-        //      自体は一切独自実装していない）。
-        // ==================================================================
-        function ensureFilenameRenameUI() {
-          try {
-            if (!/^#\/collections\/mediaLibrary\/entries\//.test(location.hash)) return;
-            var itemsField = document.querySelector('[id^="items-field-"]');
-            if (!itemsField) return;
-            var rows = itemsField.querySelectorAll('[class*="SortableListItem"]');
-            rows.forEach(function (row) {
-              if (row.querySelector('.cms-media-rename-ui')) return;
-              var imgField = row.querySelector('[id^="image-field-"]');
-              if (!imgField) return;
-              var img = imgField.querySelector('img');
-              if (!img || !img.src) return;
-              var currentName = decodeURIComponent((img.src.split('/').pop() || '').split('?')[0]);
-              if (!currentName) return;
-              var wrap = document.createElement('div');
-              wrap.className = 'cms-media-rename-ui';
-              var label = document.createElement('div');
-              label.className = 'cms-media-rename-label';
-              label.textContent = '現在のファイル名：' + currentName;
-              wrap.appendChild(label);
-              var rowEl = document.createElement('div');
-              rowEl.className = 'cms-media-rename-row';
-              var input = document.createElement('input');
-              input.type = 'text';
-              input.placeholder = '新しいファイル名（拡張子込み。例：hero-2.jpg）';
-              rowEl.appendChild(input);
-              var btn = document.createElement('button');
-              btn.type = 'button';
-              btn.textContent = 'この名前で複製保存';
-              btn.addEventListener('click', function () {
-                renameMediaImage(imgField, input.value.trim(), btn);
-              });
-              rowEl.appendChild(btn);
-              wrap.appendChild(rowEl);
-              var note = document.createElement('div');
-              note.className = 'cms-media-rename-note';
-              note.textContent = '※元のファイルは自動削除されません（他ページでの参照を壊さないため）。不要になったら通常のメディアライブラリから手動で削除してください。';
-              wrap.appendChild(note);
-              imgField.parentElement.insertBefore(wrap, imgField.nextSibling);
-            });
-          } catch (e) {}
-        }
-
-        function renameMediaImage(imgField, newName, triggerBtn) {
-          if (!newName) {
-            alert('新しいファイル名を入力してください。');
-            return;
-          }
-          if (!/^[\w.\-]+\.[A-Za-z0-9]+$/.test(newName)) {
-            alert('半角英数字・._- と拡張子で入力してください（例：hero-2.jpg）。');
-            return;
-          }
-          var img = imgField.querySelector('img');
-          if (!img || !img.src) return;
-          triggerBtn.disabled = true;
-          triggerBtn.textContent = '処理中…';
-          fetch(img.src)
-            .then(function (res) {
-              return res.blob();
-            })
-            .then(function (blob) {
-              var file = new File([blob], newName, { type: blob.type });
-              var buttons = imgField.querySelectorAll('button');
-              var openBtn = null;
-              buttons.forEach(function (b) {
-                if (/画像を選択/.test(b.textContent || '')) openBtn = b;
-              });
-              if (!openBtn) throw new Error('picker button not found');
-              openBtn.click();
-              waitForMediaModalAndUpload(file, newName, function (ok) {
-                triggerBtn.disabled = false;
-                triggerBtn.textContent = ok ? '完了しました' : 'この名前で複製保存';
-                if (ok) {
-                  setTimeout(function () {
-                    triggerBtn.textContent = 'この名前で複製保存';
-                  }, 2000);
-                }
-              });
-            })
-            .catch(function () {
-              triggerBtn.disabled = false;
-              triggerBtn.textContent = 'この名前で複製保存';
-              alert('画像の複製に失敗しました。お手数ですが手動でアップロードし直してください。');
-            });
-        }
-
-        function waitForMediaModalAndUpload(file, filename, done) {
-          var attempts = 0;
-          var timer = setInterval(function () {
-            attempts++;
-            var modal = findOpenMediaLibraryModal();
-            var input = modal && modal.querySelector('input[type="file"]');
-            if (input) {
-              clearInterval(timer);
-              try {
-                var dt = new DataTransfer();
-                dt.items.add(file);
-                input.files = dt.files;
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-              } catch (e) {
-                done(false);
-                return;
-              }
-              waitForCardAndSelect(modal, filename, done);
-            } else if (attempts > 25) {
-              clearInterval(timer);
-              done(false);
-            }
-          }, 200);
-        }
-
-        function waitForCardAndSelect(modal, filename, done) {
-          var attempts = 0;
-          var timer = setInterval(function () {
-            attempts++;
-            var textEls = modal.querySelectorAll('[class*="CardText"]');
-            var target = null;
-            textEls.forEach(function (t) {
-              if ((t.textContent || '').trim() === filename) target = t;
-            });
-            if (target) {
-              clearInterval(timer);
-              var card = findCardAncestor(target);
-              if (card) card.click();
-              setTimeout(function () {
-                var selectBtn = null;
-                modal.querySelectorAll('button').forEach(function (b) {
-                  if ((b.textContent || '').trim() === '選択する') selectBtn = b;
-                });
-                if (selectBtn) selectBtn.click();
-                done(true);
-              }, 300);
-            } else if (attempts > 25) {
-              clearInterval(timer);
-              done(false);
-            }
-          }, 300);
-        }
-
-        var filenameRenameObserver = new MutationObserver(ensureFilenameRenameUI);
-        filenameRenameObserver.observe(document.body, { childList: true, subtree: true });
-
-        // ==================================================================
-        // 13) 「サイト全体設定 ＞ 実績 ＞ 表示順序」リストの各行に、
+        // 12) 「サイト全体設定 ＞ 実績 ＞ 表示順序」リストの各行に、
         //     選択中の実績の「タイトル」を表示する。
         //
         //     config.yml の summary（"{{fields.item}}"）は、relation
@@ -3406,194 +2797,108 @@
         wireTitleToSlugAutoFill();
         setInterval(wireTitleToSlugAutoFill, 1000);
         window.addEventListener('hashchange', wireTitleToSlugAutoFill);
+
+        // ==================================================================
+        // 21c) お問い合わせフォーム「カスタム追加項目」の項目名（label）→
+        //      フィールドID（name、送信データ用の半角英数キー）自動変換
+        //      （2026-09、B-9）。
+        //
+        //      urlSlug自動変換（21b）と全く同じ2段階変換（ひらがな・
+        //      カタカナの同期変換を即時反映→kuromoji Workerの形態素解析
+        //      結果が届き次第、漢字を含む正しい読みへ格上げ）・同じ
+        //      「手動編集を上書きしない」仕様をそのまま流用する。異なるのは
+        //      urlSlugが単一フィールドなのに対し、`custom_fields`は
+        //      ドラッグ&ドロップで行を自由に追加・削除できる list ウィジェット
+        //      であるため、複数存在しうる行それぞれへ個別に配線する必要が
+        //      ある点。各行は `[class*="SortableListItem"]`（9.35等の
+        //      表示順序リストと同じDecap内部クラス）で囲まれているため、
+        //      その中から `label-field-*` / `name-field-*` を1組ずつ
+        //      取り出してペアリングする。
+        //      フィールドID（`name`）はハイフンではなくアンダースコアのみ
+        //      許容（`custom_fields.name`のhint参照）のため、
+        //      slugifyRomaji が生成するハイフン区切りの結果を
+        //      アンダースコアへ変換してから反映する。
+        // ==================================================================
+        function fallbackLabelToFieldName(label) {
+          return fallbackTitleToSlug(label).replace(/-/g, '_');
+        }
+
+        function readingTokensToFieldName(readingTokens) {
+          return readingTokensToSlug(readingTokens).replace(/-/g, '_');
+        }
+
+        function wireCustomFieldsNameAutoFill() {
+          try {
+            var m = location.hash.match(/^#\/collections\/pages\/entries\/contact(?:\/|$)/);
+            if (!m) return;
+            var listField = document.querySelector('[id^="custom_fields-field-"]');
+            if (!listField) return;
+            var rows = listField.querySelectorAll('[class*="SortableListItem"]');
+            rows.forEach(function (row) {
+              var labelWrap = row.querySelector('[id^="label-field-"]');
+              var nameWrap = row.querySelector('[id^="name-field-"]');
+              if (!labelWrap || !nameWrap) return;
+              var labelInput = labelWrap.tagName === 'INPUT' ? labelWrap : labelWrap.querySelector('input');
+              var nameInput = nameWrap.tagName === 'INPUT' ? nameWrap : nameWrap.querySelector('input');
+              if (!labelInput || !nameInput) return;
+              if (labelInput.dataset.cmsNameAutofillWired) return;
+              labelInput.dataset.cmsNameAutofillWired = '1';
+
+              // 既にnameへ値が入っている状態（既存項目の編集等）は、その
+              // 時点の値を「最後の自動入力値」として扱い、無関係な既存の
+              // 手動入力を上書きしないようにする。
+              var lastAutoName = nameInput.value || '';
+
+              nameInput.addEventListener('input', function () {
+                if (nameInput.dataset.cmsNameAutofilling === '1') {
+                  delete nameInput.dataset.cmsNameAutofilling;
+                  return;
+                }
+                lastAutoName = null;
+              });
+
+              function applyNameFromCurrentLabel() {
+                if (lastAutoName === null) return;
+                if (nameInput.value !== '' && nameInput.value !== lastAutoName) return;
+                var label = labelInput.value;
+
+                var fallbackName = fallbackLabelToFieldName(label);
+                if (fallbackName !== nameInput.value) {
+                  nameInput.dataset.cmsNameAutofilling = '1';
+                  setReactInputValue(nameInput, fallbackName);
+                  lastAutoName = fallbackName;
+                }
+
+                requestTitleReadingTokens(label, function (readingTokens) {
+                  if (!readingTokens) return;
+                  if (lastAutoName === null) return;
+                  if (labelInput.value !== label) return;
+                  if (nameInput.value !== fallbackName && nameInput.value !== lastAutoName) return;
+                  var betterName = readingTokensToFieldName(readingTokens);
+                  if (!betterName || betterName === nameInput.value) return;
+                  nameInput.dataset.cmsNameAutofilling = '1';
+                  setReactInputValue(nameInput, betterName);
+                  lastAutoName = betterName;
+                });
+              }
+
+              labelInput.addEventListener('input', function (e) {
+                if (e && e.isComposing) return;
+                applyNameFromCurrentLabel();
+              });
+              labelInput.addEventListener('compositionend', applyNameFromCurrentLabel);
+            });
+          } catch (e) {}
+        }
+
+        wireCustomFieldsNameAutoFill();
+        setInterval(wireCustomFieldsNameAutoFill, 1000);
+        window.addEventListener('hashchange', wireCustomFieldsNameAutoFill);
       })();
     </script>
     <style>
-      /* 11) メディアライブラリへドラッグ中であることを示す視覚的フィードバック */
-      [class*='StyledModal'].cms-media-drop-active {
-        outline: 3px dashed var(--color-primary, #1954e0) !important;
-        outline-offset: -3px;
-      }
-      /* 15) メディアライブラリの「メディア管理」案内バナー */
-      .cms-media-library-hint {
-        padding: 8px 12px;
-        margin: 4px 0 10px;
-        background: #eef4ff;
-        border: 1px solid #cfe0ff;
-        border-radius: 6px;
-        font-size: 12px;
-        color: #1e2330;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .cms-media-library-hint a {
-        font-weight: bold;
-        color: #1954e0;
-        text-decoration: none;
-        white-space: nowrap;
-      }
-      .cms-media-library-hint a:hover {
-        text-decoration: underline;
-      }
-      /* 17) カード上の✎（メディア管理へジャンプ）ショートカットボタン */
-      .cms-media-edit-shortcut {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        z-index: 5;
-        width: 26px;
-        height: 26px;
-        border-radius: 999px;
-        border: none;
-        background: rgba(30, 35, 48, 0.72);
-        color: #fff;
-        font-size: 13px;
-        line-height: 26px;
-        text-align: center;
-        padding: 0;
-        cursor: pointer;
-      }
-      .cms-media-edit-shortcut:hover {
-        background: #1954e0;
-      }
-      /* 18) アップロード直後の案内トースト（位置はJS側でfixed指定） */
-      .cms-media-upload-toast {
-        z-index: 2000;
-        background: #1e2330;
-        color: #fff;
-        font-size: 12px;
-        line-height: 1.6;
-        padding: 12px 36px 12px 14px;
-        border-radius: 8px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      }
-      .cms-media-upload-toast {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .cms-media-upload-toast-action {
-        flex-shrink: 0;
-        background: #1954e0;
-        border: none;
-        color: #fff;
-        font-size: 12px;
-        font-weight: bold;
-        line-height: 1;
-        cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 6px;
-        white-space: nowrap;
-      }
-      .cms-media-upload-toast-action:hover {
-        background: #1440ad;
-      }
-      .cms-media-upload-toast-close {
-        flex-shrink: 0;
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 16px;
-        line-height: 1;
-        cursor: pointer;
-        padding: 4px;
-      }
-      /* 19) 画像メタデータ編集画面のポップオーバー風の見た目（9.39） */
-      .cms-media-popover-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 90;
-        background: rgba(20, 24, 34, 0.55);
-      }
-      body.cms-media-meta-popover [class*='EditorContainer'] {
-        position: fixed !important;
-        z-index: 91;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: min(900px, calc(100vw - 48px));
-        height: min(720px, calc(100vh - 48px));
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-      }
-      /* 保存せずに閉じるための×ボタン（9.40。カード右上に固定配置し、
-         カード自体の内部スクロールに巻き込まれないよう画面座標基準にする） */
-      .cms-media-popover-close {
-        position: fixed;
-        z-index: 92;
-        top: calc(50% - min(360px, calc(50vh - 24px)) - 18px);
-        left: calc(50% + min(450px, calc(50vw - 24px)) - 18px);
-        width: 36px;
-        height: 36px;
-        border-radius: 999px;
-        border: none;
-        background: #1e2330;
-        color: #fff;
-        font-size: 18px;
-        line-height: 36px;
-        text-align: center;
-        padding: 0;
-        cursor: pointer;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-      }
-      .cms-media-popover-close:hover {
-        background: #dc2626;
-      }
-      /* 20) 画像メタデータ編集画面：ファイル名の「複製保存」ミニUI（9.39） */
-      .cms-media-rename-ui {
-        margin: 8px 0 4px;
-        padding: 10px 12px;
-        background: #f7f9fc;
-        border: 1px solid #e2e5eb;
-        border-radius: 6px;
-      }
-      .cms-media-rename-label {
-        font-size: 12px;
-        color: #1e2330;
-        margin-bottom: 6px;
-        word-break: break-all;
-      }
-      .cms-media-rename-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .cms-media-rename-row input {
-        flex: 1 1 220px;
-        min-width: 0;
-        padding: 6px 10px;
-        border-radius: 4px;
-        border: 1px solid #d5d5d5;
-        font-size: 13px;
-      }
-      .cms-media-rename-row button {
-        flex-shrink: 0;
-        padding: 6px 12px;
-        border-radius: 4px;
-        border: 1px solid #1954e0;
-        background: #fff;
-        color: #1954e0;
-        font-size: 12px;
-        cursor: pointer;
-      }
-      .cms-media-rename-row button:hover {
-        background: #eef4ff;
-      }
-      .cms-media-rename-row button:disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
-      .cms-media-rename-note {
-        margin-top: 6px;
-        font-size: 11px;
-        color: #6b7280;
-        line-height: 1.5;
-      }
       /*
-        14) メディアライブラリの横スクロール解消・5列グリッド調整。
+        11) メディアライブラリの横スクロール解消・5列グリッド調整。
 
         メディア一覧は react-virtualized の Grid（AutoSizer付き）で
         描画されており、列数・グリッド全体の幅はモーダルの実測幅を

@@ -73,8 +73,9 @@ collections:
           - label: "お知らせセクション（トップページ）"
             name: "newsSection"
             widget: object
-            hint: "トップページのヒーローと「選ばれる3つの理由」の間に表示されるお知らせ一覧。表示のON/OFFは下部の「セクションの表示・非表示」で切り替えます。"
+            hint: "トップページのヒーローと「選ばれる3つの理由」の間に表示されるお知らせ一覧。他のセクションと異なり表示位置を並び替えできない固定配置のため、表示ON/OFFはこの中の「表示する」で切り替えます（下の「セクション表示順序」には含まれません）。"
             fields:
+              - { label: "このセクションを表示する", name: "enabled", widget: boolean, default: true, required: false }
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
               - { label: "トップページに表示する件数", name: "count", widget: number, value_type: int, default: 3, min: 1, max: 10 }
@@ -289,7 +290,7 @@ collections:
             widget: list
             required: false
             label_singular: "SNS"
-            summary: "{{fields.id}}（{{fields.url}}）"
+            summary: "{{fields.id}}"
             hint: "各SNSの公式アカウントURLと表示ON/OFFをまとめて管理します。ドラッグ&ドロップの並び順が、トップページ「店舗概要・アクセス」・会社概要ページの「公式SNS」・フッターなど、SNSアイコンを掲載するすべての箇所の表示順になります。「表示する」をOFFにするか、URLが未入力のSNSはアイコンが表示されません。スマホ下部バーの「LINEで相談」ボタンも、この LINE のURL／表示ON/OFFを参照します。"
             fields:
               - label: "SNS"
@@ -321,7 +322,7 @@ collections:
             name: "sectionOrder"
             widget: list
             required: false
-            hint: "ドラッグ&ドロップで並び替えると、そのままサイト上の表示順になります（背景の白／グレーの交互配色も自動で追従します）。「セクションの表示・非表示」で非表示にしたセクションは、ここに残っていても表示されません。選択肢の文言は各セクションの「見出し」フィールドの内容に自動で追従します。"
+            hint: "ドラッグ&ドロップで並び替えると、そのままサイト上の表示順になります（背景の白／グレーの交互配色も自動で追従します）。各項目の「このセクションを表示する」をOFFにすると、並び順を保ったまま非表示にできます（2026-09、旧「セクションの表示・非表示」タブは統合により廃止）。選択肢の文言は各セクションの「見出し」フィールドの内容に自動で追従します。「お知らせ」セクションはヒーロー直下に固定配置のためここには含まれません（上の「お知らせセクション」内で表示切替）。"
             summary: "{{fields.id}}"
             fields:
               - label: "セクション"
@@ -337,6 +338,7 @@ collections:
                   - { label: "よくある質問", value: "faq" }
                   - { label: "店舗概要・アクセス", value: "access" }
                   - { label: "お問い合わせ", value: "contact" }
+              - { label: "このセクションを表示する", name: "enable", widget: boolean, default: true, required: false }
 
           - label: "ヘッダーナビゲーション"
             name: "nav"
@@ -424,24 +426,7 @@ collections:
           # --- 7. コピーライト表記 -------------------------------------------
           - { label: "コピーライト表記", name: "copyright", widget: string, required: false }
 
-          # --- 8. セクションの表示・非表示（旧：機能フラグ） -----------------
-          - label: "セクションの表示・非表示"
-            name: "features"
-            widget: object
-            hint: "各項目のラベル文言は、対応するセクションの「見出し」フィールドの内容に自動で追従します（上の各セクション設定タブで見出しを変更すると、ここの表示もあわせて更新されます）。"
-            fields:
-              - { label: "「お知らせ」セクションを表示する（トップページ／ヒーロー直下）", name: "enableNews", widget: boolean, default: true, required: false }
-              - { label: "「選ばれる3つの理由」セクションを表示する", name: "enableFeatures", widget: boolean, default: true, required: false }
-              - { label: "「サービス・事業内容」セクションを表示する", name: "enableServices", widget: boolean, default: true, required: false }
-              - { label: "「ご相談から納品までの流れ」セクションを表示する", name: "enableFlow", widget: boolean, default: true, required: false }
-              - { label: "「商品一覧」セクションを表示する（竹/松プラン）", name: "enableProducts", widget: boolean, default: false, required: false }
-              - { label: "「実績・活用事例」セクションを表示する", name: "enableWorks", widget: boolean, default: true, required: false }
-              - { label: "「料金プラン」セクションを表示する", name: "enablePlans", widget: boolean, default: true, required: false }
-              - { label: "「よくある質問」セクションを表示する", name: "enableFaq", widget: boolean, default: true, required: false }
-              - { label: "「店舗概要・アクセス」セクションを表示する", name: "enableAccess", widget: boolean, default: true, required: false }
-              - { label: "「お問い合わせ」セクションを表示する", name: "enableContact", widget: boolean, default: true, required: false }
-
-          # --- 9. 共通文言・実績詳細ページ（一番最下部） -------------
+          # --- 8. 共通文言・実績詳細ページ（一番最下部） -------------
           - label: "共通文言・実績詳細ページ"
             name: "productPage"
             widget: object
@@ -513,6 +498,7 @@ collections:
             hint: "画像・商品名・概要・価格のうち、空欄の項目はサイト上で自動的に非表示になります（商品名が空欄の項目はカードごと非表示）。"
             fields:
               - { label: "商品画像", name: "image", widget: image, required: false }
+              - { label: "商品画像 代替テキスト（Alt属性）", name: "alt", widget: string, required: false, hint: "未入力の場合は商品名で代用されます。" }
               - { label: "商品名", name: "name", widget: string, required: false }
               - { label: "概要（説明文。Enterキーで改行可）", name: "description", widget: text, required: false }
               - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
@@ -528,49 +514,6 @@ collections:
                   - { label: "上段掲載商品（新商品等）", value: "featured" }
                   - { label: "下段掲載商品（通年商品等）", value: "regular" }
                   - { label: "両方に表示", value: "both" }
-
-  # ==========================================================================
-  # ②a-2 単一ファイルコレクション：画像メタデータの裏方ストレージ
-  #    （9.39でコレクション名を"メディア管理"から中立的な名前に変更）
-  #
-  #    Decap CMS の既定メディアライブラリ（ヘッダーの「メディア」から
-  #    開く選択・アップロードモーダル）には、画像1枚ごとにAlt属性・
-  #    キャプションを保存する仕組みが無く（公開APIの範囲では既定の
-  #    アセットピッカーを安全に拡張する手段が無いため未対応。詳細は
-  #    CLAUDE.md 9.32 参照）、Decap自身の「保存」機構を安全に使う
-  #    唯一の方法が「コレクションのエントリとして保存する」ことである
-  #    ため、このファイルコレクション自体は今後も存在し続ける。
-  #
-  #    9.39で「サイドバーに独立した『メディア管理』項目がある」という
-  #    見た目を廃止し、ヘッダーの「メディア」ボタン1つに一本化した
-  #    （実装：public/admin/index.html でこのコレクションへの
-  #    サイドバーリンクをCSSで非表示にし、メディアライブラリの各
-  #    サムネイルに付けた✎ボタンから、ポップオーバー風の見た目に
-  #    整えたこのコレクションの編集画面へ直接ジャンプする。実際の
-  #    保存はここで開く本物のDecapフォーム・本物の「公開する」
-  #    ボタンを経由するため、9.26-Bで確立した「Reduxへの書き込み
-  #    dispatchは行わない」という安全原則を維持したまま実現している。
-  #    詳細はCLAUDE.md 9.39参照）。
-  #    カテゴリ機能は9.39で全廃した（絞り込み・タグ付けの複雑さより
-  #    Alt属性・キャプションという中核機能への集中を優先）。
-  # ==========================================================================
-  - name: "mediaLibrary"
-    label: "画像メタデータ"
-    files:
-      - name: "mediaLibrary"
-        label: "画像メタデータ一覧"
-        file: "src/data/mediaLibrary.yml"
-        fields:
-          - label: "画像一覧"
-            name: "items"
-            widget: list
-            required: false
-            summary: "{{fields.caption}}"
-            hint: "画像ごとにAlt属性・キャプションを登録・管理できます。通常はメディアライブラリの✎ボタンから直接編集してください（このコレクション自体を直接開く必要はありません）。"
-            fields:
-              - { label: "画像", name: "image", widget: image, required: false }
-              - { label: "Alt属性（代替テキスト）", name: "alt", widget: string, required: false, hint: "スクリーンリーダー・検索エンジン向けの説明文です。" }
-              - { label: "キャプション", name: "caption", widget: string, required: false, hint: "画像に添える短い説明文です。" }
 
   # ==========================================================================
   # ②b フォルダコレクション：型化ページ（works）＝実績・活用事例を追加・編集・削除
@@ -598,11 +541,13 @@ collections:
     slug: "{{fields.urlSlug}}"
     extension: "md"
     format: "frontmatter"
+    sortable_fields: ["publishedAt", "title"]
     fields:
       - { label: "タイトル", name: "title", widget: string, required: false }
       - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、漢字・ひらがな・カタカナを自動でローマ字（ヘボン式）に変換して補完します（初回は変換辞書の読み込みに少し時間がかかることがあります）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: corporate-site-renewal" }
-      - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+      - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false, hint: "未入力の場合、カードに価格は表示されません。" }
       - { label: "メイン画像", name: "image", widget: image, required: false }
+      - { label: "メイン画像 代替テキスト（Alt属性）", name: "imageAlt", widget: string, required: false, hint: "スクリーンリーダー・検索エンジン向けの画像説明文です。未入力の場合はタイトルで代用されます。" }
       - { label: "概要（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
       - label: "仕様・含まれる内容"
         name: "specs"
@@ -674,6 +619,7 @@ collections:
               - { label: "バッジテキスト（例：人気／おすすめ）", name: "badgeText", widget: string, required: false, hint: "入力すると、サービス名の左隣にテーマカラーのバッジが表示されます。未入力ならバッジは表示されません。" }
               - { label: "説明（Enterキーで改行可）", name: "description", widget: text, required: false }
               - { label: "画像", name: "image", widget: image, required: false }
+              - { label: "画像 代替テキスト（Alt属性）", name: "alt", widget: string, required: false, hint: "未入力の場合はサービス名で代用されます。" }
               - { label: "画像とテキストの配置を左右反転する", name: "reverseLayout", widget: boolean, default: false, required: false, hint: "OFF：画像が左・テキストが右（既定）／ON：画像が右・テキストが左。スマホ表示（1カラム）では常に画像→テキストの順です。" }
               - label: "含まれる内容"
                 name: "features"
@@ -726,6 +672,7 @@ collections:
               - { label: "本文（Enterキーで改行可）", name: "body", widget: text, required: false }
               - { label: "代表者名", name: "name", widget: string, required: false }
               - { label: "代表者写真", name: "image", widget: image, required: false }
+              - { label: "代表者写真 代替テキスト（Alt属性）", name: "alt", widget: string, required: false, hint: "未入力の場合は代表者名で代用されます。" }
           - label: "会社概要（表形式）"
             name: "profile"
             widget: list

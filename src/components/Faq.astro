@@ -1,9 +1,9 @@
 ---
 // ============================================================================
-// Faq.astro — 「よくある質問」アコーディオン（features.enableFaq で表示制御）
+// Faq.astro — 「よくある質問」アコーディオン（セクション表示順序の enable で表示制御）
 // muted: セクション背景の交互配色を、表示順序に応じて外側から動的に指定する。
 // ============================================================================
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 
 interface Props {
   muted?: boolean;
@@ -13,7 +13,7 @@ const { muted = true } = Astro.props;
 ---
 
 {
-  site.features.enableFaq && (
+  isSectionEnabled('faq') && (
     <section id="faq" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="faq-heading">
       <div class="max-w-xl sm:max-w-2xl lg:max-w-[760px] mx-auto px-4 sm:px-6 lg:px-0">
         <div class="text-center mb-10">

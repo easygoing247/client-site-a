@@ -7,7 +7,7 @@
 // 常にサイトの実際の内容と同期した状態を保てる。
 // ============================================================================
 import type { APIRoute } from 'astro';
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 
 export const GET: APIRoute = ({ site: siteURL }) => {
   const base = (siteURL ?? new URL('https://example.com/')).toString().replace(/\/$/, '');
@@ -22,11 +22,11 @@ export const GET: APIRoute = ({ site: siteURL }) => {
   lines.push(`- [トップページ](${base}/): ${site.company.tagline}`);
   lines.push(`- [プライバシーポリシー](${base}/privacy/): 個人情報の取り扱いについて`);
 
-  if (site.features.enableProducts) {
+  if (isSectionEnabled('products')) {
     lines.push(`- [商品一覧](${base}/products/): ${site.productsSection.heading}`);
   }
 
-  if (site.features.enableWorks) {
+  if (isSectionEnabled('works')) {
     lines.push(`- [実績・活用事例](${base}/#works): ${site.works.heading}`);
   }
 

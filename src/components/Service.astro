@@ -19,7 +19,7 @@
 // している）。
 // ============================================================================
 import { Image } from 'astro:assets';
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 import { servicesPage } from '../lib/pages';
 import { resolveImageOrNull } from '../lib/images';
 import Button from './Button.astro';
@@ -34,7 +34,7 @@ const isSlider = items.length > 1;
 ---
 
 {
-  site.features.enableServices && (
+  isSectionEnabled('services') && (
     <section id="services" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="services-heading">
       <div class="max-w-[1100px] mx-auto">
         <div class="text-center mb-10">
@@ -71,7 +71,7 @@ const isSlider = items.length > 1;
                   {image && (
                     <Image
                       src={image}
-                      alt={item.title ? `${item.title}のイメージ` : ''}
+                      alt={item.alt || (item.title ? `${item.title}のイメージ` : '')}
                       class="w-full flex-none aspect-video md:aspect-auto md:w-[38%] md:h-full object-cover block"
                       width={400}
                       height={225}

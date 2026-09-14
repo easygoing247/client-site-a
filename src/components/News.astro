@@ -2,7 +2,7 @@
 // ============================================================================
 // News.astro — トップページの「お知らせ」セクション
 // ヒーローセクションと「選ばれる3つの理由」の間に固定配置される
-// （sectionOrder では並び替え不可）。features.enableNews で表示制御。
+// （sectionOrder では並び替え不可）。newsSection.enabled で表示制御。
 // 最新記事を newsSection.count 件、コンパクトなリスト形式で表示する。
 // ============================================================================
 import { site } from '../lib/site';
@@ -21,7 +21,7 @@ const posts = (await getPublishedNews()).slice(0, count);
 ---
 
 {
-  site.features.enableNews && posts.length > 0 && (
+  section.enabled !== false && posts.length > 0 && (
     <section id="news" class:list={['py-16 px-5', muted && 'bg-surface-muted']} aria-labelledby="news-heading">
       <div class="max-w-[820px] mx-auto">
         <div class="text-center mb-8">

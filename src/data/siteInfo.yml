@@ -11,6 +11,7 @@ hero:
     - 最短1週間で対応
     - 安心のサポート体制
 newsSection:
+  enabled: true
   eyebrow: NEWS
   heading: お知らせ
   count: 3
@@ -194,14 +195,23 @@ ui:
   privacyConsentSuffix: に同意の上、送信してください。
 sectionOrder:
   - id: features
+    enable: true
   - id: services
+    enable: true
   - id: flow
+    enable: true
   - id: products
+    enable: true
   - id: works
+    enable: true
   - id: plans
+    enable: true
   - id: access
+    enable: true
   - id: faq
+    enable: true
   - id: contact
+    enable: true
 nav:
   - label: サービス内容
     href: /services
@@ -251,17 +261,6 @@ stickyContactBar:
     actionType: url
     customLink: ""
 copyright: © 2026 LOGO. All Rights Reserved.
-features:
-  enableFeatures: true
-  enableServices: true
-  enableProducts: true
-  enableAccess: true
-  enablePlans: true
-  enableFlow: true
-  enableFaq: true
-  enableNews: true
-  enableContact: true
-  enableWorks: true
 productPage:
   breadcrumbHome: トップ
   specsHeading: 仕様・含まれる内容

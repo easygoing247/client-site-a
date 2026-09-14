@@ -42,6 +42,8 @@ export interface ServicesPage {
     badgeText?: string;
     description?: string;
     image?: string;
+    /** 画像の代替テキスト（Alt属性）。未入力の場合はサービス名で代用する。 */
+    alt?: string;
     features?: string[];
     /** true で「画像：右／テキスト：左」に左右反転（既定は画像：左） */
     reverseLayout?: boolean;
@@ -78,6 +80,8 @@ export interface AboutPage {
     body?: string;
     name?: string;
     image?: string;
+    /** 代表者写真の代替テキスト（Alt属性）。未入力の場合は代表者名で代用する。 */
+    alt?: string;
   };
   profile?: {
     label?: string;
@@ -156,6 +160,8 @@ export type ProductSectionPlacement = 'featured' | 'regular' | 'both';
 
 export interface ProductItemConfig {
   image?: string;
+  /** 商品画像の代替テキスト（Alt属性）。未入力の場合は商品名で代用する。 */
+  alt?: string;
   name?: string;
   description?: string;
   price?: number | string;
@@ -180,6 +186,8 @@ export interface ProductsPage {
 
 export interface ResolvedProductItem {
   image?: string;
+  /** 商品画像の代替テキスト（未入力の場合は呼び出し側で商品名にフォールバックする） */
+  alt?: string;
   name: string;
   description?: string;
   price?: number;
@@ -215,6 +223,7 @@ export function resolveProductItems(
     })
     .map((item) => ({
       image: item.image || undefined,
+      alt: item.alt || undefined,
       name: String(item.name).trim(),
       description: item.description || undefined,
       price: toFiniteNumberOrUndefined(item.price),
@@ -232,6 +241,7 @@ export function resolveAllProductItems(items: ProductItemConfig[] | undefined): 
     .filter((item): item is ProductItemConfig => !!item && !!(item.name && String(item.name).trim()))
     .map((item) => ({
       image: item.image || undefined,
+      alt: item.alt || undefined,
       name: String(item.name).trim(),
       description: item.description || undefined,
       price: toFiniteNumberOrUndefined(item.price),

@@ -42,7 +42,7 @@ const { Content } = await work.render();
           <div class="rounded-2xl overflow-hidden border border-surface-border mb-8 md:max-w-[67%] md:mx-auto">
             <Image
               src={work.data.image}
-              alt={work.data.title ?? ''}
+              alt={work.data.imageAlt || work.data.title || ''}
               class="w-full h-auto object-cover block"
               width={820}
               height={480}

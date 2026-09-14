@@ -5,7 +5,7 @@
 // 各情報行・SNSアイコンは、値が未入力の場合は自動的に非表示になる。
 // ============================================================================
 import { Image } from 'astro:assets';
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
 import { orderedSnsLinks } from '../lib/sns';
 import SnsIcons from './SnsIcons.astro';
@@ -36,7 +36,7 @@ const infoRows = [
 
 ---
 
-{site.features.enableAccess && (
+{isSectionEnabled('access') && (
 <section id="access" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="access-heading">
   <div class="max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5">
     <div class="text-center mb-10">

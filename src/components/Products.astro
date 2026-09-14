@@ -3,7 +3,7 @@
 // Products.astro — トップページ「商品一覧」セクション
 // データは CMS「商品作成」（src/data/products.yml、src/lib/pages.ts の
 // productsPage）を単一の情報源として参照する（/products ページと共通）。
-// site.features.enableProducts が false、または商品が1件も登録されていない
+// 「セクション表示順序」の products が非表示、または商品が1件も登録されていない
 // 場合は非表示。表示区分（featured/regular/both）は問わず、登録順の先頭
 // site.productsSection.count 件を表示する。
 // スマホ幅（640px未満）では横スクロール＋スナップの1枚送りスライダー
@@ -14,7 +14,7 @@
 // を使う（Service.astro と共有）。
 // ============================================================================
 import { Image } from 'astro:assets';
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 import { productsPage, resolveAllProductItems } from '../lib/pages';
 import { resolveImageOrNull } from '../lib/images';
 
@@ -23,7 +23,7 @@ interface Props {
 }
 
 const { muted = false } = Astro.props;
-const enabled = site.features.enableProducts;
+const enabled = isSectionEnabled('products');
 const count = Number(site.productsSection.count) > 0 ? Math.floor(Number(site.productsSection.count)) : 4;
 const items = enabled ? resolveAllProductItems(productsPage.items).slice(0, count) : [];
 const isSlider = items.length > 1;
@@ -59,7 +59,7 @@ const isSlider = items.length > 1;
                   {image && (
                     <Image
                       src={image}
-                      alt={item.name ? `${item.name}のイメージ` : ''}
+                      alt={item.alt || (item.name ? `${item.name}のイメージ` : '')}
                       class="w-full flex-none aspect-video md:aspect-auto md:h-[150px] object-cover block"
                       width={400}
                       height={225}

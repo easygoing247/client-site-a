@@ -1491,40 +1491,40 @@
   // セクションの並び順・表示/非表示（トップページ index.astro と同じロジック）
   // ==========================================================================
   var SECTION_KEYS = ['features', 'services', 'flow', 'products', 'works', 'plans', 'faq', 'access', 'contact'];
-  var FEATURE_FLAG_MAP = {
-    features: 'enableFeatures',
-    services: 'enableServices',
-    flow: 'enableFlow',
-    products: 'enableProducts',
-    works: 'enableWorks',
-    plans: 'enablePlans',
-    faq: 'enableFaq',
-    access: 'enableAccess',
-    contact: 'enableContact',
-  };
+
+  // セクションの表示ON/OFFは2026-09に「セクション表示順序」（sectionOrder）
+  // 各項目の `enable` フィールドへ一本化した（旧・独立した`features.enableXxx`
+  // フラグ群は廃止。実サイト側は src/lib/site.ts の isSectionEnabled() と
+  // 同じロジック。CLAUDE.md 9.51参照）。
+  function sectionEnabledMap(data) {
+    var map = {};
+    (data.sectionOrder || []).forEach(function (s) {
+      if (s && s.id) map[s.id] = s.enable !== false;
+    });
+    return map;
+  }
 
   // ヘッダー・フッターのナビゲーション項目は、リンク先セクションが
-  // 「セクションの表示・非表示」機能フラグでOFFになっている場合、
+  // 「セクション表示順序」でOFF（enable: false）になっている場合、
   // 実サイト側（src/lib/site.ts の visibleNavItems）と同様に連動して
-  // 非表示にする。キーはFEATURE_FLAG_MAPと同じ対応関係を「#セクションID」
-  // の形（nav/footerNavのhref表記）に変換したもの。
+  // 非表示にする。キーは「#セクションID」の形（nav/footerNavのhref表記）。
   // 複数ページ版（master-template-multi）では、トップページのセクションへ戻る
   // リンクを「/#works」形式（ルート付きハッシュ）で持たせるため、
   // 旧来の「#works」形式と両方をキーに登録する。「/services」等の
-  // 下層ページ専用リンクは対応フラグを持たない＝常に表示。
-  var NAV_HREF_TO_FLAG = Object.keys(FEATURE_FLAG_MAP).reduce(function (acc, id) {
-    acc['#' + id] = FEATURE_FLAG_MAP[id];
-    acc['/#' + id] = FEATURE_FLAG_MAP[id];
+  // 下層ページ専用リンクは対応セクションを持たない＝常に表示。
+  var NAV_HREF_TO_SECTION = SECTION_KEYS.reduce(function (acc, id) {
+    acc['#' + id] = id;
+    acc['/#' + id] = id;
     return acc;
   }, {});
 
   function filterVisibleNavForPreview(data, items) {
-    var features = data.features || {};
+    var enabledMap = sectionEnabledMap(data);
     return (items || []).filter(function (item) {
       if (!item || !item.label || !item.href) return false;
-      var flag = NAV_HREF_TO_FLAG[item.href];
-      // 対応するセクションフラグが無いリンク（外部リンク等）は常に表示する
-      return flag === undefined || features[flag];
+      var id = NAV_HREF_TO_SECTION[item.href];
+      // 対応するセクションが無いリンク（外部リンク等）は常に表示する
+      return id === undefined || enabledMap[id] !== false;
     });
   }
 
@@ -1537,10 +1537,10 @@
         return SECTION_KEYS.indexOf(id) !== -1;
       });
     if (!order.length) order = SECTION_KEYS.slice();
-    var features = data.features || {};
+    var enabledMap = sectionEnabledMap(data);
     return order
       .filter(function (id) {
-        return !!features[FEATURE_FLAG_MAP[id]];
+        return enabledMap[id] !== false;
       })
       .map(function (id, i) {
         return { id: id, muted: i % 2 === 0 };
@@ -1615,7 +1615,7 @@
           'main',
           {},
           renderHero(h, data, getAsset),
-          data.features && data.features.enableNews && renderNewsSectionPreview(h, data),
+          data.newsSection && data.newsSection.enabled !== false && renderNewsSectionPreview(h, data),
           visibleSections.map(function (s) {
             return h('div', { key: s.id }, renderSection(h, s.id, data, getAsset, s.muted));
           })
@@ -1762,7 +1762,7 @@
                 h(
                   'div',
                   { className: 'rounded-2xl overflow-hidden border border-surface-border mb-8 md:max-w-[67%] md:mx-auto' },
-                  h('img', { src: imageUrl, alt: data.title || '', className: 'w-full h-auto object-cover block' })
+                  h('img', { src: imageUrl, alt: data.imageAlt || data.title || '', className: 'w-full h-auto object-cover block' })
                 ),
               data.title &&
                 h('h1', { className: 'font-bold mb-3', style: styleObj('font-size:clamp(24px,3.6vw,34px);') }, data.title),
@@ -1866,7 +1866,7 @@
           h(
             'div',
             { className: 'rounded-2xl overflow-hidden border border-surface-border' },
-            h('img', { src: imageUrl, alt: item.name + 'のイメージ', className: 'w-full h-[220px] sm:h-[260px] object-cover block' })
+            h('img', { src: imageUrl, alt: item.alt || item.name + 'のイメージ', className: 'w-full h-[220px] sm:h-[260px] object-cover block' })
           ),
         h(
           'div',
@@ -1888,7 +1888,7 @@
       { key: item.name, className: 'relative flex flex-col bg-white rounded-card overflow-hidden border border-surface-border' },
       badge,
       imageUrl &&
-        h('img', { src: imageUrl, alt: item.name + 'のイメージ', className: 'w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block' }),
+        h('img', { src: imageUrl, alt: item.alt || item.name + 'のイメージ', className: 'w-full flex-none aspect-video md:aspect-auto md:h-[170px] object-cover block' }),
       h(
         'div',
         { className: 'px-4 py-4 md:py-5' },
@@ -2105,7 +2105,7 @@
                     { className: cx('rounded-2xl overflow-hidden border border-surface-border', item.reverseLayout && 'md:order-2') },
                     h('img', {
                       src: imageUrl,
-                      alt: item.title ? item.title + 'のイメージ' : '',
+                      alt: item.alt || (item.title ? item.title + 'のイメージ' : ''),
                       className: 'w-full h-[220px] sm:h-[260px] object-cover block',
                     })
                   ),
@@ -2281,7 +2281,7 @@
               { className: 'rounded-2xl overflow-hidden border border-surface-border' },
               h('img', {
                 src: greetingImg,
-                alt: greeting.name ? greeting.name + 'の写真' : '',
+                alt: greeting.alt || (greeting.name ? greeting.name + 'の写真' : ''),
                 className: 'w-full h-[240px] md:h-[260px] object-cover block',
               })
             ),

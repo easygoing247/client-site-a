@@ -59,21 +59,10 @@ export interface SiteInfo {
       sns: string;
     };
   };
-  features: {
-    enableFeatures: boolean;
-    enableServices: boolean;
-    enableFlow: boolean;
-    enableProducts: boolean;
-    enableWorks: boolean;
-    enablePlans: boolean;
-    enableFaq: boolean;
-    enableAccess: boolean;
-    enableContact: boolean;
-    /** トップページの「お知らせ」セクション（ヒーローと選ばれる理由の間） */
-    enableNews: boolean;
-  };
   /** トップページの「お知らせ」セクション設定 */
   newsSection: {
+    /** トップページの「お知らせ」セクションを表示する（sectionOrder 対象外の固定配置のため独立管理） */
+    enabled?: boolean;
     eyebrow: string;
     heading: string;
     /** トップページに表示するお知らせの件数 */
@@ -81,7 +70,9 @@ export interface SiteInfo {
     linkLabel: string;
     linkHref: string;
   };
-  sectionOrder: { id: string }[];
+  /** セクションの並び順＋表示ON/OFF（統合管理、2026-09 A-2）。
+   * `enable` 未入力（既存データ・末尾の未掲載セクション）は true 扱い。 */
+  sectionOrder: { id: string; enable?: boolean }[];
   hero: {
     heading: string;
     body: string;
@@ -220,34 +211,78 @@ export interface SiteInfo {
 export const site = yaml.load(raw) as SiteInfo;
 
 // ============================================================================
+// セクションの表示ON/OFFは、9.50の管理画面精査を受けて2026-09に
+// 「セクション表示順序」（sectionOrder）へ一本化した（旧・独立した
+// `features.enableXxx` フラグ群は廃止。CLAUDE.md 9.51参照）。
+// トップページの`Hero`直下に固定配置される「お知らせ」セクションのみ
+// sectionOrder の対象外のため、`newsSection.enabled` で独立管理する。
+// ============================================================================
+export type SectionId =
+  | 'features'
+  | 'services'
+  | 'flow'
+  | 'products'
+  | 'works'
+  | 'plans'
+  | 'faq'
+  | 'access'
+  | 'contact';
+
+const ALL_SECTION_IDS: SectionId[] = [
+  'features',
+  'services',
+  'flow',
+  'products',
+  'works',
+  'plans',
+  'faq',
+  'access',
+  'contact',
+];
+
+/** 指定セクションが表示ONかどうか（sectionOrderに項目が無ければ既定でtrue）。 */
+export function isSectionEnabled(id: SectionId): boolean {
+  const item = (site.sectionOrder ?? []).find((s) => s.id === id);
+  return item ? item.enable !== false : true;
+}
+
+/** 実際の表示順序（sectionOrderが空の場合は全セクションを既定順で返す）。 */
+export function orderedSectionIds(): SectionId[] {
+  const configured = (site.sectionOrder ?? [])
+    .map((s) => s.id)
+    .filter((id): id is SectionId => (ALL_SECTION_IDS as string[]).includes(id));
+  return configured.length > 0 ? configured : ALL_SECTION_IDS;
+}
+
+// ============================================================================
 // ヘッダー／フッターのナビゲーション項目は、リンク先セクションが
-// `features.*` フラグで非表示になっている場合、連動して非表示にする。
-// （管理画面の「機能フラグ」で該当セクションをOFFにした際、ナビだけ
-// 　リンク切れのまま残ってしまうのを防ぐため）
+// 「セクション表示順序」で非表示（enable: false）になっている場合、
+// 連動して非表示にする（管理画面で該当セクションをOFFにした際、ナビだけ
+// リンク切れのまま残ってしまうのを防ぐため）。
 // ============================================================================
 // 複数ページ版（master-template-multi）では、トップページのセクションへ戻る
 // リンクを「/#works」のようにルート付きハッシュで持たせるため、旧来の
 // 「#works」形式と両方をキーに登録しておく。「/services」などの下層ページ
-// 専用リンクは対応フラグを持たない＝常に表示。
-const navHrefToFeatureFlag: Partial<Record<string, keyof SiteInfo['features']>> = {
-  '#features': 'enableFeatures',
-  '#services': 'enableServices',
-  '#flow': 'enableFlow',
-  '#products': 'enableProducts',
-  '#works': 'enableWorks',
-  '#plans': 'enablePlans',
-  '#faq': 'enableFaq',
-  '#access': 'enableAccess',
-  '#contact': 'enableContact',
-  '/#features': 'enableFeatures',
-  '/#services': 'enableServices',
-  '/#flow': 'enableFlow',
-  '/#products': 'enableProducts',
-  '/#works': 'enableWorks',
-  '/#plans': 'enablePlans',
-  '/#faq': 'enableFaq',
-  '/#access': 'enableAccess',
-  '/#contact': 'enableContact',
+// 専用リンクは対応セクションIDを持たない＝常に表示。
+const navHrefToSectionId: Partial<Record<string, SectionId>> = {
+  '#features': 'features',
+  '#services': 'services',
+  '#flow': 'flow',
+  '#products': 'products',
+  '#works': 'works',
+  '#plans': 'plans',
+  '#faq': 'faq',
+  '#access': 'access',
+  '#contact': 'contact',
+  '/#features': 'features',
+  '/#services': 'services',
+  '/#flow': 'flow',
+  '/#products': 'products',
+  '/#works': 'works',
+  '/#plans': 'plans',
+  '/#faq': 'faq',
+  '/#access': 'access',
+  '/#contact': 'contact',
 };
 
 // 「下層ページ編集」の4ページ（services/about/contact/news）は、CMS上で
@@ -281,9 +316,9 @@ export function visibleNavItems<T extends { href: string; label: string }>(items
       const pageHeading = navHrefToPageHeading[item.href];
       const label = item.label || pageHeading;
       if (!label) return null;
-      const flag = navHrefToFeatureFlag[item.href];
-      // 対応するセクションフラグが無いリンク（外部リンク・下層ページ等）は常に表示する
-      if (flag !== undefined && !site.features[flag]) return null;
+      const sectionId = navHrefToSectionId[item.href];
+      // 対応するセクションIDが無いリンク（外部リンク・下層ページ等）は常に表示する
+      if (sectionId !== undefined && !isSectionEnabled(sectionId)) return null;
       return { ...item, label };
     })
     .filter((item): item is T => item !== null);

@@ -79,7 +79,7 @@ const regularItems = await Promise.all(
                     <div class="rounded-2xl overflow-hidden border border-surface-border">
                       <Image
                         src={item.resolvedImage}
-                        alt={`${item.name}のイメージ`}
+                        alt={item.alt || `${item.name}のイメージ`}
                         class="w-full h-[220px] sm:h-[260px] object-cover block"
                         width={600}
                         height={360}

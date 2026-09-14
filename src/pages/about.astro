@@ -67,7 +67,7 @@ aboutSectionOrder
             <div class="rounded-2xl overflow-hidden border border-surface-border">
               <Image
                 src={greetingImage}
-                alt={greeting.name ? `${greeting.name}の写真` : ''}
+                alt={greeting.alt || (greeting.name ? `${greeting.name}の写真` : '')}
                 class="w-full h-[240px] md:h-[260px] object-cover block"
                 width={440}
                 height={520}

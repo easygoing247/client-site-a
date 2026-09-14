@@ -4,7 +4,7 @@
 // 送信ボタン直下に「プライバシーポリシーに同意の上、送信してください」の
 // リンク付き注記を標準配置（/privacy へリンク）。
 // ============================================================================
-import { site } from '../lib/site';
+import { site, isSectionEnabled } from '../lib/site';
 import { contactFormSettings } from '../lib/contactFormSettings';
 import ContactFields from './ContactFields.astro';
 
@@ -17,7 +17,7 @@ const formText = site.contactSection.form;
 const cf = contactFormSettings;
 ---
 
-{site.features.enableContact && (
+{isSectionEnabled('contact') && (
 <section id="contact" class:list={['py-16', muted && 'bg-surface-muted']} aria-labelledby="contact-heading">
   <div class="max-w-xl sm:max-w-2xl lg:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-5">
     <div class="text-center mb-10">

@@ -1,8 +1,8 @@
 ---
 // ============================================================================
 // src/pages/index.astro — トップページ
-// セクションの表示順序・表示/非表示は siteInfo.yml の `sectionOrder` と
-// `features.*` フラグのみで決まる（本ファイルに順序をハードコードしない）。
+// セクションの表示順序・表示/非表示は siteInfo.yml の `sectionOrder`
+// （各項目の `id` と `enable`）のみで決まる（本ファイルに順序をハードコードしない）。
 // 背景の交互配色（白／グレー）も、実際に表示されるセクションだけを数えて
 // 動的に算出するため、管理画面で並び替えても自動的に交互配色が保たれる。
 // ============================================================================
@@ -23,7 +23,7 @@ import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
 import StickyContactBar from '../components/StickyContactBar.astro';
 import BackToTop from '../components/BackToTop.astro';
-import { site } from '../lib/site';
+import { isSectionEnabled, orderedSectionIds, type SectionId } from '../lib/site';
 import { productsPage, resolveAllProductItems } from '../lib/pages';
 
 const sectionComponents = {
@@ -36,29 +36,24 @@ const sectionComponents = {
   faq: Faq,
   access: Access,
   contact: Contact,
-} as const;
+} satisfies Record<SectionId, unknown>;
 
-type SectionId = keyof typeof sectionComponents;
-
-const productCount = site.features.enableProducts ? resolveAllProductItems(productsPage.items).length : 0;
-const workCount = site.features.enableWorks ? (await getCollection('works')).length : 0;
+const productCount = isSectionEnabled('products') ? resolveAllProductItems(productsPage.items).length : 0;
+const workCount = isSectionEnabled('works') ? (await getCollection('works')).length : 0;
 
 const sectionEnabled: Record<SectionId, boolean> = {
-  features: site.features.enableFeatures,
-  services: site.features.enableServices,
-  flow: site.features.enableFlow,
-  products: site.features.enableProducts && productCount > 0,
-  works: site.features.enableWorks && workCount > 0,
-  plans: site.features.enablePlans,
-  faq: site.features.enableFaq,
-  access: site.features.enableAccess,
-  contact: site.features.enableContact,
+  features: isSectionEnabled('features'),
+  services: isSectionEnabled('services'),
+  flow: isSectionEnabled('flow'),
+  products: isSectionEnabled('products') && productCount > 0,
+  works: isSectionEnabled('works') && workCount > 0,
+  plans: isSectionEnabled('plans'),
+  faq: isSectionEnabled('faq'),
+  access: isSectionEnabled('access'),
+  contact: isSectionEnabled('contact'),
 };
 
-const orderIds: SectionId[] =
-  site.sectionOrder?.length > 0
-    ? (site.sectionOrder.map((s) => s.id).filter((id) => id in sectionComponents) as SectionId[])
-    : (Object.keys(sectionComponents) as SectionId[]);
+const orderIds = orderedSectionIds();
 
 // 表示されるセクションだけを数えて交互配色（偶数番目=グレー）を割り当てる
 const visibleSections = orderIds
