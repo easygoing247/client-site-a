@@ -4213,3 +4213,37 @@ B-8/B-10/C-12（小粒な改善）を実装した。
 なっていることを、それぞれNode.jsスクリプトで実機確認した。
 `preview.js`/`config.yml`を変更したため、キャッシュバスター
 （9.24参照）を`20260914b`へ更新した。
+
+### 9.53 フッターナビ「ヘッダーナビ流用」機能にヘッダーCTAボタンも結合（2026-09-14）
+
+- **要望**：9.52-A-5で実装した`footerNav.useHeaderNav`は、ONの間
+  ヘッダーの通常メニュー項目（`nav`）のみをフッターに流用しており、
+  ヘッダー右端の強調CTAボタン（`navCta`。ヘッダーでは`Header.astro`が
+  `MobileNavDrawer`にも渡している「お問い合わせ」等のボタン）が
+  含まれていなかった。ヘッダーの見た目（通常メニュー＋CTAボタン）に
+  フッターも完全に揃えたいという要望を受け、`nav`配列の末尾に
+  `navCta`の「表示名」「リンク先」を1項目として結合するよう拡張した。
+- **実装**：`src/lib/site.ts`の`resolveFooterNavItems()`を、
+  `useHeaderNav`が`true`の場合は`visibleNavItems(site.nav)`の結果に
+  `site.navCta`（`label`と`href`の両方が入力済みの場合のみ）を
+  1項目として追加する形に変更した。`Header.astro`の表示条件
+  （`site.navCta.label && site.navCta.href`）と全く同じガードを使う
+  ことで、ヘッダー側でCTAボタンが表示されない設定（文言またはリンク先が
+  未入力）のときはフッターにも追加されない、という一貫性を保っている。
+  `navCta`はナビ項目自身が明示的な表示名を持つため、下層ページ見出しへの
+  フォールバックを行う`visibleNavItems()`は通さず、そのまま配列末尾へ
+  追加する（`navCta`はそもそもセクションIDにもページ見出しにも
+  対応しない独立した設定のため）。
+- `public/admin/preview.js`の`renderFooter`も同じロジック
+  （`useHeaderNav`時は`data.nav`をフィルタした配列へ`data.navCta`を
+  条件付きで`concat`）で追従修正した。
+- `config.yml`の`useHeaderNav`フィールドのhintに、CTAボタンも
+  自動結合される旨を追記した。
+- **実機検証**：`siteInfo.yml`の`useHeaderNav`を一時的に`true`へ切り替えて
+  `npm run build`し、`dist/index.html`のフッター内`<a>`要素を実測。
+  `nav`配列（7項目、`/contact`を含まない）の末尾に`navCta`
+  （「お問い合わせ」→`/contact`）が過不足なく追加され、合計8項目に
+  なっていることを確認。検証後、`siteInfo.yml`は`git checkout`で
+  元の値（`useHeaderNav: false`）へ戻し、コミットには含めていない。
+  `npx astro check`は0エラー。`preview.js`/`config.yml`を変更したため
+  キャッシュバスターを`20260914c`へ更新した。

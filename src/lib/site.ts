@@ -329,13 +329,28 @@ export function visibleNavItems<T extends { href: string; label: string }>(items
 }
 
 /**
- * フッターナビの表示元を解決する（2026-09、A-5）。
+ * フッターナビの表示元を解決する（2026-09、A-5／2026-09-14 CTA結合対応）。
  * `footerNav.useHeaderNav` が true の場合はヘッダーナビ（`nav`）と
- * 同じ項目をそのまま流用し、そうでない場合は `footerNav.items` を使う。
- * どちらも最終的に `visibleNavItems()` を通すため、セクション表示
- * ON/OFF・下層ページ見出しへのフォールバックは通常のナビと同様に働く。
+ * 同じ項目を流用し、末尾にヘッダーCTAボタン（`navCta`）の「表示名」
+ * 「リンク先」を1項目として追加する（ヘッダー側の見た目——通常メニュー
+ * ＋強調CTAボタン——にフッターも合わせるため）。`useHeaderNav` が
+ * false の場合は従来どおり `footerNav.items` のみを使う。
+ * `navCta` は `label`／`href` のどちらかが未入力（＝ヘッダー自体でも
+ * 非表示になる状態、`Header.astro` の `site.navCta.label &&
+ * site.navCta.href` 判定と同じ条件）なら安全に追加をスキップする。
+ * ナビ項目は最終的に `visibleNavItems()` を通すため、セクション表示
+ * ON/OFF・下層ページ見出しへのフォールバックは通常のナビと同様に働く
+ * （`navCta` はページ見出しフォールバックの対象外の明示的な表示名を
+ * 持つため、`visibleNavItems()` を通さずそのまま追加する）。
  */
 export function resolveFooterNavItems(): { label: string; href: string }[] {
-  const source = site.footerNav?.useHeaderNav ? site.nav : site.footerNav?.items;
-  return visibleNavItems(source ?? []);
+  if (!site.footerNav?.useHeaderNav) {
+    return visibleNavItems(site.footerNav?.items ?? []);
+  }
+  const items = visibleNavItems(site.nav ?? []);
+  const cta = site.navCta;
+  if (cta?.label && cta?.href) {
+    return [...items, { label: cta.label, href: cta.href }];
+  }
+  return items;
 }

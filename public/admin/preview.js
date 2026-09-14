@@ -1448,8 +1448,16 @@
   function renderFooter(h, data, getAsset) {
     var company = data.company || {};
     var footerNavSetting = data.footerNav || {};
-    var footerNavSource = footerNavSetting.useHeaderNav ? data.nav : footerNavSetting.items;
-    var footerNav = filterVisibleNavForPreview(data, footerNavSource);
+    var footerNav;
+    if (footerNavSetting.useHeaderNav) {
+      footerNav = filterVisibleNavForPreview(data, data.nav);
+      var navCta = data.navCta || {};
+      if (navCta.label && navCta.href) {
+        footerNav = footerNav.concat([{ label: navCta.label, href: navCta.href }]);
+      }
+    } else {
+      footerNav = filterVisibleNavForPreview(data, footerNavSetting.items);
+    }
     var logoUrl = assetUrl(getAsset, company.logo);
     var showTextLogo = !logoUrl || company.useTextLogo === true;
     var textLogo = company.textLogo || company.name || 'LOGO';
