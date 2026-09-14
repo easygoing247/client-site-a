@@ -33,7 +33,13 @@ formFields:
     label: お問い合わせ内容
     placeholder: お問い合わせ内容をご記入ください
     required: true
-custom_fields: []
+custom_fields:
+  - type: text
+    enabled: true
+    required: false
+    label: テストフィールド
+    name: tesuto_fiirudo
+    placeholder: テストフィールドです
 privacyPolicy:
   heading: プライバシーポリシー
   body: |-
