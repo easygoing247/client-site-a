@@ -519,7 +519,7 @@
           : h('img', { src: logoUrl, alt: (company.name || '') + ' ロゴ', className: 'h-7 w-auto object-contain' }),
         h(
           'nav',
-          { className: 'hidden md:flex items-center gap-8' },
+          { className: 'hidden lg:flex items-center gap-8' },
           nav.map(function (item, i) {
             return h(
               'a',
@@ -540,7 +540,7 @@
             'button',
             {
               type: 'button',
-              className: 'md:hidden p-2 bg-transparent border-none cursor-pointer flex flex-col justify-center flex-none',
+              className: 'lg:hidden p-2 bg-transparent border-none cursor-pointer flex flex-col justify-center flex-none',
               'aria-label': navOpen ? 'メニューを閉じる' : 'メニューを開く',
               'aria-expanded': navOpen ? 'true' : 'false',
               onClick: mobileNav.onToggle,
@@ -554,7 +554,7 @@
         h(
           'nav',
           {
-            className: 'md:hidden overflow-hidden',
+            className: 'lg:hidden overflow-hidden',
             style: styleObj('max-height:' + (navOpen ? '600px' : '0px') + ';transition:max-height 0.25s ease;'),
           },
           nav.map(function (item, i) {

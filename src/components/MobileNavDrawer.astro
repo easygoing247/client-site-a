@@ -1,7 +1,9 @@
 ---
 // ============================================================================
 // MobileNavDrawer.astro
-// スマホ表示専用：開閉ドロワー本体。
+// スマホ・タブレット表示用：開閉ドロワー本体。lg=1024px未満（タブレット
+// 768〜1023px含む）で使用し、MobileMenuButton.astro/Header.astroの
+// デスクトップナビと対になるブレイクポイント（lg:hidden）を使う。
 // ヘッダーの横並び行（flex row）の“外側”に、幅100%の兄弟要素として配置する
 // こと（PC表示で高さ0のまま横幅だけ確保してレイアウトを崩すのを防ぐため）。
 // ============================================================================
@@ -19,7 +21,7 @@ interface Props {
 const { items, ctaLabel, ctaHref } = Astro.props;
 ---
 
-<nav id="mobile-nav" class="md:hidden" aria-label="モバイルナビゲーション">
+<nav id="mobile-nav" class="lg:hidden" aria-label="モバイルナビゲーション">
   {
     items.map((item) => (
       <a

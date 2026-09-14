@@ -29,8 +29,12 @@ const textLogo = site.company.textLogo || site.company.name;
       </a>
     )}
 
-    <!-- デスクトップナビ -->
-    <nav class="hidden md:flex items-center gap-8" aria-label="メインナビゲーション">
+    <!-- デスクトップナビ（タブレット幅768〜1023pxではメニュー項目数によって
+         折り返し・表示崩れが起きやすいため、lg=1024px以上でのみ表示する。
+         768〜1023pxの範囲はスマホと同じハンバーガーメニューにフォール
+         バックする＝MobileMenuButton.astro/MobileNavDrawer.astroの
+         lg:hiddenと対にすること。2026-09） -->
+    <nav class="hidden lg:flex items-center gap-8" aria-label="メインナビゲーション">
       {
         nav.map((item) => (
           <a

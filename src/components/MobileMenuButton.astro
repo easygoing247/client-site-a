@@ -1,7 +1,11 @@
 ---
 // ============================================================================
 // MobileMenuButton.astro
-// スマホ表示専用：ハンバーガーボタン（ヘッダーの横並び行の中に配置する）
+// スマホ・タブレット表示用：ハンバーガーボタン（ヘッダーの横並び行の中に
+// 配置する）。lg=1024px未満（タブレット768〜1023px含む）で表示し、
+// それ以上ではデスクトップナビ（Header.astroのlg:flex）に切り替わる
+// （タブレット幅ではメニュー項目数によって折り返し・表示崩れが起きやすい
+// ため、2026-09にmd=768pxからlg=1024pxへ引き上げた）。
 // 開閉ロジック本体は MobileNavDrawer.astro 側の <script> にまとめてある。
 // ============================================================================
 ---
@@ -12,7 +16,7 @@
   aria-label="メニューを開く"
   aria-expanded="false"
   aria-controls="mobile-nav"
-  class="md:hidden p-2 bg-transparent border-none cursor-pointer flex flex-col justify-center flex-none"
+  class="lg:hidden p-2 bg-transparent border-none cursor-pointer flex flex-col justify-center flex-none"
 >
   <span class="block w-6 h-0.5 bg-secondary mb-1.5" id="bar1"></span>
   <span class="block w-6 h-0.5 bg-secondary mb-1.5" id="bar2"></span>
