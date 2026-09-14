@@ -38,7 +38,7 @@ custom_fields:
     enabled: true
     required: false
     label: テストフィールド
-    name: tesuto_fiirudo
+    name: test-field
     placeholder: テストフィールドです
 privacyPolicy:
   heading: プライバシーポリシー
