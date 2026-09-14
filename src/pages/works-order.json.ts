@@ -14,7 +14,7 @@
 // （CLAUDE.md 9.33/9.37/9.40参照）。
 // ============================================================================
 import type { APIRoute } from 'astro';
-import { site } from '../lib/site';
+import { site } from '@core/lib/site';
 
 export const GET: APIRoute = async () => {
   // site.works.order の各項目は `{ item: string }`（2026-09、Task 2で

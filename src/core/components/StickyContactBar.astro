@@ -23,7 +23,7 @@
 //
 // 【2026-09 リファクタリング】左右ボタンで重複していた「表示可否・リンク先の
 // 解決」ロジックを resolveButton()（共通の StickyButtonConfig 型、
-// src/lib/site.ts 参照）に1本化し、`buttons` 配列をフィルタして
+// src/core/lib/site.ts 参照）に1本化し、`buttons` 配列をフィルタして
 // 描画する設計に変更した（config.yml側もYAMLアンカー＋マージキーで
 // leftButton/rightButtonのフィールド定義を共通化済み）。アイコン
 // （電話／LINE）だけは意味が異なるためボタンごとに個別に描画するが、

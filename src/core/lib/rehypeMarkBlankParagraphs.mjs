@@ -1,5 +1,5 @@
 // ============================================================================
-// src/lib/rehypeMarkBlankParagraphs.mjs
+// src/core/lib/rehypeMarkBlankParagraphs.mjs
 // works / news の本文（Markdown）で、Enterキーを2回押して作った意図的な
 // 空行（3行目：「1行目」→空行→「3行目」）が、本番ページで「テキストの
 // 行間が広がっただけ」に見えてしまう不具合の修正（2026-09、9.48）。

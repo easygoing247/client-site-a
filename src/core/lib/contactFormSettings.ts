@@ -1,5 +1,5 @@
 // ============================================================================
-// src/lib/contactFormSettings.ts
+// src/core/lib/contactFormSettings.ts
 // src/data/contact-form.json（Decap CMS「サイト設定」の3つ目のファイル項目
 // 「お問い合わせフォーム設定」）を型付きで公開する。
 // 「デザインテーマ設定（site-settings.json）」と同じく siteInfo.yml とは
@@ -11,7 +11,7 @@
 //  - contact_email_subject  → hidden <input name="subject">
 //  - contact_email_from_name → hidden <input name="from_name">
 // ============================================================================
-import raw from '../data/contact-form.json';
+import raw from '../../data/contact-form.json';
 
 export interface ContactFormSettings {
   /** Web3Forms のアクセスキー（36桁UUID。未設定なら送信は失敗） */

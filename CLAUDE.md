@@ -6,33 +6,45 @@
 ## 1. プロジェクト構造
 
 ```
-astro.config.mjs        Astro設定（sitemap統合、site URL）
+astro.config.mjs        Astro設定（sitemap統合、site URL、@core/@customエイリアス）
 tailwind.config.mjs      デザイントークン（primary/secondary/accent 等）を定義
+tsconfig.json            @core/* → src/core/*、@custom/* → src/custom/* のパスエイリアス
 src/
+  core/                  ★共通コアコード（一括アップデート時に丸ごと上書きされる領域。
+                         10.3章参照。案件固有の変更をここへ直接書き込まないこと）
+    lib/site.ts          siteInfo.yml をパースして型付きで公開
+    lib/images.ts        siteInfo.yml内の画像パス文字列を astro:assets の
+                         ImageMetadata に解決するヘルパー
+    layouts/Layout.astro 共通<head>・フォント読み込み最適化
+    components/          セクション単位のAstroコンポーネント（1コンポーネント1責務）
+    scripts/             クライアント側の共有スクリプト（cardSlider.ts 等）
+    styles/global.css    テーマカラーCSS変数（Design Tokens）・共通スタイル
+  custom/                顧客固有の追加・オーバーライド領域（既定は空。README.md参照）
   data/siteInfo.yml      ★サイト全データの唯一のソース（Single Source of Truth）
-  lib/site.ts            siteInfo.yml をパースして型付きで公開
-  lib/images.ts           siteInfo.yml内の画像パス文字列を astro:assets の
-                          ImageMetadata に解決するヘルパー
-  layouts/Layout.astro    共通<head>・フォント読み込み最適化
-  components/             セクション単位のAstroコンポーネント（1コンポーネント1責務）
   content/
-    config.ts             Content Collections スキーマ定義（products）
-    products/*.md          型化ページの実データ（Markdown + frontmatter）
-  pages/
+    config.ts             Content Collections スキーマ定義（works/news/newsCategories）
+    works/*.md             型化ページの実データ（Markdown + frontmatter）
+  pages/                 ★Astroの仕様上、必ずこの場所に置く必要がある
     index.astro            トップページ（コンポーネントを並べるだけ）
     privacy.astro           プライバシーポリシー（siteInfo.ymlから動的生成）
-    products/[slug].astro   型化ページの動的ルート
+    works/[slug].astro      型化ページの動的ルート
 public/
-  admin/                   Decap CMS（index.html + config.yml）
+  admin/                   Decap CMS（index.html + config.yml。config.ymlは
+                          src/admin/config/*.yml から自動生成、9.9章参照）
   robots.txt               検索エンジン向け設定（sitemapは@astrojs/sitemapが自動生成）
 ```
+
+`src/pages/`・`src/content/`（Content Collections）は Astro の仕様上この場所から
+移動できないため、`src/core/`（一括アップデート対象）へは含まれない
+（10.3章参照）。`src/pages/**/*.astro`・`*.ts` からコアコードを参照する際は
+必ず `@core/...` パスエイリアスを使うこと（相対パス `../lib/...` 等は使わない）。
 
 ### 絶対ルール①：テキスト直書き禁止
 
 - コンポーネント（`.astro`）内に日本語テキスト・電話番号・住所・価格などを直接書き込まないこと。
 - すべてのテキスト／数値／リンク先は `src/data/siteInfo.yml` に定義し、
-  `src/lib/site.ts` の `site` オブジェクト経由で参照すること。
-- 型化ページ（商品一覧）のテキストは `src/content/products/*.md` の frontmatter に書く。
+  `src/core/lib/site.ts` の `site` オブジェクト経由で参照すること。
+- 型化ページ（実績・活用事例）のテキストは `src/content/works/*.md` の frontmatter に書く。
 - 例外：aria-label の補助文言、SVGのpath座標など「コンテンツではない実装詳細」のみ許容。
 
 ### 絶対ルール②：画像は astro:assets の `<Image />` を使用する
@@ -5124,3 +5136,111 @@ B-8/B-10/C-12（小粒な改善）を実装した。
      pre-existingな表示上の問題）を発見したが、本タスクの変更とは
      無関係かつ機能的な支障が無いことを確認した上で、別タスクとして
      切り出した（このセクションでは対応していない）。
+
+### 10.3 Phase 4：一括アップデート対応のディレクトリ構造分離（`src/core/`／`src/custom/`）（2026-09-14）
+
+- **目的**：設計ドキュメントの「① ディレクトリ構造の完全分離」原則を
+  実装した。マスターテンプレート側から`multi-gitter`で一括アップデート
+  （PR一斉発行）する際、**顧客固有のカスタマイズを一切壊さずに共通
+  コードだけを丸ごと上書きできる**ようにするため、「絶対に顧客側が
+  変更しない・マスターが丸ごと上書きする領域」と「顧客固有の追加・
+  オーバーライド領域」を物理的なディレクトリとして分離した。
+- **`src/core/` の新設**：以下をすべて`git mv`で移設した（Git上は
+  リネームとして記録され、各ファイルの変更履歴は保持されている）。
+  移設は該当行範囲をそのまま移動しただけで、ロジック自体は一切
+  変更していない。
+
+  | 移設前 | 移設後 |
+  |---|---|
+  | `src/components/*.astro` | `src/core/components/*.astro` |
+  | `src/layouts/Layout.astro` | `src/core/layouts/Layout.astro` |
+  | `src/lib/*.ts` / `*.mjs` | `src/core/lib/*.ts` / `*.mjs` |
+  | `src/scripts/*.ts` | `src/core/scripts/*.ts` |
+  | `src/styles/global.css` | `src/core/styles/global.css` |
+
+  各移設ファイル先頭の自己参照コメント（例：`// src/lib/site.ts`）も
+  新しいパスへ機械的に更新した。
+- **`src/pages/`・`src/content/`は意図的に対象外**：Astroの仕様上、
+  ページのファイルベースルーティングは必ず`<srcDir>/pages/`
+  （＝`src/pages/`）に置く必要があり、Content Collections
+  （`works`/`news`/`newsCategories`）も`src/content/`という固定位置
+  でしか機能しない。いずれもAstro自体の制約でリロケート不可能なため、
+  `src/core/`へは含めていない。`src/data/`（Decap CMSが書き込む
+  YAML/JSONデータ）・`src/assets/`（案件ごとに差し替わる画像資産）も
+  同様の理由で対象外とした——設計ドキュメントの`src/content/`の説明
+  （「Decap CMSから生成されるMarkdownやYAML、画像ファイルのみを
+  格納。更新時非破壊」）に照らすと、これらは「コアロジック」では
+  なく「データ領域」の性質を持つため、一括アップデートで上書き
+  される`src/core/`に含めるべきではないという判断でもある（誤って
+  含めてしまうと、一括アップデートのたびに顧客の実データが失われる
+  重大な事故になり得る）。
+- **`src/custom/` の新設**：顧客固有の追加・オーバーライド用の
+  プレースホルダーディレクトリ。マスターテンプレート側では空のまま
+  維持する（`src/admin/config/custom.yml`＝Phase 2のDecap CMS設定
+  プレースホルダーと対になる構成）。`src/custom/README.md`に運用
+  ルール・想定する使い方（`@custom/components/Xxx.astro`を追加し、
+  `src/core/`側のコンポーネントを差し替えたい場合は呼び出し元
+  （`src/pages/*`）のimportを`@custom/...`へ切り替える、という方式）
+  を記載した。
+- **パスエイリアスの設定**：`@core/*` → `src/core/*`、
+  `@custom/*` → `src/custom/*`を、以下の**2箇所に同じ対応関係で**
+  設定した（片方だけでは機能しない）：
+  - `tsconfig.json`の`compilerOptions.paths`（`astro check`・
+    エディタの型チェック・補完に作用）。
+  - `astro.config.mjs`の`vite.resolve.alias`（実際のビルド時
+    モジュール解決に作用。Viteは`tsconfig.json`の`paths`を
+    自動では読まないため、この設定が無いと`npm run build`が
+    「モジュールが見つからない」で失敗する）。
+  `astro.config.mjs`自身はNode（設定ロード時）で実行されるため、
+  ファイル冒頭の`rehypeMarkBlankParagraphs.mjs`のimportは
+  エイリアスではなく相対パス（`./src/core/lib/...`）のまま。
+- **インポート文の一括置換**：`src/pages/**/*.astro`・`*.ts`
+  （14ファイル）が持っていた、移設した5ディレクトリを指す相対import
+  （`../components/...`・`../../layouts/...`等）をすべて
+  `@core/components/...`・`@core/layouts/...`等の形式へ一括置換した
+  （`sed`による機械的な置換。1階層・2階層いずれの相対パスにも対応）。
+  `astro.config.mjs`のrehypeプラグインimportも新しいファイルパスへ
+  更新した。
+  - **移設後に新たに必要になった修正（`src/core/`内部から`src/data/`
+    への相対参照）**：`src/core/lib/{site,pages,siteSettings,
+    contactFormSettings}.ts`は、CMSデータファイル
+    （`src/data/*.yml`/`*.json`）を`?raw`インポートしているが、
+    これらの相対パス（`../data/xxx.yml`）は移設前は`src/lib/`から
+    見て1階層上で正しかったものの、`src/core/lib/`（2階層下に
+    ネストされた新しい位置）からは1階層足りず、初回ビルドで
+    `Could not resolve "../data/siteInfo.yml?raw"`というエラーに
+    なった。`src/data/`は移設対象外のため、参照する側
+    （`src/core/lib/`内の4ファイル、計8箇所）の相対パスを
+    `../../data/...`へ修正して解決した（`src/core/components/`等
+    ほかの移設ディレクトリ同士の相互参照は、両方が同じ1階層分
+    ネストされたため相対パスの変更が一切不要だった。この`data`への
+    参照だけが「移設対象の内側から移設対象外へ出る」参照だった
+    ため、唯一の例外的な修正が必要だった）。
+- **検証**：
+  1. `npm run build`（16ページ・エラー0件、途中`Could not resolve`
+     エラーを上記の`../data/`修正で解消したことを含む）・
+     `npx astro check`（0エラー・0警告、`@core/*`エイリアスが
+     型チェック側でも正しく解決されることを確認）を確認。
+  2. `git status`で全ファイルが`R`（rename）または想定どおりの
+     `M`（import文のみの変更）になっていること、内容が意図しない
+     形で変わっていないことを確認。
+  3. ローカル環境（`npm run dev`＋`npm run cms:proxy`）で実際に
+     トップページ・型化ページ詳細（`/works/sample/`）・下層ページ
+     （`/contact/`）を開き、正しく表示されることをスクリーン
+     ショットで確認。Decap CMS管理画面（`/admin/index.html`、
+     `public/admin/`は今回の移設対象外のため無変更）を開き、
+     コレクション一覧・「サイト全体設定」のライブプレビュー
+     （本番の実HTML/CSSを流用する既存の仕組み、7章参照）が
+     いずれも正常に動作することも確認した。
+- **正直な開示（今後のPhaseへの申し送り）**：本セクションの設計
+  ドキュメント本文には「プレビューロジック」も`src/core/`へ含める
+  記載があったが、実際のプレビューロジック（`public/admin/
+  preview.js`・`editor-components.js`）は`src/`の外（`public/admin/`）
+  に置かれたプレーンなJS（Decap CMSが直接fetchする静的ファイル）で
+  あり、Astroのビルドパイプラインにもエイリアス解決にも関与しない。
+  これらを`src/`配下へ移設するとDecap CMSの読み込みモデル
+  （`/admin/index.html`から固定の相対パスで`<script src>`読み込み）
+  を壊すおそれが大きく、設計ドキュメントの本来の意図（構造分離に
+  よる一括アップデート耐性の向上）に対しても実利が薄いため、今回は
+  意図的に対象外とした（Decap CMS関連ファイルは`public/admin/`に
+  留め置く、9.3章の既存方針を維持）。

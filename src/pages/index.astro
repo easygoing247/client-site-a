@@ -7,24 +7,24 @@
 // 動的に算出するため、管理画面で並び替えても自動的に交互配色が保たれる。
 // ============================================================================
 import { getCollection } from 'astro:content';
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Hero from '../components/Hero.astro';
-import News from '../components/News.astro';
-import Features from '../components/Features.astro';
-import Service from '../components/Service.astro';
-import Flow from '../components/Flow.astro';
-import Products from '../components/Products.astro';
-import Works from '../components/Works.astro';
-import Plans from '../components/Plans.astro';
-import Faq from '../components/Faq.astro';
-import Access from '../components/Access.astro';
-import Contact from '../components/Contact.astro';
-import Footer from '../components/Footer.astro';
-import StickyContactBar from '../components/StickyContactBar.astro';
-import BackToTop from '../components/BackToTop.astro';
-import { isSectionEnabled, orderedSectionIds, type SectionId } from '../lib/site';
-import { productsPage, resolveAllProductItems } from '../lib/pages';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Hero from '@core/components/Hero.astro';
+import News from '@core/components/News.astro';
+import Features from '@core/components/Features.astro';
+import Service from '@core/components/Service.astro';
+import Flow from '@core/components/Flow.astro';
+import Products from '@core/components/Products.astro';
+import Works from '@core/components/Works.astro';
+import Plans from '@core/components/Plans.astro';
+import Faq from '@core/components/Faq.astro';
+import Access from '@core/components/Access.astro';
+import Contact from '@core/components/Contact.astro';
+import Footer from '@core/components/Footer.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { isSectionEnabled, orderedSectionIds, type SectionId } from '@core/lib/site';
+import { productsPage, resolveAllProductItems } from '@core/lib/pages';
 
 const sectionComponents = {
   features: Features,

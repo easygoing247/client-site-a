@@ -3,12 +3,12 @@
 // src/pages/privacy.astro — プライバシーポリシー（標準実装）
 // 事業者名・住所・連絡先は siteInfo.yml から動的に参照する（直書き禁止）。
 // ============================================================================
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import StickyContactBar from '../components/StickyContactBar.astro';
-import BackToTop from '../components/BackToTop.astro';
-import { site } from '../lib/site';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Footer from '@core/components/Footer.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { site } from '@core/lib/site';
 
 // ラベル・値のどちらかが空欄の行は表示しない
 const businessInfoRows = [

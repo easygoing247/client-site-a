@@ -2,9 +2,16 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import remarkBreaks from 'remark-breaks';
-import rehypeMarkBlankParagraphs from './src/lib/rehypeMarkBlankParagraphs.mjs';
+import rehypeMarkBlankParagraphs from './src/core/lib/rehypeMarkBlankParagraphs.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// このファイル自身はNode（Vite設定ロード時）で実行されるため、後述の
+// vite.resolve.alias（Viteが実際にモジュール解決する際に使う設定）とは
+// 別に、ここでの相対importは素のNode ESM解決のまま書く必要がある
+// （@core/* のようなエイリアスはまだ使えない）。
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // 本番公開時は実際のドメインに差し替えてください（sitemap生成に使用されます）
 const SITE_URL = 'https://master-template-multi.easygoing247.workers.dev';
@@ -131,7 +138,7 @@ export default defineConfig({
     // 受け取ってしまうため、直前の段落のmargin＋この段落自身の行の
     // 高さ＋この段落自身のmarginが単純に積み重なり、意図した「空行
     // 1つぶん」よりも明らかに広い余白（実測で約3倍）になっていた。
-    // このrehypeプラグイン（src/lib/rehypeMarkBlankParagraphs.mjs）が
+    // このrehypeプラグイン（src/core/lib/rehypeMarkBlankParagraphs.mjs）が
     // ビルド時にそのような段落を検出して`prose-blank-line`クラスを
     // 付与し、CSS側（global.css）でちょうど1行ぶんの高さに揃える。
     rehypePlugins: [rehypeMarkBlankParagraphs],
@@ -142,5 +149,25 @@ export default defineConfig({
     // なくし、各HTMLの <head> に直接インライン展開する。
     // （'auto' は既定4KB未満のみインライン化するため、この規模だと外部化される）
     inlineStylesheets: 'always',
+  },
+  vite: {
+    resolve: {
+      // ============================================================
+      // パスエイリアス（一括アップデート対応の構造分離、Phase 4）。
+      // tsconfig.json の compilerOptions.paths と必ず同じ対応関係を
+      // 保つこと（tsconfig側は型チェック・エディタ補完のみに作用し、
+      // 実際のビルド時モジュール解決には影響しないため、Vite側の
+      // この設定が無いと実行時に解決エラーになる）。
+      // ・@core/*   → src/core/*（マスターから一括アップデートする
+      //   共通コンポーネント・レイアウト・ユーティリティ・スクリプト・
+      //   スタイル）
+      // ・@custom/* → src/custom/*（顧客固有の追加・オーバーライド。
+      //   一括アップデートの対象外）
+      // ============================================================
+      alias: {
+        '@core': path.join(__dirname, 'src/core'),
+        '@custom': path.join(__dirname, 'src/custom'),
+      },
+    },
   },
 });

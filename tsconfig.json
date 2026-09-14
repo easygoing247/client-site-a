@@ -3,6 +3,24 @@
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"],
   "compilerOptions": {
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    // ============================================================
+    // パスエイリアス（一括アップデート対応の構造分離、Phase 4）。
+    // ・@core/*   → src/core/*（共通コンポーネント・レイアウト・
+    //   ユーティリティ・スクリプト・スタイル。マスター側から丸ごと
+    //   上書きアップデートする対象）
+    // ・@custom/* → src/custom/*（顧客固有の追加・オーバーライド。
+    //   マスターからの一括アップデートでは触れない対象）
+    // baseUrl は tsconfig.json 自身のあるディレクトリ（プロジェクト
+    // ルート）を基準にする。Viteランタイム側の対応する設定は
+    // astro.config.mjs の vite.resolve.alias を参照（TypeScriptの
+    // pathsは型チェック・エディタ補完のみに作用し、実際のビルド時
+    // モジュール解決には反映されないため、両方の設定が必要）。
+    // ============================================================
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["src/core/*"],
+      "@custom/*": ["src/custom/*"]
+    }
   }
 }

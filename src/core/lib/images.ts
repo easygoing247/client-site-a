@@ -1,5 +1,5 @@
 // ============================================================================
-// src/lib/images.ts
+// src/core/lib/images.ts
 // siteInfo.yml に文字列で書かれた相対パス（例: "../assets/hero.jpg"）を、
 // astro:assets が最適化できる ImageMetadata へ解決するためのヘルパー。
 // Decap CMS でパス文字列だけを差し替えても、ビルド時に自動で

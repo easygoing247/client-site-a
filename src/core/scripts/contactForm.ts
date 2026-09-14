@@ -1,5 +1,5 @@
 // ============================================================================
-// src/scripts/contactForm.ts
+// src/core/scripts/contactForm.ts
 // お問い合わせフォームの非同期送信（Web3Forms / Fetch API）。
 // #contact-form を持つページ（Contact.astro / contact.astro）で読み込むと
 // 自動的に初期化される。アクセスキー・各種文言はサーバー側

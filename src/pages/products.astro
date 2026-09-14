@@ -10,15 +10,15 @@
 //   （src/pages/works/[slug].astro とは異なる方針。下部 <script> 参照）。
 // ============================================================================
 import { Image, getImage } from 'astro:assets';
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import PageHeader from '../components/PageHeader.astro';
-import StickyContactBar from '../components/StickyContactBar.astro';
-import BackToTop from '../components/BackToTop.astro';
-import { site } from '../lib/site';
-import { productsPage, resolveProductItems, resolveProductColumns } from '../lib/pages';
-import { resolveImageOrNull } from '../lib/images';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Footer from '@core/components/Footer.astro';
+import PageHeader from '@core/components/PageHeader.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { site } from '@core/lib/site';
+import { productsPage, resolveProductItems, resolveProductColumns } from '@core/lib/pages';
+import { resolveImageOrNull } from '@core/lib/images';
 
 const heading = productsPage.heading || '商品一覧';
 const featuredHeading = productsPage.featuredHeading || '新商品';

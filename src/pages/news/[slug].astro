@@ -4,14 +4,14 @@
 // news コレクションの各記事を静的生成する動的ルート。
 // ============================================================================
 import { Image } from 'astro:assets';
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import Button from '../../components/Button.astro';
-import StickyContactBar from '../../components/StickyContactBar.astro';
-import BackToTop from '../../components/BackToTop.astro';
-import { site } from '../../lib/site';
-import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate, getNewsCategoryMap } from '../../lib/news';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Footer from '@core/components/Footer.astro';
+import Button from '@core/components/Button.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { site } from '@core/lib/site';
+import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate, getNewsCategoryMap } from '@core/lib/news';
 
 export async function getStaticPaths() {
   const posts = await getPublishedNews();

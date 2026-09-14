@@ -1,18 +1,18 @@
 // ============================================================================
-// src/lib/pages.ts
+// src/core/lib/pages.ts
 // 複数ページ版（master-template-multi）専用。下層ページ用の YAML
 // （src/data/services.yml / about.yml / contactPage.yml）をビルド時に
 // 読み込み・パースして型付きで公開する。siteInfo.yml に対する
-// src/lib/site.ts と同じ役割・同じ実装方針（`?raw` インポート）。
+// src/core/lib/site.ts と同じ役割・同じ実装方針（`?raw` インポート）。
 // 各下層ページ（src/pages/services.astro 等）はこのモジュール経由でのみ
 // データへアクセスし、コンポーネントへのテキスト直書きを禁止する。
 // ============================================================================
 import yaml from 'js-yaml';
-import servicesRaw from '../data/services.yml?raw';
-import aboutRaw from '../data/about.yml?raw';
-import contactPageRaw from '../data/contactPage.yml?raw';
-import productsRaw from '../data/products.yml?raw';
-import newsPageRaw from '../data/newsPage.yml?raw';
+import servicesRaw from '../../data/services.yml?raw';
+import aboutRaw from '../../data/about.yml?raw';
+import contactPageRaw from '../../data/contactPage.yml?raw';
+import productsRaw from '../../data/products.yml?raw';
+import newsPageRaw from '../../data/newsPage.yml?raw';
 
 /** 「お知らせ」一覧ページ（src/pages/news/index.astro）の見出し・リード文設定。
  * 個々の記事データ（src/content/news/*.md）とは別の設定ファイル。 */

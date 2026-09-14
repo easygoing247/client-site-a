@@ -35,7 +35,7 @@ const allWorks = await getCollection('works');
 // そこに無い実績は公開日の新しい順でその後ろに続ける。
 // 各項目は `{ item: slug }` というオブジェクト（2026-09、Task 2。
 // Decap CMSの delete ボタン不具合対応で配列の要素形式を変更した。
-// src/lib/site.ts の SiteInfo['works']['order'] コメント参照）。
+// src/core/lib/site.ts の SiteInfo['works']['order'] コメント参照）。
 const orderList = (site.works.order ?? [])
   .map((entry) => entry?.item)
   .filter((slug): slug is string => !!slug && String(slug).trim() !== '');

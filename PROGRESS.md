@@ -482,6 +482,35 @@ LP版から複製後に実施した、複数ページ構成・下層ページ・
   pre-existingな問題）は別タスクとして切り出し、本ラウンドでは
   対応していない。
 
+### 1a.3 Phase 4：一括アップデート対応のディレクトリ構造分離（`src/core/`／`src/custom/`）（2026-09-14、CLAUDE.md 10.3）
+
+- `src/components`/`layouts`/`lib`/`scripts`/`styles`を`git mv`で
+  `src/core/`配下へ移設（変更履歴は保持、ロジック自体は無変更）。
+  Astroの仕様上リロケート不可能な`src/pages/`・`src/content/`、および
+  データ領域の性質を持つ`src/data/`・`src/assets/`は対象外とし、
+  理由をCLAUDE.md 10.3に明記した。
+- 顧客固有の追加・オーバーライド用に`src/custom/`（README.md付き
+  プレースホルダー）を新設。マスター側は空のまま維持する運用。
+- `tsconfig.json`の`compilerOptions.paths`と`astro.config.mjs`の
+  `vite.resolve.alias`の両方に`@core/*`/`@custom/*`エイリアスを設定
+  （型チェックとビルド時解決の両方に必要）。`src/pages/**`が持って
+  いた移設先を指す相対importをすべて`@core/...`形式へ一括置換した。
+- 移設後、`src/core/lib/`内の4ファイルが`src/data/`を参照する相対
+  パス（8箇所）が1階層足りなくなっていたため`../../data/...`へ修正
+  （唯一必要だった例外対応。他の移設ファイル同士の相互参照は相対
+  パス変更不要だった）。
+- **検証**：`npm run build`（16ページ・0エラー、上記の相対パス
+  エラーを解消したことを含む）・`npx astro check`（0エラー、
+  `@core/*`が型チェック側でも解決されることを確認）を確認。
+  ローカル環境でトップページ・型化ページ詳細・下層ページ・Decap CMS
+  管理画面（コレクション一覧・ライブプレビュー）がいずれも正常に
+  動作することを実機確認した。
+- 設計ドキュメントが挙げていた「プレビューロジック」の`src/core/`
+  移設は、実体が`public/admin/`配下のDecap CMS用静的JSであり
+  Astroのビルド・エイリアス解決に関与しないため、CMSの読み込み
+  モデルを壊すリスクの方が大きいと判断し意図的に対象外とした
+  （詳細はCLAUDE.md 10.3の「正直な開示」参照）。
+
 ## 2. 完了済みタスク（複数ページ版 master-template-multi）
 
 直近バッチで完了し、`main` に push 済みのタスク一覧（詳細は 1.7 と `CLAUDE.md` 9 章）。

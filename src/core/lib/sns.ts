@@ -1,5 +1,5 @@
 // ============================================================================
-// src/lib/sns.ts
+// src/core/lib/sns.ts
 // 公式SNSリンクの一覧を、管理画面（siteInfo.yml のトップレベル `sns` リスト）で
 // 指定された順序どおりに、かつ enabled かつ URL 入力済みのものだけ返す。
 // Access.astro / Footer.astro / about.astro（会社概要の「公式SNS」行）など、

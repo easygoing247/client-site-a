@@ -1,5 +1,5 @@
 // ============================================================================
-// src/lib/site.ts
+// src/core/lib/site.ts
 // siteInfo.yml をビルド時（Node環境）に読み込み・パースして型付きで公開する。
 // すべてのコンポーネントはこのモジュール経由でのみサイトデータへアクセスする。
 // ============================================================================
@@ -7,7 +7,7 @@ import yaml from 'js-yaml';
 // Viteの `?raw` インポートでYAML本文を文字列としてバンドルに埋め込む。
 // fs.readFileSync + import.meta.url ベースのパス解決は、ビルド後に
 // ファイル配置が変わり ENOENT になるため使用しない。
-import raw from '../data/siteInfo.yml?raw';
+import raw from '../../data/siteInfo.yml?raw';
 import { servicesPage, aboutPage, contactPage, newsPage } from './pages';
 
 /**

@@ -5,16 +5,16 @@
 // ページ固有の案内文・注意事項・プライバシーポリシーは
 // src/data/contactPage.yml（src/lib/pages.ts の contactPage）を参照する。
 // ============================================================================
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import PageHeader from '../components/PageHeader.astro';
-import ContactFields from '../components/ContactFields.astro';
-import StickyContactBar from '../components/StickyContactBar.astro';
-import BackToTop from '../components/BackToTop.astro';
-import { site } from '../lib/site';
-import { contactFormSettings } from '../lib/contactFormSettings';
-import { contactPage, parseTextBlocks } from '../lib/pages';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Footer from '@core/components/Footer.astro';
+import PageHeader from '@core/components/PageHeader.astro';
+import ContactFields from '@core/components/ContactFields.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { site } from '@core/lib/site';
+import { contactFormSettings } from '@core/lib/contactFormSettings';
+import { contactPage, parseTextBlocks } from '@core/lib/pages';
 
 const heading = contactPage.heading || 'お問い合わせ・ご予約';
 const notes = (contactPage.notes ?? []).filter(Boolean);
@@ -112,5 +112,5 @@ const privacyBlocks = parseTextBlocks(privacy.body);
 </Layout>
 
 <script>
-  import '../scripts/contactForm.ts';
+  import '@core/scripts/contactForm.ts';
 </script>

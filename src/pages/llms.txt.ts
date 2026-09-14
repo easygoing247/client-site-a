@@ -7,7 +7,7 @@
 // 常にサイトの実際の内容と同期した状態を保てる。
 // ============================================================================
 import type { APIRoute } from 'astro';
-import { site, isSectionEnabled } from '../lib/site';
+import { site, isSectionEnabled } from '@core/lib/site';
 
 export const GET: APIRoute = ({ site: siteURL }) => {
   const base = (siteURL ?? new URL('https://example.com/')).toString().replace(/\/$/, '');

@@ -6,14 +6,14 @@
 // ・カード形式／リスト形式の表示切り替え
 // ============================================================================
 import { Image } from 'astro:assets';
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import PageHeader from '../../components/PageHeader.astro';
-import StickyContactBar from '../../components/StickyContactBar.astro';
-import BackToTop from '../../components/BackToTop.astro';
-import { site } from '../../lib/site';
-import { newsPage } from '../../lib/pages';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Footer from '@core/components/Footer.astro';
+import PageHeader from '@core/components/PageHeader.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { site } from '@core/lib/site';
+import { newsPage } from '@core/lib/pages';
 import {
   getPublishedNews,
   getPublicSlug,
@@ -21,7 +21,7 @@ import {
   formatNewsDate,
   collectNewsCategories,
   getNewsCategoryMap,
-} from '../../lib/news';
+} from '@core/lib/news';
 
 const posts = await getPublishedNews();
 const categoryLabels = await getNewsCategoryMap();

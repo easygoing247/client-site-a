@@ -5,17 +5,17 @@
 // 連絡先・SNS・店舗名など siteInfo.yml 側にある共通情報はそちらを参照する。
 // ============================================================================
 import { Image } from 'astro:assets';
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import PageHeader from '../components/PageHeader.astro';
-import StickyContactBar from '../components/StickyContactBar.astro';
-import BackToTop from '../components/BackToTop.astro';
-import { site } from '../lib/site';
-import { aboutPage, resolveAboutAccessItems } from '../lib/pages';
-import { resolveImageOrNull } from '../lib/images';
-import { orderedSnsLinks } from '../lib/sns';
-import SnsIcons from '../components/SnsIcons.astro';
+import Layout from '@core/layouts/Layout.astro';
+import Header from '@core/components/Header.astro';
+import Footer from '@core/components/Footer.astro';
+import PageHeader from '@core/components/PageHeader.astro';
+import StickyContactBar from '@core/components/StickyContactBar.astro';
+import BackToTop from '@core/components/BackToTop.astro';
+import { site } from '@core/lib/site';
+import { aboutPage, resolveAboutAccessItems } from '@core/lib/pages';
+import { resolveImageOrNull } from '@core/lib/images';
+import { orderedSnsLinks } from '@core/lib/sns';
+import SnsIcons from '@core/components/SnsIcons.astro';
 
 const heading = aboutPage.heading || '会社概要';
 const sections = aboutPage.sections ?? {};
