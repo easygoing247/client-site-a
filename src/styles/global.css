@@ -569,12 +569,24 @@
     width: 56px;
     text-align: center;
   }
-  .prose-content .cms-speech-avatar {
+  /* アバター画像は2026-09よりMarkdown画像構文（![]()）で出力するため
+     （Astroの画像最適化パイプラインに乗せて本番404を防ぐための変更。
+     editor-components.js参照）、生成される<img>に直接クラスを
+     付与できない。代わりに構造セレクタでこの列の中の唯一の画像を
+     対象にする。 */
+  .prose-content .cms-speech-avatar-col img {
     width: 48px;
     height: 48px;
     border-radius: 999px;
     object-fit: cover;
     display: inline-block;
+  }
+  /* Markdown画像は remark-rehype により <p><img></p> として出力される
+     ため、.prose-content p の既定 margin-bottom（1.9em）がアバター画像と
+     名前表示の間に不要な余白を作ってしまう。この列内の段落だけ
+     margin を打ち消す。 */
+  .prose-content .cms-speech-avatar-col p {
+    margin: 0;
   }
   .prose-content .cms-speech-name {
     margin-top: 4px;

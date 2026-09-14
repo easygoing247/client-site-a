@@ -17,7 +17,14 @@ import type { APIRoute } from 'astro';
 import { site } from '../lib/site';
 
 export const GET: APIRoute = async () => {
-  const order = Array.isArray(site.works.order) ? site.works.order : [];
+  // site.works.order の各項目は `{ item: string }`（2026-09、Task 2で
+  // Decap CMSの delete ボタン不具合対応のため配列要素形式を変更した。
+  // src/lib/site.ts のコメント参照）。このJSON自体は従来どおり
+  // 文字列配列として出力し、消費側（public/admin/index.html）の
+  // 変更を最小限にする。
+  const order = Array.isArray(site.works.order)
+    ? site.works.order.map((entry) => entry?.item).filter((slug): slug is string => !!slug)
+    : [];
   return new Response(JSON.stringify(order), {
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });

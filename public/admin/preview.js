@@ -655,7 +655,11 @@
 
     return h(
       'div',
-      { className: 'fixed left-0 right-0 bottom-0 z-[60] md:hidden' },
+      {
+        className: 'fixed left-0 right-0 bottom-0 z-[60] md:hidden',
+        role: 'complementary',
+        'aria-label': 'お問い合わせショートカット',
+      },
       h(
         'div',
         { className: cx('grid', buttons.length >= 2 ? 'grid-cols-2' : 'grid-cols-1') },

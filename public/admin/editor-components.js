@@ -422,34 +422,42 @@
   // ==========================================================================
   // 5) 画像付き吹き出し
   // アイコン画像は他の画像フィールドと違い、複数記事間で使い回す「話者
-  // アバター」用途のため、works/newsの記事ごとのmedia_folder（../../assets）
-  // ではなく、メディアライブラリ全体（既定のグローバル設定）から選ぶ。
+  // アバター」用途のため、専用フォルダ（/public/uploads/editor）を
+  // media_folder/public_folder に指定していた（9.40）。
   //
-  // ⚠️ ただし既定のグローバル設定（media_folder: "src/assets" /
-  // public_folder: "/src/assets"）をそのまま使うと、保存される値が
-  // `/src/assets/xxx.jpg`という「サイトのソースディレクトリ基準の
-  // 絶対パス」になる。この値は`toBlock()`で本文中に生の`<img src="...">`
-  // タグとしてそのまま埋め込まれるが、`<img>`タグはAstroのMarkdown画像
-  // 最適化パイプライン（`![]()`構文専用）の対象外のため一切変換されず、
-  // ビルド後の`dist/`には`src/`ディレクトリ自体が存在しないため本番で
-  // 404になる（実機確認済み。2026-09、9.40）。video-fileコンポーネント
-  // （このファイル内の2番目のコンポーネント）と同じ理由・同じ対処で、
-  // `public/uploads/editor/`という専用フォルダに保存し、常にビルド後も
-  // そのまま配信可能な絶対URLパス（`/uploads/editor/xxx.jpg`）になる
-  // ようにしている。
+  // ⚠️【2026-09 修正】実機検証の結果、`registerEditorComponent` の
+  // `fields` に指定した `media_folder`/`public_folder` は、Decap CMS
+  // 本体（3.16.2）の画像ピッカーには一切反映されないことが判明した
+  // （Reduxの`mediaLibrary.field`には指定どおりの値が渡っているにも
+  // 関わらず、実際に一覧表示・保存されるパスは常に**このコンポーネントを
+  // 使っている記事コレクション自身**の`media_folder`/`public_folder`
+  // （works/newsの場合は`../../assets`。本文中のMarkdown画像
+  // `![]()`用の相対パス）にフォールバックしていた）。そのため、
+  // 保存される`avatar`の値は常に`../../assets/xxx.jpg`という相対パスに
+  // なる。この値を旧実装のように生の`<img src="...">`タグへ直接
+  // 埋め込むと、`<img>`タグはAstroのMarkdown画像最適化パイプライン
+  // （`![]()`構文専用）の対象外のため一切変換されず、ブラウザは
+  // このパスをページURL基準の相対パスとして解決しようとして404になり、
+  // 「画像が表示されずAlt属性のテキストのみ表示される」不具合の
+  // 直接の原因になっていた。
+  //
+  // 【修正方針】アバター画像は`<img>`タグではなく、標準のMarkdown画像
+  // 構文`![alt](path)`として出力するよう変更した（`id:'image'`の
+  // 標準画像コンポーネントと全く同じ仕組み）。これにより、Astroの
+  // remarkパイプラインがこの画像を通常の本文画像と同様に検出・
+  // 最適化するため、`media_folder`のフォールバック先が
+  // `../../assets`（＝本文画像用の相対パス）であること自体が
+  // そのまま正しく機能するようになる（＝個別のmedia_folder指定は
+  // 実際には効いていなかったので削除し、素直に記事コレクション既定の
+  // 動作に任せる）。CSSは`<img>`へ直接クラスを付与できなくなった分、
+  // `.cms-speech-avatar-col img`という構造セレクタに変更した
+  // （global.css参照）。
   // ==========================================================================
   window.CMS.registerEditorComponent({
     id: 'speech-bubble',
     label: '吹き出し（アイコン付き）',
     fields: [
-      {
-        name: 'avatar',
-        label: 'アイコン画像（話者アバター）',
-        widget: 'image',
-        required: false,
-        media_folder: '/public/uploads/editor',
-        public_folder: '/uploads/editor',
-      },
+      { name: 'avatar', label: 'アイコン画像（話者アバター）', widget: 'image', required: false },
       { name: 'name', label: '名前（未入力なら非表示）', widget: 'string', required: false },
       {
         name: 'align',
@@ -468,17 +476,21 @@
       return decodeData(match[1]);
     },
     toBlock: function (obj) {
-      var avatarImg = obj.avatar ? '<img class="cms-speech-avatar" src="' + escapeHtml(obj.avatar) + '" alt="' + escapeHtml(obj.name || '') + '" />' : '';
+      // アバター画像は標準のMarkdown画像構文で出力する（上記コメント
+      // 参照。空行で前後を区切ることで、周囲の生HTML（<div>）ブロックとは
+      // 独立した段落として認識され、Astroの画像最適化対象になる）。
+      var avatarMd = obj.avatar ? '![' + (obj.name || '') + '](' + obj.avatar + ')' : '';
       var nameHtml = obj.name ? '<div class="cms-speech-name">' + escapeHtml(obj.name) + '</div>' : '';
       return (
         '<!--cms-speech:' +
         encodeData(obj) +
         '-->\n<div class="cms-speech cms-speech--' +
         (obj.align || 'left') +
-        '"><div class="cms-speech-avatar-col">' +
-        avatarImg +
+        '">\n<div class="cms-speech-avatar-col">\n\n' +
+        avatarMd +
+        '\n\n' +
         nameHtml +
-        '</div><div class="cms-speech-bubble">\n\n' +
+        '\n\n</div>\n<div class="cms-speech-bubble">\n\n' +
         (obj.text || '') +
         '\n\n</div></div>'
       );

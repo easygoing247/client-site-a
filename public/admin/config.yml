@@ -151,15 +151,30 @@ collections:
                 required: false
                 summary: "{{fields.item}}"
                 hint: "ドラッグ&ドロップで並び替えると、トップページでの表示順に反映されます。ここに追加していない実績（または新しく作成した実績）は、この一覧の後ろに公開日の新しい順で表示されますが、上の「トップページに表示する件数」の枠を超える分は表示されません。ここに追加する実績を絞り込みすぎると、新しい実績が表示されなくなるのでご注意ください。各行には選択中の実績のURL用識別子（例：corporate-site-renewal）が表示されます。"
-                field:
-                  label: "実績"
-                  name: "item"
-                  widget: relation
-                  collection: "works"
-                  search_fields: ["title"]
-                  display_fields: ["title"]
-                  value_field: "{{slug}}"
-                  required: false
+                # ⚠️ 2026-09の実機検証で、`relation`ウィジェットを`list`の
+                # 単数形`field:`（＝各項目が素の文字列として保存される
+                # 構成）で使うと、各行の削除（バツ）ボタンがDecap CMS本体側の
+                # 不具合（Immutable.jsの内部例外「Invalid keyPath: expected
+                # Ordered Collection or Array: <選択中の値>」）で機能しなく
+                # なることを確認した。同じ`list`＋単数`field:`構成でも
+                # `widget: string`（例：上の「アピールポイント」）では
+                # 正常に削除できるため、`relation`ウィジェットがlistの
+                # 直接の子として使われる場合に限って発生する、decap-cms
+                # 3.16.2本体側の既知の制約と判断した。複数形`fields:`
+                # （＝各項目が`{item: "slug"}`というオブジェクトとして
+                # 保存される、他の大半のlist項目と同じ構成）に変更する
+                # ことで削除ボタンが正常に機能することを実機で確認済み。
+                # 新しく`relation`をlistに含める場合も、単数`field:`では
+                # なく複数形`fields:`（1項目だけでも配列で囲む）を使うこと。
+                fields:
+                  - label: "実績"
+                    name: "item"
+                    widget: relation
+                    collection: "works"
+                    search_fields: ["title"]
+                    display_fields: ["title"]
+                    value_field: "{{slug}}"
+                    required: false
 
           - label: "料金プラン"
             name: "plans"

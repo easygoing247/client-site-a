@@ -132,8 +132,14 @@ export interface SiteInfo {
     /** PC表示時の並列カード枚数（1〜3。超過分はスライダーで閲覧） */
     columns?: number;
     /** ドラッグ&ドロップで並べ替える表示順序（works の slug のリスト）。
-     * 未掲載の実績は末尾に追加順で並ぶ。 */
-    order?: string[];
+     * 未掲載の実績は末尾に追加順で並ぶ。
+     * 各項目は `{ item: string }` というオブジェクト（2026-09、Task 2）。
+     * 以前は素の文字列配列だったが、Decap CMSの`list`ウィジェットに
+     * `relation`を単数形`field:`として直接指定すると、削除ボタンが
+     * 本体側の不具合で機能しなくなることが判明したため、複数形
+     * `fields:`（＝各項目をオブジェクトとして保存する、他の大半の
+     * listフィールドと同じ構成）へ変更した。 */
+    order?: { item: string }[];
   };
   plans: {
     eyebrow: string;

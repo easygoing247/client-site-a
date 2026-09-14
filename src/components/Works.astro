@@ -33,9 +33,12 @@ const allWorks = await getCollection('works');
 
 // 「表示順序」（CMSでドラッグ&ドロップした slug のリスト）を優先し、
 // そこに無い実績は公開日の新しい順でその後ろに続ける。
-const orderList = (site.works.order ?? []).filter(
-  (slug): slug is string => !!slug && String(slug).trim() !== ''
-);
+// 各項目は `{ item: slug }` というオブジェクト（2026-09、Task 2。
+// Decap CMSの delete ボタン不具合対応で配列の要素形式を変更した。
+// src/lib/site.ts の SiteInfo['works']['order'] コメント参照）。
+const orderList = (site.works.order ?? [])
+  .map((entry) => entry?.item)
+  .filter((slug): slug is string => !!slug && String(slug).trim() !== '');
 const bySlug = new Map<string, (typeof allWorks)[number]>(allWorks.map((w) => [w.slug, w]));
 const seen = new Set<string>();
 const ordered: typeof allWorks = [];

@@ -4427,3 +4427,134 @@ B-8/B-10/C-12（小粒な改善）を実装した。
   （0エラー・0警告）を確認。管理画面側の変更（`preview.js`の
   CTAボタンスタイル、`index.html`のCSS）に伴い、キャッシュバスター
   （9.24参照）を`20260914f`へ更新した。
+
+### 9.57 記事本文「吹き出し」の画像404修正／「実績＞表示順序」削除ボタン修復／CMSプレビューのPC時固定バー非表示・リサイズ時消失の修正（2026-09-14）
+
+**A. 記事本文「吹き出し」コンポーネントのアバター画像が本番で表示されない不具合を修正**
+
+- **原因**：`public/admin/editor-components.js`の`speech-bubble`は、
+  Decapの`registerEditorComponent`が持つ`avatar`フィールド専用の
+  `media_folder`/`public_folder`上書きが実際には機能しない（9.21の
+  Redux調査で確認済みの既知の制約）ため、コレクション自身の
+  `media_folder`設定（`../../assets`相対パス）で選択された画像パスが、
+  `toBlock()`の中で**生の`<img src="...">`タグ**として本文へそのまま
+  埋め込まれていた。生の`<img>`はAstroのMarkdown画像最適化パイプライン
+  （`![]()`構文専用）の対象外のため、この相対パスは変換されずビルド後
+  HTMLへそのまま出力され、`dist/`には`src/`ディレクトリ自体が
+  存在しないため本番で404になり、代わりに`alt`テキストのみが
+  表示されていた。
+- **修正**：`toBlock()`の出力を、生の`<img>`から標準の`![]()`
+  Markdown画像構文に変更した（前後を空行で分離し、CommonMarkの
+  ブロック構造として独立させる。9.25で確立した「HTMLブロック
+  （`<div>`）に囲まれたMarkdown画像は空行で分離すれば最適化対象になる」
+  パターンを踏襲）。あわせて機能しない`media_folder`/`public_folder`
+  上書き宣言自体も削除し、意図しない誤解を避けた。`src/styles/
+  global.css`の`.prose-content .cms-speech-avatar`（クラス付き`<img>`
+  前提のセレクタ）を`.prose-content .cms-speech-avatar-col img`
+  （構造セレクタ、Markdown生成`<img>`にはクラスが付かないため）に
+  変更し、`.cms-speech-avatar-col p { margin: 0; }`を追加して
+  画像が`<p>`でラップされることによる余分な段落マージンを打ち消した。
+  テスト記事（`speech-bubble-test.md`、検証後削除）を使い、
+  `npm run build`後のHTMLに`/_astro/*.webp`という最適化済み画像
+  （`width`/`height`/`loading`属性付き）が出力されることを確認した。
+
+**B. 「サイト全体設定 ＞ 実績 ＞ 表示順序」の個別削除（×）ボタンが機能しない不具合を修正**
+
+- **原因**：`public/admin/config.yml`の`works.order`（`widget: list`）が、
+  中身のフィールドを`widget: relation`の**単数形`field:`**として
+  直接指定していた。これはDecap CMS 3.16.2自体の内部バグ
+  （`relation`ウィジェットをlistの単数`field:`にすると、保存済みの
+  各行が素の文字列としてImmutable.jsに格納され、削除操作の内部処理
+  （`Invalid keyPath: expected Ordered Collection or Array`という
+  Immutable.js例外）が壊れる）で、他のフィールド型（string等）を
+  単数`field:`にした場合や、複数形`fields:`（＝各行をオブジェクトとして
+  保存する構成）にした場合には発生しない、`relation`＋単数`field:`の
+  組み合わせに固有の問題であることを実機の比較テスト（正常に削除
+  できる別のlistとの動作比較）で特定した。
+- **修正**：`works.order`を単数`field:`から複数形`fields:`（`item`
+  という名前の`relation`フィールドを1つだけ持つオブジェクトの配列）へ
+  変更した。これに伴い、保存データ構造が`string[]`から
+  `{ item: string }[]`に変わるため、以下の依存箇所をすべて更新した：
+  `src/data/siteInfo.yml`（既存6件のデータ移行）、`src/lib/site.ts`
+  （`SiteInfo['works']['order']`の型定義）、`src/components/Works.astro`
+  （`.map((entry) => entry?.item)`で値を取り出してから従来ロジックに
+  渡す）、`src/pages/works-order.json.ts`（同様に`.item`を抽出。
+  エンドポイント自体の出力契約＝フラットな`string[]`は変更なし）、
+  `public/admin/index.html`の`getSiteWorksOrderList()`
+  （9.37で実装した一覧画面の並び順連動ロジックが参照するRedux値の
+  読み取り側）。実機検証で削除ボタン（6→5件）・追加ボタン
+  （5→6件）の両方が正しく動作すること、`npm run build`
+  （17ページ・エラー0件）・`npx astro check`（0エラー）を確認した。
+
+**C. CMSプレビューのPC表示時、画面下部固定バーが表示されてしまう不具合の防御的修正**
+
+- **背景**：9.30で「PC」プリセットの実測幅がタブレット幅（768px）を
+  下回り、実サイト側の`md:hidden`（CSSのみでの表示制御）が誤って
+  「768px未満だから表示する」と判定してしまう不具合を修正済みだった
+  （`.SplitPane[data-cms-device='pc']`にPane1固定400px＋Pane2に
+  残り全幅を明示する対応）。ただし、この対策は「一般的なデスクトップ
+  幅（1200px以上）のウィンドウであれば」という前提に依存しており、
+  管理画面のウィンドウ自体が狭い場合（Pane1の固定400pxを差し引いた
+  残りが768pxを下回るケース）には、CSSのメディアクエリだけでは
+  依然としてPC選択時に固定バーが表示され得るという構造的な余地が
+  残っていた。
+- **修正**：CSSのビューポート判定に加えて、「今どのデバイス
+  プリセットが選択されているか」というアプリケーション側の意図を
+  JSで直接反映する二重の安全策を追加した。`public/admin/index.html`に
+  `updateStickyBarPreviewVisibility()`を新設し、`.Pane2 iframe`の
+  `contentDocument`から`[aria-label="お問い合わせショートカット"]`
+  （`StickyContactBar.astro`の`role="complementary"`要素）を探索して、
+  `currentPreviewDevice === 'pc'`の場合は`display:none`、それ以外は
+  空文字（CSS任せ）に戻す。`applyPreviewDevice()`（デバイス切替時）と
+  `relocateDeviceToolbar()`（DOM変化・resize・プレビューiframeの
+  再読み込み時にも呼ばれる既存のポーリング的トリガー、7.5節参照）の
+  両方から呼び出し、プレビューが再描画されるたびに再チェックする。
+  - **「サイト全体設定」プレビュー（`SiteInfoPreview`）固有の追加
+    修正**：`preview.js`の`renderStickyContactBarPreview()`
+    （本番の`StickyContactBar.astro`をJSで再実装したもの、9.21参照）
+    には`role="complementary"`／`aria-label="お問い合わせ
+    ショートカット"`が付与されておらず、上記のセレクタで発見
+    できなかった（下層ページ系プレビューが使う`publishedStickyBarHtml`
+    ＝本番の実HTMLをそのまま流用する方式には元々この属性が含まれて
+    いたため、この不整合は`SiteInfoPreview`のみの問題だった）。
+    実サイト側のマークアップと属性まで一致させる原則
+    （7章の二重管理ルール）に従い、`renderStickyContactBarPreview()`の
+    ルート`<div>`にも同じ`role`/`aria-label`を追加した。
+- **検証**：ローカル環境で「サイト全体設定」プレビューを開き、
+  「PC」選択時は`display:none`（非表示）、「スマホ」選択時は
+  `display:block`（表示）になることをDOM上で確認した。
+
+**D. 特定の画面幅で手動リサイズした際にプレビューが消失・崩れる不具合を修正**
+
+- **原因**：`public/admin/index.html`の`.SplitPane[data-cms-device] >
+  .Pane1, .Pane2`に付与していた`transition: flex-basis 0.2s ease,
+  width 0.2s ease`（デバイス幅切替ボタンクリック時の見た目の
+  滑らかさを狙ったもの）が、`resize`イベントで同期的に
+  `getBoundingClientRect()`を読み取る`relocateDeviceToolbar()`/
+  `relocateViewControls()`（7.5〜7.5b節）とタイミング的に競合して
+  いた。ウィンドウを連続的に手動リサイズすると、ブラウザの実際の
+  レイアウト（トランジション実行中の中間値）と、これらの関数が
+  読み取る座標（トランジション開始直後の古い値、または未確定の
+  値）がずれ、その結果デバイス幅切替ボタン・ViewControlsの位置
+  計算が一時的に破綻し、「タブレット幅とスマホ幅の中間で1〜2秒
+  ほどプレビュー・ツールバーが消失/崩れて見える」症状を実機の
+  1300px→800pxリサイズ再現手順で確認した（アニメーション完了後は
+  自然に正しい状態へ復帰する一過性の不具合）。
+- **修正**：該当の`transition`宣言を削除した（デバイス幅切替時の
+  見た目の滑らかさより、手動リサイズ時の一貫した表示を優先する
+  判断）。念のための保険として、`resize`イベントに250ms
+  デバウンスされた再計算処理（`relocateDeviceToolbar()`/
+  `relocateViewControls()`を再実行）を追加し、ブラウザ自身の
+  reflowが`resize`イベントの発火よりわずかに遅れるケースが
+  万一残っていても、最終的に正しい位置へ収束するようにした。
+- **検証**：ローカル環境で「タブレット」プリセットを選択した状態から
+  ウィンドウ幅を1300px→800pxへ変更し、変更直後のスクリーンショットで
+  デバイス幅切替ボタン・フォームパネル・プレビューがいずれも正しく
+  表示され続けることを確認した（修正前に再現していた一過性の崩れが
+  解消）。
+
+**検証・キャッシュバスター**：`npm run build`（17ページ・エラー0件）・
+`npx astro check`（0エラー・0警告）を確認。`public/admin/config.yml`・
+`public/admin/editor-components.js`・`public/admin/index.html`の変更に
+伴い、キャッシュバスター（9.24参照）を`20260914f`→`20260914g`へ
+更新した（`preview.js`は本ラウンドでも変更したため同様に更新）。
