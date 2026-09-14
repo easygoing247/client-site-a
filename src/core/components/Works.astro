@@ -57,7 +57,7 @@ allWorks
 const works = ordered.slice(0, count);
 // 矢印はいったんマークアップに含めておき、実際にオーバーフローしている
 // かどうか（PCで表示件数が columns 超、またはスマホで2件以上など）は
-// クライアント側で scrollWidth を実測して判定する（下部 <script> 参照）。
+// クライアント側で scrollWidth を実測して判定する（下部の script タグ参照）。
 // ここでは「そもそも2件以上あるか」だけで有無を決める。
 const isSlider = works.length > 1;
 ---

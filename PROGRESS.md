@@ -533,6 +533,27 @@ LP版から複製後に実施した、複数ページ構成・下層ページ・
   再確認 → `main`へマージ → マージ後の`main`でも同じ検証を実行し
   エラー0件を確認 → `origin/main`へpush、という手順で完了した。
 
+### 1a.5 `npm run dev` 起動時のVite誤検知エラーログを解消（2026-09-14、CLAUDE.md 10.5）
+
+- `npm run dev`起動時に毎回出ていた`[vite] Error: Failed to scan for
+  dependencies`エラーログ（実際の表示・機能には支障なし、9.59でも
+  遭遇し当時は保留していた問題）の原因を特定した。`src/core/
+  components/Works.astro`・`src/pages/products.astro`・`src/core/
+  components/MobileMenuButton.astro`の3ファイルが、日本語コメント中に
+  説明用の生テキストとして`<script>`という文字列をそのまま含んでおり、
+  Viteの`optimizeDeps`（esbuildベースの軽量事前スキャン）がコメントか
+  どうかを判別せずこれを実タグの開始と誤認、コメントの残り部分を
+  スクリプトの中身として抽出しようとして構文エラーになっていた。
+- 3箇所とも「script タグ」という表記へ言い換えて解消（`vite.
+  optimizeDeps.exclude`等の設定側での回避は、根本原因を隠蔽するだけで
+  該当ファイルの事前バンドルの恩恵も失われるため採用しなかった）。
+- **検証**：キャッシュを削除したクリーンな状態で`npm run dev`を
+  複数回実行し、エラーログが一切出力されないことを確認。新規ブラウザ
+  タブでトップページ・`/products/`・`/works/sample/`のコンソールに
+  エラーが無いことも確認した。`npm run build`（16ページ・0エラー）・
+  `npx astro check`（0エラー）を確認し、本番ビルド・型チェックへの
+  影響が無いことも確認済み。
+
 ## 2. 完了済みタスク（複数ページ版 master-template-multi）
 
 直近バッチで完了し、`main` に push 済みのタスク一覧（詳細は 1.7 と `CLAUDE.md` 9 章）。
