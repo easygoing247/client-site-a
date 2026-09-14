@@ -4135,3 +4135,81 @@ B-8/B-10/C-12（小粒な改善）を実装した。
 `node --check`で個別に検証した。管理画面アセットのキャッシュバスター
 （`config.yml`/`preview.js`/`editor-components.js`の`?v=`、9.24参照）は
 今回の変更に合わせて`20260914a`へ統一した。
+
+### 9.52 お問い合わせ設定の相互案内・アクセスラベルの注記・下層ページ共通フィールドのYAMLアンカー化・フッターナビのヘッダー流用機能（2026-09-14）
+
+9.50-Cのロードマップの残り項目（C-11・B-6・A-4・A-5）を実装した。
+
+**C-11：お問い合わせ設定の全体案内注記**
+
+お問い合わせ関連の設定は3箇所（①`siteInfo.yml`の`contactSection`＝
+見出し・本文・送信ボタン文言、②`contactPage.yml`＝入力欄のラベル・
+必須設定・カスタム項目、③`contact-form.json`＝Web3Formsの送信先・
+通知メール設定）に意図的に分かれている（9.7章参照）。この3箇所すべての
+`hint`に、他の2箇所の役割・所在を明示する相互案内文を追加した
+（`config.yml`の`contactSection`オブジェクト・`contactFormSettings`
+ファイル項目・`pages`コレクションの`contact`ファイル項目、各hint参照）。
+どれか1つを開けば残り2箇所への導線が分かるようにする狙い。
+
+**B-6：「アクセス」項目ラベルの電話番号フィールドへの注記明確化**
+
+`access.labels.phone`（アクセスセクションの「電話番号」という**表示文言**
+だけを設定するフィールド）に、「実際の電話番号本体は『連絡先』
+セクションで変更してください」という趣旨のhintを追加した。9.12で
+同じ混同（ラベルと実データの分離）を`access`オブジェクト全体の説明として
+一度案内していたが、今回は該当フィールド自体にピンポイントで明記した。
+
+**A-4：下層ページ共通フィールド（`pageName`/`heading`）のYAMLアンカー化**
+
+`services`/`about`/`contact`/`newsPage`の4ファイルが共通して持つ先頭
+2フィールド（「ページ名」「ページ見出し」、9.3参照）の定義を、最初の
+出現（`services`）にYAMLアンカー（`&pageIdentityName` /
+`&pageIdentityHeading`）を付け、以降の3ファイルは**マージキー**
+（`{ <<: *pageIdentityName, default: "会社概要" }`のように、共通部分を
+継承しつつ`default`だけをページごとに上書きする）または`default`が
+不要な場合はそのままの別名参照（`*pageIdentityHeading`）で共通化した。
+- YAMLのマージキー（`<<:`）は標準YAML 1.1機能で、`js-yaml`が既定で
+  対応していることを実機（Node.js）で事前検証してから採用した
+  （`editor_components`/`buttons`の既存の`&anchor`/`*alias`利用は
+  「フィールド値全体をまるごと共有」するケースのみだったため、
+  「一部のプロパティだけ上書きしたい」今回の要件には初めてマージキーを
+  導入した）。
+- 新しい下層ページを追加する場合も、この2フィールドは
+  `{ <<: *pageIdentityName, default: "<ページ名の既定値>" }` /
+  `*pageIdentityHeading`（または`default`が必要なら同様にマージキー）を
+  踏襲すること。label/hint文言を変更する場合は`services`側の
+  アンカー定義を直すだけで4ファイルすべてに反映される。
+
+**A-5：フッターナビゲーションの「ヘッダーナビと同じ内容を使う」トグル**
+
+`footerNav`を素の配列（`widget: list`）から、`useHeaderNav`
+（boolean、既定false）＋`items`（従来のリスト）を持つオブジェクトへ
+構造変更した。ONにすると、`items`の内容を無視してヘッダーナビ（`nav`）
+と全く同じ項目・表示名・並び順がフッターにも表示される（同じリンクを
+2箇所に入力する手間を解消）。
+- `src/lib/site.ts`：`SiteInfo.footerNav`の型を
+  `{ useHeaderNav?: boolean; items?: {...}[] }`に変更し、新関数
+  `resolveFooterNavItems()`（`useHeaderNav`なら`site.nav`、そうでなければ
+  `site.footerNav.items`を選び、`visibleNavItems()`を通す）を追加。
+  セクション表示ON/OFF・下層ページ見出しへのフォールバックは通常の
+  ナビゲーションと全く同じロジックがそのまま働く。
+- `Footer.astro`：`visibleNavItems(site.footerNav)`直接呼び出しを
+  `resolveFooterNavItems()`へ置き換え。
+- `preview.js`の`renderFooter`：`data.footerNav.useHeaderNav`を見て
+  `data.nav`／`data.footerNav.items`のどちらを`filterVisibleNavForPreview()`
+  に渡すか切り替えるよう追従修正。
+- 既存データ（`siteInfo.yml`）は`footerNav: [...]`（配列）から
+  `footerNav: { useHeaderNav: false, items: [...] }`へ構造移行し、
+  既存の8項目はそのまま`items`の中へ移した（`useHeaderNav`は既定`false`
+  のため、移行前後で実サイトの表示内容は変化しない）。
+
+**検証**：4項目とも実装後、`npm run build`（22ページ・エラー0件）・
+`npx astro check`（0エラー・0警告）を確認。`config.yml`は
+`js-yaml`で構文検証し、A-4のマージキーが各下層ページで正しい
+`default`値に解決されること（`services`＝サービス内容・料金、
+`about`＝会社概要、`contact`＝お問い合わせ・ご予約、`newsPage`＝
+お知らせ一覧ページ／お知らせ）、A-5の`footerNav`が
+`widget: object`＋`useHeaderNav`/`items`の2フィールド構成に
+なっていることを、それぞれNode.jsスクリプトで実機確認した。
+`preview.js`/`config.yml`を変更したため、キャッシュバスター
+（9.24参照）を`20260914b`へ更新した。

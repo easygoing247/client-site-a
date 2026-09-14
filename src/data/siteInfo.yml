@@ -231,22 +231,24 @@ navCta:
   label: お問い合わせ
   href: /contact
 footerNav:
-  - label: サービス
-    href: /services
-  - label: 商品
-    href: /products
-  - label: 実績
-    href: /#works
-  - label: 料金プラン
-    href: /#plans
-  - label: よくある質問
-    href: /#faq
-  - label: 会社概要
-    href: /about
-  - label: お知らせ
-    href: /news
-  - label: お問い合わせ
-    href: /contact
+  useHeaderNav: false
+  items:
+    - label: サービス
+      href: /services
+    - label: 商品
+      href: /products
+    - label: 実績
+      href: /#works
+    - label: 料金プラン
+      href: /#plans
+    - label: よくある質問
+      href: /#faq
+    - label: 会社概要
+      href: /about
+    - label: お知らせ
+      href: /news
+    - label: お問い合わせ
+      href: /contact
 stickyContactBar:
   leftButton:
     label: お電話

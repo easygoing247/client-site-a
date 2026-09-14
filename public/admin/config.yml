@@ -214,7 +214,7 @@ collections:
                   - { label: "郵便番号", name: "postalCode", widget: string, required: false }
                   - { label: "住所", name: "address", widget: string, required: false }
                   - { label: "最寄り駅", name: "nearestStation", widget: string, required: false }
-                  - { label: "電話番号", name: "phone", widget: string, required: false }
+                  - { label: "電話番号", name: "phone", widget: string, required: false, hint: "※ここは項目名（ラベル）の表示文言設定です。実際の電話番号本体は下の「連絡先」セクションで変更してください。" }
                   - { label: "営業時間", name: "businessHours", widget: string, required: false }
                   - { label: "定休日", name: "closedDays", widget: string, required: false }
                   - { label: "駐車場", name: "parking", widget: string, required: false }
@@ -237,6 +237,7 @@ collections:
           - label: "お問い合わせ"
             name: "contactSection"
             widget: object
+            hint: "お問い合わせ関連の設定は3箇所に分かれています。①ここ（サイト設定＞お問い合わせ）＝見出し・本文・送信ボタン等の文言。②「下層ページ編集＞お問い合わせ・ご予約」＝入力欄（お名前・メール等）のラベル・必須設定・カスタム項目。③「サイト設定＞お問い合わせフォーム設定」＝Web3Formsの送信先キー・通知メールの件名/送信者名。見た目や文言を変えたいなら①、入力項目を変えたいなら②、送信先を変えたいなら③を編集してください。"
             fields:
               - { label: "見出し上部ラベル", name: "eyebrow", widget: string, required: false }
               - { label: "見出し", name: "heading", widget: string, required: false }
@@ -358,12 +359,18 @@ collections:
 
           - label: "フッターナビゲーション"
             name: "footerNav"
-            widget: list
-            required: false
-            hint: "リンク先が「下層ページ編集」の各ページ（/services 等）の場合、「表示名」が未入力ならそのページの「ページ見出し」が自動的に表示されます。個別の表記にしたい場合のみ「表示名」を入力してください。トップページ内セクションへのリンク（例：/#works）は対応する「ページ見出し」が無いため、表示名の入力が必要です。"
+            widget: object
+            hint: "「ヘッダーナビと同じ内容を使う」をONにすると、下の「フッター専用のメニュー項目」は無視され、上の「ヘッダーナビゲーション」と全く同じ項目・表示名・並び順がフッターにも表示されます（同じ内容を2箇所に入力する手間を省けます）。個別にリンクを変えたい場合はOFFのまま「フッター専用のメニュー項目」を編集してください。"
             fields:
-              - { label: "表示名", name: "label", widget: string, required: false, hint: "※未入力の場合は「下層ページ編集」の「ページ見出し」が反映されます。個別の表記にしたい場合のみ入力してください。" }
-              - { label: "リンク先", name: "href", widget: string, required: false }
+              - { label: "ヘッダーナビと同じ内容を使う", name: "useHeaderNav", widget: boolean, default: false, required: false }
+              - label: "フッター専用のメニュー項目"
+                name: "items"
+                widget: list
+                required: false
+                hint: "「ヘッダーナビと同じ内容を使う」がONの間は、ここを編集してもフッターの表示には反映されません。リンク先が「下層ページ編集」の各ページ（/services 等）の場合、「表示名」が未入力ならそのページの「ページ見出し」が自動的に表示されます。個別の表記にしたい場合のみ「表示名」を入力してください。トップページ内セクションへのリンク（例：/#works）は対応する「ページ見出し」が無いため、表示名の入力が必要です。"
+                fields:
+                  - { label: "表示名", name: "label", widget: string, required: false, hint: "※未入力の場合は「下層ページ編集」の「ページ見出し」が反映されます。個別の表記にしたい場合のみ入力してください。" }
+                  - { label: "リンク先", name: "href", widget: string, required: false }
 
           - label: "画面下部固定バー"
             name: "stickyContactBar"
@@ -461,6 +468,7 @@ collections:
       - name: "contactFormSettings"
         label: "お問い合わせフォーム設定（contact-form.json）"
         file: "src/data/contact-form.json"
+        hint: "ここは送信先（Web3Forms）専用の設定です。フォームの見出し・本文・ボタン文言は「サイト設定＞お問い合わせ」、入力欄（お名前・メール等）のラベル・必須設定・カスタム項目は「下層ページ編集＞お問い合わせ・ご予約」で編集してください。"
         fields:
           - name: "web3forms_access_key"
             label: "Web3Forms アクセスキー"
@@ -595,6 +603,16 @@ collections:
   #    各下層ページのテキスト・数値は src/data/*.yml に集約し、
   #    対応する下層ページ（src/pages/*.astro）が siteInfo.yml と同じ要領で
   #    型付き参照する。1ファイル = 1下層ページ。
+  #
+  #    services/about/contact/newsPage の4ファイルは共通して先頭2フィールド
+  #    （「ページ名」「ページ見出し」）を持つ（9.3参照）。定型的なコピペを
+  #    避けるため、最初の出現（services）にYAMLアンカー
+  #    （&pageIdentityName / &pageIdentityHeading）を付け、以降の3ファイルは
+  #    マージキー（`<<: *アンカー名`。デフォルト値だけ各ページごとに上書き）
+  #    またはそのままの別名参照（`*アンカー名`）で共通化している（2026-09）。
+  #    新しい下層ページを追加する場合も、この2フィールドは同じアンカーを
+  #    使い回すこと（label/hint/widget文言を変更する場合は services 側の
+  #    アンカー定義を直すだけで全ページに反映される）。
   # ==========================================================================
   - name: "pages"
     label: "下層ページ編集"
@@ -606,8 +624,8 @@ collections:
         summary: "{{fields.pageName}}"
         file: "src/data/services.yml"
         fields:
-          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "サービス内容・料金", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
+          - &pageIdentityName { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "サービス内容・料金", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
+          - &pageIdentityHeading { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "「サービス詳細」セクションの見出し", name: "itemsHeading", widget: string, required: false, default: "サービス内容", hint: "サービス詳細（画像＋説明）の一覧の上に表示される見出し。空欄にすると「サービス内容」を表示します。" }
           - label: "サービス詳細"
@@ -653,8 +671,8 @@ collections:
         summary: "{{fields.pageName}}"
         file: "src/data/about.yml"
         fields:
-          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "会社概要", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
+          - { <<: *pageIdentityName, default: "会社概要" }
+          - *pageIdentityHeading
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - label: "セクションの表示・非表示"
             name: "sections"
@@ -704,9 +722,10 @@ collections:
         label_singular: "お問い合わせ・ご予約"
         summary: "{{fields.pageName}}"
         file: "src/data/contactPage.yml"
+        hint: "ここは入力欄（お名前・メール等）のラベル・必須設定・カスタム項目専用です。見出し・本文・送信ボタンの文言は「サイト設定＞お問い合わせ」、送信先（Web3Forms）は「サイト設定＞お問い合わせフォーム設定」で編集してください。"
         fields:
-          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "お問い合わせ・ご予約", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
+          - { <<: *pageIdentityName, default: "お問い合わせ・ご予約" }
+          - *pageIdentityHeading
           - { label: "フォーム上部の案内文（Enterキーで改行可）", name: "intro", widget: text, required: false }
           - label: "ご予約・お問い合わせの注意事項"
             name: "notes"
@@ -808,8 +827,8 @@ collections:
         summary: "{{fields.pageName}}"
         file: "src/data/newsPage.yml"
         fields:
-          - { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "お知らせ一覧ページ", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
-          - { label: "ページ見出し", name: "heading", widget: string, required: false, default: "お知らせ", hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
+          - { <<: *pageIdentityName, default: "お知らせ一覧ページ" }
+          - { <<: *pageIdentityHeading, default: "お知らせ" }
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "一覧セクションの見出し", name: "listHeading", widget: string, required: false, default: "お知らせ一覧", hint: "カテゴリ絞り込み・記事一覧の直前に表示される見出し。空欄にすると「お知らせ一覧」を表示します。" }
 

@@ -1447,7 +1447,9 @@
   // ==========================================================================
   function renderFooter(h, data, getAsset) {
     var company = data.company || {};
-    var footerNav = filterVisibleNavForPreview(data, data.footerNav);
+    var footerNavSetting = data.footerNav || {};
+    var footerNavSource = footerNavSetting.useHeaderNav ? data.nav : footerNavSetting.items;
+    var footerNav = filterVisibleNavForPreview(data, footerNavSource);
     var logoUrl = assetUrl(getAsset, company.logo);
     var showTextLogo = !logoUrl || company.useTextLogo === true;
     var textLogo = company.textLogo || company.name || 'LOGO';

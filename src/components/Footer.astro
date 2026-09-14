@@ -13,14 +13,14 @@
 // 満たす（透過白などの中間トーンは使わない）。
 // ============================================================================
 import { Image } from 'astro:assets';
-import { site, visibleNavItems } from '../lib/site';
+import { site, resolveFooterNavItems } from '../lib/site';
 import { resolveImageOrNull } from '../lib/images';
 import { orderedSnsLinks } from '../lib/sns';
 
 const logo = resolveImageOrNull(site.company.logo);
 const showTextLogo = !logo || site.company.useTextLogo === true;
 const textLogo = site.company.textLogo || site.company.name;
-const footerNav = visibleNavItems(site.footerNav);
+const footerNav = resolveFooterNavItems();
 // 2列レイアウトの行数は、表示される項目数に合わせて動的に算出する
 // （非表示セクションが増えても不自然な空白行ができないようにするため）
 const footerNavRows = Math.max(1, Math.ceil(footerNav.length / 2));

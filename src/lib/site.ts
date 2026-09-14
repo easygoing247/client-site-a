@@ -180,7 +180,11 @@ export interface SiteInfo {
   };
   nav: { label: string; href: string }[];
   navCta: { label: string; href: string };
-  footerNav: { label: string; href: string }[];
+  footerNav: {
+    /** true の場合、下の items を無視してヘッダーナビ（nav）と同じ内容を表示する */
+    useHeaderNav?: boolean;
+    items?: { label: string; href: string }[];
+  };
   /** スマホ表示時、画面下部に常時表示される「お電話」「LINEで相談」固定バーの設定。
    * 電話番号・LINEのURL自体は `contact` / `sns` を参照する（このオブジェクトは
    * 文言・表示トグルのみを持つ）。 */
@@ -322,4 +326,16 @@ export function visibleNavItems<T extends { href: string; label: string }>(items
       return { ...item, label };
     })
     .filter((item): item is T => item !== null);
+}
+
+/**
+ * フッターナビの表示元を解決する（2026-09、A-5）。
+ * `footerNav.useHeaderNav` が true の場合はヘッダーナビ（`nav`）と
+ * 同じ項目をそのまま流用し、そうでない場合は `footerNav.items` を使う。
+ * どちらも最終的に `visibleNavItems()` を通すため、セクション表示
+ * ON/OFF・下層ページ見出しへのフォールバックは通常のナビと同様に働く。
+ */
+export function resolveFooterNavItems(): { label: string; href: string }[] {
+  const source = site.footerNav?.useHeaderNav ? site.nav : site.footerNav?.items;
+  return visibleNavItems(source ?? []);
 }
