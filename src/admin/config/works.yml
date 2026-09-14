@@ -1,0 +1,128 @@
+# ============================================================================
+# src/admin/config/works.yml — 「商品作成」「実績・活用事例作成」コレクション。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# ⚠️ このファイルは &richTextButtons / &richTextComponents アンカーを
+# 定義しており、news.yml がこれをエイリアス参照する。結合順序
+# （build-config.js のMODULE_ORDER）で必ずnews.ymlより前に来ること。
+# ============================================================================
+  # ==========================================================================
+  # ②a 単一ファイルコレクション：「商品作成」（商品一覧・/products の元データ）
+  #    型化ページ（1件=1ファイル）ではなく、1ファイル内の可変リスト（widget:
+  #    list）構造。ドラッグ&ドロップで直感的に並び替え・追加・削除できる。
+  #    トップページ「商品一覧」セクションと /products ページの両方が
+  #    このデータを参照する（src/lib/pages.ts の productsPage / resolveProductItems）。
+  # ==========================================================================
+  - name: "productsCatalog"
+    label: "商品作成"
+    files:
+      - name: "products"
+        label: "商品一覧設定"
+        file: "src/data/products.yml"
+        summary: "{{fields.heading}}"
+        fields:
+          - { label: "ページ見出し（/products）", name: "heading", widget: string, required: false }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - { label: "上段掲載商品セクションの見出し", name: "featuredHeading", widget: string, required: false, default: "新商品", hint: "横長カードで表示するセクションの見出しです。空欄にすると「新商品」を表示します。" }
+          - { label: "下段掲載商品セクションの見出し", name: "regularHeading", widget: string, required: false, default: "通年商品", hint: "縦型カードで表示するセクションの見出しです。空欄にすると「通年商品」を表示します。" }
+          - { label: "下段掲載商品のグリッド列数（PC表示時の目安）", name: "regularColumns", widget: number, value_type: int, default: 3, min: 2, max: 4, required: false, hint: "※PC表示時の目安列数です。スマホでは常に1列、タブレット幅では自動調整されます。" }
+          - label: "商品項目"
+            name: "items"
+            widget: list
+            required: false
+            summary: "{{fields.name}}"
+            hint: "画像・商品名・概要・価格のうち、空欄の項目はサイト上で自動的に非表示になります（商品名が空欄の項目はカードごと非表示）。"
+            fields:
+              - { label: "商品画像", name: "image", widget: image, required: false }
+              - { label: "商品画像 代替テキスト（Alt属性）", name: "alt", widget: string, required: false, hint: "未入力の場合は商品名で代用されます。" }
+              - { label: "商品名", name: "name", widget: string, required: false }
+              - { label: "概要（説明文。Enterキーで改行可）", name: "description", widget: text, required: false }
+              - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+              - { label: "バッジを表示する", name: "showBadge", widget: boolean, default: false, required: false, hint: "ONにして下の「バッジ文言」を入力すると、商品名の上にテーマカラーのバッジが表示されます。" }
+              - { label: "バッジ文言（例：新商品／おすすめ／限定）", name: "badgeText", widget: string, default: "", required: false }
+              - label: "表示セクション区分"
+                name: "section"
+                widget: select
+                default: "regular"
+                required: false
+                hint: "この商品をどちらのセクションに表示するかを選びます。"
+                options:
+                  - { label: "上段掲載商品（新商品等）", value: "featured" }
+                  - { label: "下段掲載商品（通年商品等）", value: "regular" }
+                  - { label: "両方に表示", value: "both" }
+
+  # ==========================================================================
+  # ②b フォルダコレクション：型化ページ（works）＝実績・活用事例を追加・編集・削除
+  # ==========================================================================
+  - name: "works"
+    label: "実績・活用事例作成"
+    folder: "src/content/works"
+    create: true
+    delete: true
+    # このコレクションは src/content/works/*.md（リポジトリ直下から2階層）に
+    # 保存される。画像は全コレクション共通の src/assets/ に保存しつつ、
+    # frontmatter・本文には .md から見た相対パス（../../assets/xxx）で記録する。
+    # グローバル設定（public_folder: /src/assets）のままだと、frontmatter の
+    # image() は解決できるが本文中の Markdown 画像（![](...)）が最適化されず
+    # /src/assets/... のまま出力され本番で404になるため、ここで上書きする。
+    media_folder: "/src/assets"
+    public_folder: "../../assets"
+    # タイトル（日本語）をそのままファイル名・URLスラッグにすると、非ASCII文字
+    # 入りのURLになるだけでなく、「公開して新規作成／公開して複製する」実行後に
+    # 編集画面が新規作成画面へ遷移せず元の画面に留まる不具合の一因にもなり得る
+    # （Decap既定の {{slug}} は全角文字の扱いにバージョン差異があり、スラッグ
+    # 計算に失敗すると後続のリダイレクト処理まで巻き込んで止まることがある）。
+    # news コレクションと同じ方針で、半角英数字の「URL用識別子」フィールドから
+    # 明示的にファイル名を組み立てる。
+    slug: "{{fields.urlSlug}}"
+    extension: "md"
+    format: "frontmatter"
+    sortable_fields: ["publishedAt", "title"]
+    fields:
+      - { label: "タイトル", name: "title", widget: string, required: false }
+      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、漢字・ひらがな・カタカナを自動でローマ字（ヘボン式）に変換して補完します（初回は変換辞書の読み込みに少し時間がかかることがあります）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: corporate-site-renewal" }
+      - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false, hint: "未入力の場合、カードに価格は表示されません。" }
+      - { label: "メイン画像", name: "image", widget: image, required: false }
+      - { label: "メイン画像 代替テキスト（Alt属性）", name: "imageAlt", widget: string, required: false, hint: "スクリーンリーダー・検索エンジン向けの画像説明文です。未入力の場合はタイトルで代用されます。" }
+      - { label: "概要（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
+      - label: "仕様・含まれる内容"
+        name: "specs"
+        widget: list
+        required: false
+        field: { label: "項目", name: "spec", widget: string, required: false }
+      - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
+      - label: "本文"
+        name: "body"
+        widget: markdown
+        required: false
+        hint: "※個別ページに掲載されている「このプランで相談する ›」ボタンの表記やリンク先を変更する場合は、「サイト全体設定」＞「共通文言・実績詳細ページ」から設定を行ってください（このコレクションの個別項目からは変更できません）。"
+        # ツールバーはよく使う項目のみに絞り、意味の近い順にグループ化
+        # （太字系→見出し→引用→リスト）。「+」ボタン（コンポーネント追加）
+        # から挿入できるカスタムブロックは editor_components で個別に登録
+        # した6種（public/admin/editor-components.js参照）のみに絞る。
+        buttons: &richTextButtons
+          [
+            "bold",
+            "italic",
+            "strikethrough",
+            "code",
+            "heading-one",
+            "heading-two",
+            "heading-three",
+            "quote",
+            "link",
+            "bulleted-list",
+            "numbered-list",
+          ]
+        editor_components: &richTextComponents
+          [
+            "image",
+            "youtube-video",
+            "video-file",
+            "highlight-marker",
+            "callout-box",
+            "speech-bubble",
+            "aligned-text",
+            "blank-line",
+          ]
+

@@ -1,0 +1,87 @@
+# ============================================================================
+# src/admin/config/news.yml — 「お知らせカテゴリ管理」「お知らせ投稿」
+# コレクション。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# ⚠️ このファイルの news.body フィールドは works.yml が定義する
+# &richTextButtons / &richTextComponents アンカーをエイリアス参照するため、
+# 結合順序（build-config.js のMODULE_ORDER）で必ずworks.ymlより後に来ること。
+# ============================================================================
+  # ==========================================================================
+  # ④a 複数ページ版（master-template-multi）専用：お知らせカテゴリ管理
+  #    1カテゴリ = src/content/newsCategories/*.yaml（frontmatterのみ、本文なし）。
+  #    ファイル名（＝URL用識別子）がそのままカテゴリの内部識別子（slug）になり、
+  #    下の「お知らせ投稿」コレクションの「カテゴリ」フィールド（relation
+  #    ウィジェット）が value_field: "{{slug}}" として保存する値と一致する。
+  #    運用者はここから自由にカテゴリを追加・編集・削除できる（2026-09）。
+  #    ⚠️ 既に記事へ割り当て済みのカテゴリの「URL用識別子」を後から変更・
+  #    削除すると、その記事側の参照が宙に浮く（該当記事はカテゴリ無し扱いに
+  #    フォールバックする。src/lib/news.ts の newsCategoryLabel 参照）。
+  #    識別子を変えたい場合は、先に対象の記事側で新しいカテゴリへ選び直して
+  #    から、不要になった古いカテゴリを削除すること。
+  # ==========================================================================
+  - name: "newsCategories"
+    label: "お知らせカテゴリ管理"
+    folder: "src/content/newsCategories"
+    create: true
+    delete: true
+    slug: "{{fields.urlSlug}}"
+    extension: "yaml"
+    format: "yaml"
+    sortable_fields: ["title"]
+    summary: "{{fields.title}}"
+    fields:
+      - { label: "カテゴリ名", name: "title", widget: string, required: false }
+      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "カテゴリ名入力に応じて自動でローマ字（ヘボン式）に変換して補完します。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。⚠️ 記事へ割り当てた後にこの識別子を変更すると、その記事のカテゴリ表示が外れます（上記の注意書き参照）。例: campaign" }
+
+  # ==========================================================================
+  # ④ 複数ページ版（master-template-multi）専用：お知らせ（投稿型）
+  #    1記事 = src/content/news/*.md（frontmatter + Markdown本文）。
+  #    ファイル名がURLスラッグになる（例: hello.md → /news/hello/）。
+  # ==========================================================================
+  - name: "news"
+    label: "お知らせ投稿"
+    folder: "src/content/news"
+    create: true
+    delete: true
+    # products と同様、本文中の Markdown 画像も含めて .md からの相対パス
+    # （../../assets/xxx）で記録する（詳細は products コレクションのコメント参照）。
+    media_folder: "/src/assets"
+    public_folder: "../../assets"
+    # 記事タイトル（日本語）をそのままファイル名・URLスラッグにすると、
+    # 非ASCII文字を含むURL（環境によっては文字化け・リンク切れの原因）に
+    # なるため、Decap既定の {{slug}}（タイトルから自動生成）は使わず、
+    # 半角英数字限定の「URL用識別子」フィールド（下の fields 参照）から
+    # 明示的に組み立てる。
+    # ※ フィールド名は "slug" ではなく "urlSlug" にしている（Astro の Content
+    #   Collections が frontmatter の `slug` キーをURL上書き用の予約語として
+    #   特別扱いするため。詳細は src/content/config.ts のコメント参照）。
+    slug: "{{fields.urlSlug}}"
+    extension: "md"
+    format: "frontmatter"
+    sortable_fields: ["publishedAt", "title"]
+    fields:
+      - { label: "記事タイトル", name: "title", widget: string, required: false }
+      - { label: "URL用識別子（半角英数字）", name: "urlSlug", widget: string, required: false, pattern: ['^[a-z0-9-]+$', '半角英小文字、数字、ハイフンのみ使用可能です'], hint: "タイトル入力に応じて、漢字・ひらがな・カタカナを自動でローマ字（ヘボン式）に変換して補完します（初回は変換辞書の読み込みに少し時間がかかることがあります）。この欄を直接編集すると自動補完は止まりますので、必要に応じて手動で調整してください。未入力のまま保存した場合は自動でランダムな識別子が割り当てられます。例: new-product-info" }
+      - { label: "アイキャッチ画像", name: "image", widget: image, required: false }
+      - { label: "アイキャッチ 代替テキスト", name: "imageAlt", widget: string, required: false }
+      - { label: "公開日", name: "publishedAt", widget: datetime, required: false }
+      - label: "カテゴリ"
+        name: "category"
+        widget: relation
+        collection: "newsCategories"
+        search_fields: ["title"]
+        display_fields: ["title"]
+        value_field: "{{slug}}"
+        required: false
+        hint: "カテゴリの新規作成・編集・削除は「お知らせカテゴリ管理」コレクションから行ってください（2026-09、works.orderと同じ relation ウィジェット方式に変更）。"
+      - { label: "抜粋（一覧・OGP用の要約文）", name: "summary", widget: text, required: false }
+      - { label: "この記事を一覧の最上部に固定表示する", name: "pinned", widget: boolean, default: false, required: false }
+      - { label: "固定時の表示優先度（数字が小さいほど上に表示）", name: "pinOrder", widget: number, value_type: int, default: 1, required: false, hint: "固定表示が有効な記事が複数ある場合に適用されます。" }
+      - { label: "下書き（チェック中はサイトに公開されません）", name: "draft", widget: boolean, default: false, required: false }
+      - label: "本文"
+        name: "body"
+        widget: markdown
+        required: false
+        buttons: *richTextButtons
+        editor_components: *richTextComponents

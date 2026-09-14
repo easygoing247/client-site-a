@@ -1,0 +1,70 @@
+# ============================================================================
+# src/admin/config/base.yml — Decap CMS 設定（モジュール分割・ベース部分）
+#
+# ⚠️【重要】このファイルは複数の分割設定ファイルの1つです。
+# 実際にDecap CMSが読み込む `public/admin/config.yml` は、
+# `src/admin/config/*.yml` を `scripts/build-config.js` が結合して
+# 自動生成する成果物です。**`public/admin/config.yml` を直接編集しても
+# 次回ビルド時（`npm run build`/`npm run dev`の`pre*`フック）に上書きされ
+# 消えます**。CMS設定を変更する場合は、必ずこの`src/admin/config/`配下の
+# 該当ファイルを編集してください。
+#
+# 【分割構成】（結合順・CMSサイドバー表示順と一致）
+#   1. base.yml     … backend/media_folder等のトップレベル設定（このファイル）
+#   2. settings.yml … 「サイト設定」コレクション（siteInfo/デザインテーマ/フォーム設定）
+#   3. works.yml     … 「商品作成」「実績・活用事例作成」コレクション
+#                       （&richTextButtons/&richTextComponentsをここで定義。
+#                       news.ymlより先に結合する必要がある）
+#   4. pages.yml     … 「下層ページ編集」コレクション
+#   5. news.yml      … 「お知らせカテゴリ管理」「お知らせ投稿」コレクション
+#                       （works.ymlの&richTextButtons等をエイリアス参照するため
+#                       works.ymlより後に結合する必要がある）
+#   6. custom.yml    … 顧客固有の追加コレクション用プレースホルダー
+#                       （案件へ複製した際、このファイルにのみ追記する）
+#
+# 【YAMLアンカー/エイリアスに関する注意】
+# `build-config.js`は各ファイルを構文解析してオブジェクトとしてマージする
+# のではなく、**生テキストをそのまま連結**して単一のYAMLドキュメントを
+# 生成する（連結後、js-yamlで構文検証のみ行う）。YAMLの仕様上アンカーは
+# 参照より前に定義されている必要があるため、上記の結合順序
+# （特にworks.yml→news.ymlの順）を変更しないこと。
+#
+# ・backend は GitHub 直接連携（OAuth）。Git Gateway（Netlify Identity）は
+#   使用しない。GitHubリポジトリへ直接コミットする方式のため、CMSへの
+#   ログインには GitHub OAuth App の登録と、そのOAuthフローを仲介する
+#   認可サーバーが必要。ここでは自前の Cloudflare Worker（cms-oauth-worker/、
+#   base_url に指定）をOAuthプロキシとして使用している。
+#   参考: https://decapcms.org/docs/github-backend/
+# ・/admin 自体へのアクセス制限は、デプロイ後に Cloudflare Access 等で行う
+#   （このリポジトリのコードでは認可制御を行わない。CLAUDE.md 参照）。
+# ・システムの構造上必須な識別子（下記「セクション表示順序」の
+#   セレクト値等）を除き、原則すべてのフィールドを required: false
+#   （任意入力）にしている。未入力の場合、サイト側の各コンポーネントが
+#   対応する表示要素を自動的に非表示にする。
+# ============================================================================
+
+backend:
+  name: github
+  repo: easygoing247/master-template-multi
+  branch: main
+  base_url: https://master-template-oauth.easygoing247.workers.dev
+  auth_endpoint: /auth
+
+# ローカル動作確認用：`npm run cms:proxy`（別ターミナルで decap-server を起動）と
+# 併用すると、GitHub OAuth なしで localhost 上のファイルへ直接読み書きできる。
+# 本番ビルド（Cloudflare Pages等）にデプロイした際は、localhost以外では
+# 自動的に無視され、上の github backend（OAuth経由）が使われる。
+local_backend: true
+
+# 本番サイトのURL。CMS内の「サイトを表示」リンクやプレビューの絶対URL基準に使われる。
+site_url: "https://master-template-multi.easygoing247.workers.dev"
+display_url: "https://master-template-multi.easygoing247.workers.dev"
+
+# アップロードした画像の保存先（Astroの src/assets を直接指すことで、
+# CMSから差し替えた画像も astro:assets の最適化対象になる）
+media_folder: "src/assets"
+public_folder: "/src/assets"
+
+locale: "ja"
+
+collections:

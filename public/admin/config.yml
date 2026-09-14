@@ -1,5 +1,51 @@
 # ============================================================================
-# public/admin/config.yml — Decap CMS 設定
+# ⚠️ このファイルは自動生成されます。直接編集しないでください。
+#
+# 実体は src/admin/config/*.yml に機能単位で分割保存されており、
+# `npm run dev` / `npm run build` の実行前（predev/prebuild、
+# scripts/build-config.js）に自動結合されてこのファイルが生成されます。
+# ここへ直接加えた変更は、次回のビルド／dev起動時に上書きされ消えます。
+#
+# 設定を変更する場合は、以下のいずれかを編集してください：
+#   src/admin/config/base.yml     … backend/media_folder等のベース設定
+#   src/admin/config/settings.yml … 「サイト設定」コレクション
+#   src/admin/config/works.yml    … 「商品作成」「実績・活用事例作成」
+#   src/admin/config/pages.yml    … 「下層ページ編集」コレクション
+#   src/admin/config/news.yml     … 「お知らせカテゴリ管理」「お知らせ投稿」
+#   src/admin/config/custom.yml   … 顧客固有の追加コレクション（案件複製時）
+# ============================================================================
+
+# ============================================================================
+# src/admin/config/base.yml — Decap CMS 設定（モジュール分割・ベース部分）
+#
+# ⚠️【重要】このファイルは複数の分割設定ファイルの1つです。
+# 実際にDecap CMSが読み込む `public/admin/config.yml` は、
+# `src/admin/config/*.yml` を `scripts/build-config.js` が結合して
+# 自動生成する成果物です。**`public/admin/config.yml` を直接編集しても
+# 次回ビルド時（`npm run build`/`npm run dev`の`pre*`フック）に上書きされ
+# 消えます**。CMS設定を変更する場合は、必ずこの`src/admin/config/`配下の
+# 該当ファイルを編集してください。
+#
+# 【分割構成】（結合順・CMSサイドバー表示順と一致）
+#   1. base.yml     … backend/media_folder等のトップレベル設定（このファイル）
+#   2. settings.yml … 「サイト設定」コレクション（siteInfo/デザインテーマ/フォーム設定）
+#   3. works.yml     … 「商品作成」「実績・活用事例作成」コレクション
+#                       （&richTextButtons/&richTextComponentsをここで定義。
+#                       news.ymlより先に結合する必要がある）
+#   4. pages.yml     … 「下層ページ編集」コレクション
+#   5. news.yml      … 「お知らせカテゴリ管理」「お知らせ投稿」コレクション
+#                       （works.ymlの&richTextButtons等をエイリアス参照するため
+#                       works.ymlより後に結合する必要がある）
+#   6. custom.yml    … 顧客固有の追加コレクション用プレースホルダー
+#                       （案件へ複製した際、このファイルにのみ追記する）
+#
+# 【YAMLアンカー/エイリアスに関する注意】
+# `build-config.js`は各ファイルを構文解析してオブジェクトとしてマージする
+# のではなく、**生テキストをそのまま連結**して単一のYAMLドキュメントを
+# 生成する（連結後、js-yamlで構文検証のみ行う）。YAMLの仕様上アンカーは
+# 参照より前に定義されている必要があるため、上記の結合順序
+# （特にworks.yml→news.ymlの順）を変更しないこと。
+#
 # ・backend は GitHub 直接連携（OAuth）。Git Gateway（Netlify Identity）は
 #   使用しない。GitHubリポジトリへ直接コミットする方式のため、CMSへの
 #   ログインには GitHub OAuth App の登録と、そのOAuthフローを仲介する
@@ -39,6 +85,12 @@ public_folder: "/src/assets"
 locale: "ja"
 
 collections:
+# ============================================================================
+# src/admin/config/settings.yml — 「サイト設定」コレクション（siteInfo.yml /
+# デザインテーマ設定 / お問い合わせフォーム設定）。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# ============================================================================
   # ==========================================================================
   # ① ファイルコレクション：siteInfo.yml を丸ごと編集
   #    表示順は「ヒーロー→セクション表示順序の並び→基本情報・共通設定→
@@ -493,6 +545,14 @@ collections:
           - { label: "通知メールの件名", name: "contact_email_subject", widget: string, required: false }
           - { label: "通知メールの送信者名", name: "contact_email_from_name", widget: string, required: false }
 
+# ============================================================================
+# src/admin/config/works.yml — 「商品作成」「実績・活用事例作成」コレクション。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# ⚠️ このファイルは &richTextButtons / &richTextComponents アンカーを
+# 定義しており、news.yml がこれをエイリアス参照する。結合順序
+# （build-config.js のMODULE_ORDER）で必ずnews.ymlより前に来ること。
+# ============================================================================
   # ==========================================================================
   # ②a 単一ファイルコレクション：「商品作成」（商品一覧・/products の元データ）
   #    型化ページ（1件=1ファイル）ではなく、1ファイル内の可変リスト（widget:
@@ -613,6 +673,14 @@ collections:
             "blank-line",
           ]
 
+# ============================================================================
+# src/admin/config/pages.yml — 「下層ページ編集」コレクション
+# （services / about / contact / newsPage）。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# &pageIdentityName / &pageIdentityHeading アンカーはこのファイル内で
+# 定義・参照が完結しているため、他ファイルとの結合順序には依存しない。
+# ============================================================================
   # ==========================================================================
   # ③ 複数ページ版（master-template-multi）専用：下層ページのファイルコレクション
   #    各下層ページのテキスト・数値は src/data/*.yml に集約し、
@@ -847,6 +915,15 @@ collections:
           - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
           - { label: "一覧セクションの見出し", name: "listHeading", widget: string, required: false, default: "お知らせ一覧", hint: "カテゴリ絞り込み・記事一覧の直前に表示される見出し。空欄にすると「お知らせ一覧」を表示します。" }
 
+# ============================================================================
+# src/admin/config/news.yml — 「お知らせカテゴリ管理」「お知らせ投稿」
+# コレクション。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# ⚠️ このファイルの news.body フィールドは works.yml が定義する
+# &richTextButtons / &richTextComponents アンカーをエイリアス参照するため、
+# 結合順序（build-config.js のMODULE_ORDER）で必ずworks.ymlより後に来ること。
+# ============================================================================
   # ==========================================================================
   # ④a 複数ページ版（master-template-multi）専用：お知らせカテゴリ管理
   #    1カテゴリ = src/content/newsCategories/*.yaml（frontmatterのみ、本文なし）。
@@ -925,3 +1002,38 @@ collections:
         required: false
         buttons: *richTextButtons
         editor_components: *richTextComponents
+# ============================================================================
+# src/admin/config/custom.yml — 顧客固有の追加コレクション用プレースホルダー
+#
+# このファイルは、このマスターテンプレートを実案件（顧客リポジトリ）へ
+# 複製した際に、その案件だけに必要な追加コレクション・フィールドを
+# 追記するための場所です（納品済みの顧客テンプレートの一括アップデート.md
+# 「② コンフリクトを防ぐ構造分離の原則」参照）。
+#
+# 【運用ルール】
+# ・マスターテンプレート側では空のまま維持する（コア機能は base.yml /
+#   settings.yml / works.yml / pages.yml / news.yml 側に実装すること）。
+# ・顧客リポジトリでは、このファイルにのみ追記する（他の分割ファイルは
+#   マスターからの一括アップデート時に上書きされる想定のため、顧客固有の
+#   変更を書き込むと次回アップデートで失われる）。
+# ・ここに追加する内容は、他のモジュール（collectionsのリスト項目）と
+#   同じインデント（半角スペース2つ）で `- name: "..."` から書き始める。
+#   例：
+#     - name: "customPromotions"
+#       label: "キャンペーン設定（顧客独自）"
+#       files:
+#         - name: "promotions"
+#           label: "キャンペーン一覧"
+#           file: "src/data/promotions.yml"
+#           fields:
+#             - { label: "見出し", name: "heading", widget: string, required: false }
+#
+# 【結合順序】base.yml → settings.yml → works.yml → pages.yml → news.yml →
+# このファイル、の順（scripts/build-config.js の MODULE_ORDER 参照）。
+# 既存コレクションのYAMLアンカー（&pageIdentityName 等）は、このファイル
+# からもエイリアス参照できる（結合順序上、必ず後に来るため）。
+#
+# このファイル自体に有効なYAML内容が無い（コメントのみ）場合、
+# build-config.js は何も追加せず、生成される config.yml の内容には
+# 一切影響しない。
+# ============================================================================

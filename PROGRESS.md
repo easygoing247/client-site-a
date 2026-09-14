@@ -416,6 +416,41 @@ LP版から複製後に実施した、複数ページ構成・下層ページ・
 `npm run build`・`npx astro check`は各項目とも個別にエラー0件を
 確認済み（詳細は1.9〜1.17・CLAUDE.md 9.51〜9.59を参照）。
 
+## 1a. マスターテンプレート一括アップデート対応（構造分離アーキテクチャ、進行中）
+
+複数の顧客案件へ複製・納品した後もマスターテンプレート側から共通機能の
+更新を一括反映できるようにするための段階的リファクタリング。設計方針は
+プロジェクトルートの`納品済みの顧客テンプレートの一括アップデート.md`を
+参照。専用ブランチ`refactor/core-architecture`上で段階的に実施する
+（詳細はCLAUDE.md 10章）。
+
+### 1a.1 Phase 2：`config.yml` のモジュール分割・ビルド時自動結合（2026-09-14、CLAUDE.md 10.1）
+
+- 927行の単一`public/admin/config.yml`を、機能単位の6ファイル
+  （`src/admin/config/base.yml`/`settings.yml`/`works.yml`/`pages.yml`/
+  `news.yml`/`custom.yml`）へ分割。分割自体は元ファイルの該当行範囲を
+  一字も変えずに切り出したもの。
+- `scripts/build-config.js`を新設し、各モジュールの**生テキストを
+  決まった順序で連結**して単一YAMLドキュメントを組み立て、`js-yaml`で
+  構文検証してから`public/admin/config.yml`を生成する方式を実装。
+  オブジェクトへパースしてからマージする方式を採用しなかったのは、
+  `works.yml`が定義する`&richTextButtons`等のYAMLアンカーを`news.yml`が
+  エイリアス参照しており、アンカー/エイリアスは単一ドキュメント内でしか
+  解決されないため。
+- 結合順序（`base→settings→works→pages→news→custom`）はYAMLのアンカー
+  前方定義制約に基づき固定。`works.yml`は必ず`news.yml`より前に来る
+  必要がある（各ファイル冒頭のコメントに依存関係を明記）。
+- `package.json`の`predev`/`prebuild`に登録し、`npm run dev`/
+  `npm run build`の実行前に自動的に`config.yml`を再生成するように
+  した。手動実行用に`npm run build:config`も追加。
+- **検証**：分割前後のYAMLを`js-yaml`でパースして`deepStrictEqual`
+  比較し完全一致を確認。`npm run build`（16ページ・0エラー）・
+  `npx astro check`（0エラー）を確認。ローカルCMSで実際に6コレクション
+  が元の順序どおり表示され、`works.yml`→`news.yml`をまたぐアンカー
+  参照（リッチテキストツールバー）が正しく機能することも実機確認済み。
+- 今後のPhase（CSS変数/Design Tokensの集約、`src/core/`へのコア
+  ロジック移設）は未着手。
+
 ## 2. 完了済みタスク（複数ページ版 master-template-multi）
 
 直近バッチで完了し、`main` に push 済みのタスク一覧（詳細は 1.7 と `CLAUDE.md` 9 章）。

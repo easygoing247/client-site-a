@@ -1,0 +1,242 @@
+# ============================================================================
+# src/admin/config/pages.yml — 「下層ページ編集」コレクション
+# （services / about / contact / newsPage）。
+# このファイルは public/admin/config.yml の一部として自動結合される
+# モジュールの1つ。単体編集についての注意は base.yml 冒頭のコメント参照。
+# &pageIdentityName / &pageIdentityHeading アンカーはこのファイル内で
+# 定義・参照が完結しているため、他ファイルとの結合順序には依存しない。
+# ============================================================================
+  # ==========================================================================
+  # ③ 複数ページ版（master-template-multi）専用：下層ページのファイルコレクション
+  #    各下層ページのテキスト・数値は src/data/*.yml に集約し、
+  #    対応する下層ページ（src/pages/*.astro）が siteInfo.yml と同じ要領で
+  #    型付き参照する。1ファイル = 1下層ページ。
+  #
+  #    services/about/contact/newsPage の4ファイルは共通して先頭2フィールド
+  #    （「ページ名」「ページ見出し」）を持つ（9.3参照）。定型的なコピペを
+  #    避けるため、最初の出現（services）にYAMLアンカー
+  #    （&pageIdentityName / &pageIdentityHeading）を付け、以降の3ファイルは
+  #    マージキー（`<<: *アンカー名`。デフォルト値だけ各ページごとに上書き）
+  #    またはそのままの別名参照（`*アンカー名`）で共通化している（2026-09）。
+  #    新しい下層ページを追加する場合も、この2フィールドは同じアンカーを
+  #    使い回すこと（label/hint/widget文言を変更する場合は services 側の
+  #    アンカー定義を直すだけで全ページに反映される）。
+  # ==========================================================================
+  - name: "pages"
+    label: "下層ページ編集"
+    files:
+      # --- サービス内容・料金 -------------------------------------------------
+      - name: "services"
+        label: "サービス内容・料金"
+        label_singular: "サービス内容・料金"
+        summary: "{{fields.pageName}}"
+        file: "src/data/services.yml"
+        fields:
+          - &pageIdentityName { label: "ページ名（下層ページ編集の一覧に表示される項目名）", name: "pageName", widget: string, required: false, default: "サービス内容・料金", hint: "管理画面の「下層ページ編集」一覧にこの項目の表記として表示されます。サイト上の見出し（下の「ページ見出し」）とは別に、管理用の識別名として自由に変更できます。" }
+          - &pageIdentityHeading { label: "ページ見出し", name: "heading", widget: string, required: false, hint: "※このページへのヘッダー・フッターのナビ項目で「表示名」が未入力の場合、この見出しがナビの表示名としても使われます。" }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - { label: "「サービス詳細」セクションの見出し", name: "itemsHeading", widget: string, required: false, default: "サービス内容", hint: "サービス詳細（画像＋説明）の一覧の上に表示される見出し。空欄にすると「サービス内容」を表示します。" }
+          - label: "サービス詳細"
+            name: "items"
+            widget: list
+            required: false
+            fields:
+              - { label: "サービス名", name: "title", widget: string, required: false }
+              - { label: "バッジテキスト（例：人気／おすすめ）", name: "badgeText", widget: string, required: false, hint: "入力すると、サービス名の左隣にテーマカラーのバッジが表示されます。未入力ならバッジは表示されません。" }
+              - { label: "説明（Enterキーで改行可）", name: "description", widget: text, required: false }
+              - { label: "画像", name: "image", widget: image, required: false }
+              - { label: "画像 代替テキスト（Alt属性）", name: "alt", widget: string, required: false, hint: "未入力の場合はサービス名で代用されます。" }
+              - { label: "画像とテキストの配置を左右反転する", name: "reverseLayout", widget: boolean, default: false, required: false, hint: "OFF：画像が左・テキストが右（既定）／ON：画像が右・テキストが左。スマホ表示（1カラム）では常に画像→テキストの順です。" }
+              - label: "含まれる内容"
+                name: "features"
+                widget: list
+                required: false
+                field: { label: "項目", name: "feature", widget: string, required: false }
+          - { label: "「料金表」セクションの見出し", name: "priceHeading", widget: string, required: false, default: "料金表", hint: "料金表の上に表示される見出し。空欄にすると「料金表」を表示します。" }
+          - label: "料金表"
+            name: "priceTable"
+            widget: list
+            required: false
+            fields:
+              - { label: "項目名", name: "name", widget: string, required: false }
+              - { label: "価格（税抜・数値）", name: "price", widget: number, value_type: int, required: false }
+              - { label: "備考", name: "note", widget: string, required: false }
+              - { label: "項目名の左に強調バッジを表示する", name: "showBadge", widget: boolean, default: false, required: false, hint: "ONにして下の「バッジ文言」を入力すると、項目名の左隣にテーマカラーのバッジが表示されます。" }
+              - { label: "バッジ文言（例：人気／おすすめ／限定）", name: "badgeText", widget: string, default: "", required: false }
+              - { label: "強調表示（ハイライト）", name: "highlight", widget: boolean, default: false, required: false, hint: "ONにすると、トップページ「料金プラン」の人気プランと同様の青枠で、この項目だけ枠線とかげを付けて強調表示します（上の「強調バッジ」とは独立して併用できます）。" }
+              - label: "含まれる内容／特徴"
+                name: "features"
+                widget: list
+                required: false
+                hint: "各項目の文頭にチェックマークを付けて、備考の下に箇条書き表示します（料金プランの「含まれる内容」と同仕様）。"
+                field: { label: "項目", name: "feature", widget: string, required: false }
+          - { label: "料金に関する注記文", name: "priceNote", widget: text, required: false }
+
+      # --- 会社概要・アクセス -----------------------------------------------
+      - name: "about"
+        label: "会社概要"
+        label_singular: "会社概要"
+        summary: "{{fields.pageName}}"
+        file: "src/data/about.yml"
+        fields:
+          - { <<: *pageIdentityName, default: "会社概要" }
+          - *pageIdentityHeading
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - label: "セクションの表示・非表示"
+            name: "sections"
+            widget: object
+            hint: "この会社概要ページ内の各セクションを、それぞれ個別に表示・非表示できます。"
+            fields:
+              - { label: "「代表挨拶」を表示する", name: "greeting", widget: boolean, default: true, required: false }
+              - { label: "「会社概要（表形式）」を表示する", name: "companyOverview", widget: boolean, default: true, required: false }
+              - { label: "「アクセス」を表示する", name: "access", widget: boolean, default: true, required: false }
+          - label: "代表挨拶"
+            name: "greeting"
+            widget: object
+            fields:
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "本文（Enterキーで改行可）", name: "body", widget: text, required: false }
+              - { label: "代表者名", name: "name", widget: string, required: false }
+              - { label: "代表者写真", name: "image", widget: image, required: false }
+              - { label: "代表者写真 代替テキスト（Alt属性）", name: "alt", widget: string, required: false, hint: "未入力の場合は代表者名で代用されます。" }
+          - label: "会社概要（表形式）"
+            name: "profile"
+            widget: list
+            required: false
+            fields:
+              - { label: "項目名", name: "label", widget: string, required: false }
+              - { label: "内容（Enterキーで改行可）", name: "value", widget: text, required: false }
+          - { label: "「公式SNS」行のラベル", name: "companySnsLabel", widget: string, required: false, hint: "会社概要（表形式）の末尾に、SNS設定で表示ONにしたSNSのアイコンを並べた行を追加します（表示するアイコン・並び順はサイト設定の「SNS設定」に連動）。この欄を空にすると既定の「公式SNS」を使用します。" }
+          - label: "アクセス情報"
+            name: "access"
+            widget: object
+            hint: "表示順・ラベル・内容・表示可否を自由に編集できます。「+ アクセス項目」で行を追加、ゴミ箱アイコンで削除、ドラッグで並び替えできます。ラベルまたは内容が空欄の行、「この項目を表示する」がOFFの行はサイト上に表示されません。"
+            fields:
+              - label: "アクセス項目"
+                name: "items"
+                label_singular: "アクセス項目"
+                widget: list
+                required: false
+                summary: "{{fields.label}}：{{fields.value}}"
+                fields:
+                  - { label: "ラベル（例：郵便番号／住所／最寄り駅／駐車場）", name: "label", widget: string, required: false }
+                  - { label: "内容（Enterキーで改行可）", name: "value", widget: text, required: false }
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+              - { label: "Googleマップ埋め込みURL", name: "mapEmbedUrl", widget: string, required: false }
+
+      # --- お問い合わせ・ご予約 ---------------------------------------------
+      - name: "contact"
+        label: "お問い合わせ・ご予約"
+        label_singular: "お問い合わせ・ご予約"
+        summary: "{{fields.pageName}}"
+        file: "src/data/contactPage.yml"
+        hint: "ここは入力欄（お名前・メール等）のラベル・必須設定・カスタム項目専用です。見出し・本文・送信ボタンの文言は「サイト設定＞お問い合わせ」、送信先（Web3Forms）は「サイト設定＞お問い合わせフォーム設定」で編集してください。"
+        fields:
+          - { <<: *pageIdentityName, default: "お問い合わせ・ご予約" }
+          - *pageIdentityHeading
+          - { label: "フォーム上部の案内文（Enterキーで改行可）", name: "intro", widget: text, required: false }
+          - label: "ご予約・お問い合わせの注意事項"
+            name: "notes"
+            widget: list
+            required: false
+            field: { label: "注意事項", name: "note", widget: string, required: false }
+
+          # --- フォーム入力項目の設定（表示順は お名前→会社名→メールアドレス→電話番号→お問い合わせ内容 で固定） ---
+          - label: "フォーム入力項目の設定"
+            name: "formFields"
+            widget: object
+            hint: "各入力欄の表示/非表示・ラベル・プレースホルダー・必須を設定します。表示順は固定（電話番号はメールアドレスとお問い合わせ内容の間）。トップページの「お問い合わせ」セクションと /contact ページの両方に反映されます。"
+            fields:
+              - label: "お名前"
+                name: "name"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true, required: false }
+              - label: "会社名"
+                name: "company"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: false, required: false }
+              - label: "メールアドレス"
+                name: "email"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true, required: false }
+              - label: "連絡先・電話番号"
+                name: "phone"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: false, required: false }
+              - label: "お問い合わせ内容"
+                name: "message"
+                widget: object
+                fields:
+                  - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+                  - { label: "ラベル", name: "label", widget: string, required: false }
+                  - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+                  - { label: "必須にする", name: "required", widget: boolean, default: true, required: false }
+
+          # --- カスタム追加項目（固定項目の後ろに表示。CMS で自由に追加・削除できる） ---
+          - label: "カスタム追加項目"
+            name: "custom_fields"
+            label_singular: "カスタム項目"
+            widget: list
+            required: false
+            summary: "{{fields.label}}（{{fields.name}}）"
+            hint: "固定項目（お名前〜お問い合わせ内容）の後ろに追加される入力欄。「+ カスタム項目」で追加、各項目のゴミ箱アイコンで削除できます（固定項目は削除できません）。"
+            fields:
+              - { label: "項目名（ラベル）", name: "label", widget: string, required: false }
+              - { label: "フィールドID（送信データのキー名）", name: "name", widget: string, required: false, hint: "半角英数字と _ のみ（例: budget, deadline）。空欄・固定項目と同名・重複はサイトに表示されません。" }
+              - { label: "プレースホルダー（入力例）", name: "placeholder", widget: string, required: false }
+              - label: "入力タイプ"
+                name: "type"
+                widget: select
+                default: "text"
+                options:
+                  - { label: "テキスト", value: "text" }
+                  - { label: "数値", value: "number" }
+                  - { label: "電話番号", value: "tel" }
+                  - { label: "メールアドレス", value: "email" }
+                  - { label: "複数行テキスト", value: "textarea" }
+                  - { label: "選択肢（プルダウン）", value: "select" }
+              - label: "選択肢（入力タイプが「選択肢」のときのみ使用）"
+                name: "options"
+                widget: list
+                required: false
+                field: { label: "選択肢", name: "option", widget: string, required: false }
+              - { label: "この項目を表示する", name: "enabled", widget: boolean, default: true, required: false }
+              - { label: "必須にする", name: "required", widget: boolean, default: false, required: false }
+
+          - label: "プライバシーポリシー"
+            name: "privacyPolicy"
+            widget: object
+            fields:
+              - { label: "見出し", name: "heading", widget: string, required: false }
+              - { label: "本文（空行で段落区切り／行頭「## 」で小見出し）", name: "body", widget: text, required: false }
+              - { label: "最終改定日", name: "updatedAt", widget: string, required: false }
+
+      # --- お知らせ一覧ページ（/news の見出し・リード文設定。個々の記事は
+      #     下の「お知らせ」（投稿型コレクション）で編集する） -----------------
+      - name: "newsPage"
+        label: "お知らせ一覧ページ"
+        label_singular: "お知らせ一覧ページ"
+        summary: "{{fields.pageName}}"
+        file: "src/data/newsPage.yml"
+        fields:
+          - { <<: *pageIdentityName, default: "お知らせ一覧ページ" }
+          - { <<: *pageIdentityHeading, default: "お知らせ" }
+          - { label: "リード文（Enterキーで改行可）", name: "lead", widget: text, required: false }
+          - { label: "一覧セクションの見出し", name: "listHeading", widget: string, required: false, default: "お知らせ一覧", hint: "カテゴリ絞り込み・記事一覧の直前に表示される見出し。空欄にすると「お知らせ一覧」を表示します。" }
+
