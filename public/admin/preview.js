@@ -625,7 +625,7 @@
         { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none' },
         h('path', {
           d: 'M12 3C6.48 3 2 6.69 2 11.24c0 4.08 3.58 7.49 8.42 8.13.33.07.78.22.89.5.1.26.07.66.03.92l-.14.87c-.04.26-.2 1 .88.55 1.07-.46 5.8-3.42 7.92-5.85C21.34 14.86 22 13.13 22 11.24 22 6.69 17.52 3 12 3Z',
-          fill: '#fff',
+          fill: 'currentColor',
         })
       );
     }
@@ -1123,14 +1123,17 @@
   // 店舗概要・アクセス
   // ==========================================================================
   // SNS のアイコン配色。src/components/SnsIcons.astro の SNS_STYLE と一致させること。
+  // 配色はいずれも tailwind.config.mjs の colors.sns.* ／
+  // src/styles/global.css の .bg-sns-instagram（CSS変数ベース）を参照する
+  // クラス名のみで、直書きのカラーコードは持たない（2026-09、Phase 3）。
   var SNS_KNOWN_IDS = ['line', 'instagram', 'x', 'facebook', 'youtube', 'tiktok'];
   var SNS_STYLE = {
     line: { className: 'bg-accent' },
-    instagram: { style: styleObj('background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);') },
+    instagram: { className: 'bg-sns-instagram' },
     x: { className: 'bg-secondary' },
-    facebook: { className: 'bg-[#1877f2]' },
-    youtube: { className: 'bg-[#ff0000]' },
-    tiktok: { className: 'bg-[#010101]' },
+    facebook: { className: 'bg-sns-facebook' },
+    youtube: { className: 'bg-sns-youtube' },
+    tiktok: { className: 'bg-sns-tiktok' },
   };
 
   // siteInfo.yml トップレベルの `sns` リスト（{id,url,enabled}）を、
@@ -1361,7 +1364,7 @@
   }
 
   function renderContactFieldPreview(h, f) {
-    var inputClass = 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]';
+    var inputClass = 'px-4 py-[14px] border border-formBorder rounded-lg text-[14px]';
     var control;
     if (f.type === 'textarea') {
       control = h('textarea', { readOnly: true, rows: 5, placeholder: f.placeholder, className: inputClass + ' resize-y' });
@@ -1385,7 +1388,7 @@
         { className: 'text-[13px] font-bold text-secondary flex items-center gap-2' },
         f.label,
         f.required
-          ? h('span', { className: 'text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-[3px] leading-none' }, '必須')
+          ? h('span', { className: 'text-[10px] font-bold text-white bg-required rounded px-1.5 py-[3px] leading-none' }, '必須')
           : h('span', { className: 'text-[10px] font-bold text-ink-faint bg-surface-muted rounded px-1.5 py-[3px] leading-none' }, '任意')
       ),
       control

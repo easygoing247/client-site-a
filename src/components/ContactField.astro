@@ -11,7 +11,7 @@ interface Props {
 }
 
 const { field } = Astro.props;
-const inputClass = 'px-4 py-[14px] border border-[#dbdfe8] rounded-lg text-[14px]';
+const inputClass = 'px-4 py-[14px] border border-formBorder rounded-lg text-[14px]';
 const options = field.options ?? [];
 ---
 
@@ -19,7 +19,7 @@ const options = field.options ?? [];
   <span class="text-[13px] font-bold text-secondary flex items-center gap-2">
     {field.label}
     {field.required ? (
-      <span class="text-[10px] font-bold text-white bg-[#c62828] rounded px-1.5 py-[3px] leading-none">必須</span>
+      <span class="text-[10px] font-bold text-white bg-required rounded px-1.5 py-[3px] leading-none">必須</span>
     ) : (
       <span class="text-[10px] font-bold text-ink-faint bg-surface-muted rounded px-1.5 py-[3px] leading-none">任意</span>
     )}

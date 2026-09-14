@@ -7,13 +7,18 @@
 // ============================================================================
 import { orderedSnsLinks, type SnsId } from '../lib/sns';
 
-const SNS_STYLE: Record<SnsId, { class: string; style?: string }> = {
+// 配色はすべて tailwind.config.mjs の colors.* ／ src/styles/global.css の
+// CSS変数（Design Tokens）を参照する（2026-09、Phase 3で直書きの
+// カラーコードを撤去）。アイコン自体の色は各バッジの背景色に関わらず
+// 常に白のため、fill/stroke は currentColor にして text-white で
+// 明示する（このコードベース標準のアイコン配色パターン）。
+const SNS_STYLE: Record<SnsId, { class: string }> = {
   line: { class: 'bg-accent' },
-  instagram: { class: '', style: 'background:linear-gradient(45deg,#f58529,#dd2a7b 50%,#515bd4);' },
+  instagram: { class: 'bg-sns-instagram' },
   x: { class: 'bg-secondary' },
-  facebook: { class: 'bg-[#1877f2]' },
-  youtube: { class: 'bg-[#ff0000]' },
-  tiktok: { class: 'bg-[#010101]' },
+  facebook: { class: 'bg-sns-facebook' },
+  youtube: { class: 'bg-sns-youtube' },
+  tiktok: { class: 'bg-sns-tiktok' },
 };
 
 const links = orderedSnsLinks().map((sns) => ({ ...sns, ...SNS_STYLE[sns.id] }));
@@ -26,18 +31,17 @@ const links = orderedSnsLinks().map((sns) => ({ ...sns, ...SNS_STYLE[sns.id] }))
         <a
           href={sns.href}
           aria-label={sns.label}
-          class:list={['flex-none w-9 h-9 rounded-full flex items-center justify-center', sns.class]}
-          style={sns.style}
+          class:list={['flex-none w-9 h-9 rounded-full flex items-center justify-center text-white', sns.class]}
         >
           {sns.isFrame ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="5" stroke="#fff" stroke-width="1.8" />
-              <circle cx="12" cy="12" r="4" stroke="#fff" stroke-width="1.8" />
-              <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" />
+              <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.8" />
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8" />
+              <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
             </svg>
           ) : (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d={sns.icon} fill="#fff" />
+              <path d={sns.icon} fill="currentColor" />
             </svg>
           )}
         </a>

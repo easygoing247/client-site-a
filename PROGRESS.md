@@ -451,6 +451,37 @@ LP版から複製後に実施した、複数ページ構成・下層ページ・
 - 今後のPhase（CSS変数/Design Tokensの集約、`src/core/`へのコア
   ロジック移設）は未着手。
 
+### 1a.2 Phase 3：テーマ・デザインパラメータの完全抽象化（Design Tokens化）（2026-09-14、CLAUDE.md 10.2）
+
+- `src/`配下を全数棚卸しし、複数ファイルに生の16進数カラーコードが
+  重複していた8ファイル（`BackToTop.astro`/`Contact.astro`/
+  `ContactField.astro`/`Flow.astro`/`Footer.astro`/`Hero.astro`/
+  `SnsIcons.astro`/`StickyContactBar.astro`、＋CMSプレビュー側の
+  `preview.js`）を特定し、いずれも`src/styles/global.css`の`:root`に
+  集約したCSS変数＋`tailwind.config.mjs`の対応するcolorsエントリへ
+  置き換えた（フォーム枠線・必須バッジ・エラーメッセージ・フロー
+  コネクター・SNS各ブランドカラー等の新規トークンを追加）。
+- 以前から`tailwind.config.mjs`に生の16進数を直書きしていた
+  `secondary`/`accent`/`surface`/`ink`も同じCSS変数参照方式へ移設し、
+  「色の実値はすべて`global.css`の`:root`に集約する」という単一の
+  原則に統一（値は不変、見た目に影響なし）。
+- SVGアイコンの`fill`/`stroke`に直書きされていた`#fff`/`#ffffff`を
+  `currentColor`（祖先の`text-white`から継承）へ統一。
+- フォントサイズ（`text-[Npx]`任意値）・角丸（`rounded-card`は既に
+  集約済み）・CMS管理画面自身のUI配色は、明確な「顧客ごとの設定」
+  ニーズが無い／既に集約済み／サイトデザインと無関係、のいずれかの
+  理由で意図的にスコープ外とした（詳細はCLAUDE.md 10.2参照）。
+- **検証**：`npm run build`（16ページ・0エラー）・`npx astro check`
+  （0エラー）を確認。ビルド後のCSSに新トークンが正しく生成されて
+  いることを確認した上で、本番ページ・ローカルCMSプレビュー双方で
+  該当要素の`getComputedStyle()`を移設前の16進数値と比較し、完全
+  一致（1px単位で同一）することを実機検証した。
+- 検証中に発見した、本タスクと無関係な既存の軽微な問題（`npm run dev`
+  起動時に`products.astro`/`Works.astro`のコメント文中の`<script>`
+  という文字列をViteが誤検知しエラーログを出す、機能的な支障が無い
+  pre-existingな問題）は別タスクとして切り出し、本ラウンドでは
+  対応していない。
+
 ## 2. 完了済みタスク（複数ページ版 master-template-multi）
 
 直近バッチで完了し、`main` に push 済みのタスク一覧（詳細は 1.7 と `CLAUDE.md` 9 章）。

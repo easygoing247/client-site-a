@@ -5006,3 +5006,121 @@ B-8/B-10/C-12（小粒な改善）を実装した。
   残りのフェーズ（CSS変数／Design Tokensの集約、`src/core/`への
   コアロジック移設）は本ラウンドの対象外。着手時はこの章に
   `### 10.2` 以降として追記すること。
+
+### 10.2 Phase 3：テーマ・デザインパラメータの完全抽象化（Design Tokens化）（2026-09-14）
+
+- **前提調査**：着手前に`src/`配下の全`.astro`/`.css`/`.ts`ファイルを
+  対象に、ハードコードされたカラーコード（`#xxxxxx`）を`grep`で全数
+  棚卸しした。結果、大半（`tailwind.config.mjs`のprimary系・
+  `src/styles/global.css`の`:root`/`[data-theme]`ブロック＝そもそも
+  トークンの定義元そのもの、CMSリッチテキストのマーカー/囲い枠の
+  配色スウォッチ＝サイトテーマとは独立した意図的な固定選択肢、
+  `site.ts`のハッシュ値`#features`等＝正規表現の偽陽性）は、既に
+  適切に集約済みか、意図的にテーマ非連動として文書化済みの値
+  だったことを確認した。実際に「複数ファイルに同じ値が生で
+  重複している」「専用のCSS変数を持たず直書きされている」という
+  意味で本物の対象だったのは以下の8ファイルだった：
+  `BackToTop.astro` / `Contact.astro` / `ContactField.astro` /
+  `Flow.astro` / `Footer.astro` / `Hero.astro` / `SnsIcons.astro` /
+  `StickyContactBar.astro`（＋CMSプレビュー側の対になる
+  `public/admin/preview.js`）。
+- **方針**：既に確立されている「primaryはCSS変数（`src/styles/
+  global.css`の`:root`/`[data-theme]`）経由、`tailwind.config.mjs`は
+  `var(--color-*)`参照のみを持つ」というアーキテクチャ（9.6章・
+  tailwind.config.mjs冒頭コメント参照）を、**全カラートークンに
+  拡張**した。新しいCSS変数（テーマ非連動の固定値）を追加すると
+  同時に、以前から`tailwind.config.mjs`に生の16進数を直書きして
+  いた`secondary`/`accent`/`surface`/`ink`も同じCSS変数参照方式へ
+  移設し、「サイトの色に関する実際の値はすべて`global.css`の
+  `:root`（テーマ切替の対象になるprimary系のみ`[data-theme]`も）に
+  集約されている」という単一の原則に統一した。値そのものは一切
+  変更していないため、見た目・computed styleは変更前と完全に同一
+  （検証手順は後述）。
+- **新設したトークン**（すべて`src/styles/global.css`の`:root`に
+  CSS変数として定義し、`tailwind.config.mjs`の`colors`から
+  `var(--color-*)`で参照する。既存のprimary/footer.bgと同じ方式）：
+
+  | Tailwindクラス | CSS変数 | 用途 |
+  |---|---|---|
+  | `border-formBorder` | `--color-form-border` | フォーム入力欄の枠線（`surface.border`とは意図的に別トーン） |
+  | `bg-required` | `--color-required` | フォーム「必須」バッジの背景 |
+  | `text-error` / `bg-error-bg` | `--color-error-text` / `--color-error-bg` | お問い合わせフォーム送信エラーメッセージ |
+  | `text-flow-connector`（`stroke="currentColor"`と組み合わせ） | `--color-flow-connector` | 「制作の流れ」ステップ間コネクター矢印 |
+  | `bg-sns-facebook` / `bg-sns-youtube` / `bg-sns-tiktok` | `--color-sns-facebook` 等 | SNS公式ブランドカラー（単色） |
+  | `bg-sns-instagram`（`global.css`の`@layer components`ユーティリティ） | `--color-sns-instagram-from/via/to` | Instagram公式グラデーション（3色）。単色のTailwindカラートークンでは表現できないため、CSS変数3つ＋専用ユーティリティクラスで組み立てる |
+
+  既存の`secondary`/`accent`/`surface`/`ink`も同様に
+  `--color-secondary`等のCSS変数へ移設（値は不変）。
+- **SVGアイコンの`fill`/`stroke`に直書きされていた`#fff`/`#ffffff`を
+  `currentColor`へ統一**：`BackToTop.astro`・`Contact.astro`（該当
+  無し、後述）・`Footer.astro`・`Hero.astro`・`SnsIcons.astro`・
+  `StickyContactBar.astro`・`public/admin/preview.js`の対応箇所で、
+  アイコンの塗り色を親要素の`text-white`（既に付与済みでない箇所は
+  今回追加）から継承する`currentColor`方式に統一した。これは
+  Works.astroの矢印アイコン等で既に使われていたこのコードベース
+  標準のアイコン配色パターン（stroke/fill=currentColor + 祖先要素の
+  `text-*`ユーティリティ）への統一でもある。
+- **意図的にスコープ外とした項目とその理由**：
+  - **フォントサイズ**：依頼文には「フォントサイズ指定等」も挙げ
+    られていたが、調査の結果、本文中の`text-[13px]`等のTailwind
+    任意値は、見出し・カード・注釈等ごとに個別に決められた
+    「実装上のサイズ調整」であり、色（primary等）のように
+    「案件ごとに1つの値を変えれば全社ブランドに反映される」性質の
+    パラメータではない（既にTailwindのユーティリティシステムを
+    経由した記述であり、生CSSへの直書きでもない）。設計ドキュメント
+    本文（②デザインの抽象化）も実例としてはCSS変数によるカラー
+    抽象化のみを挙げている。数十箇所に及ぶ`text-[Npx]`を名前付き
+    フォントサイズスケールへ一括置換することは、対応する明確な
+    「顧客ごとの設定」ニーズが無いままレイアウトの再検証が必要な
+    箇所を大量に生む、本タスクの意図を超えた過剰な抽象化
+    （プロジェクトの既存方針「不要な抽象化を追加しない」に反する）
+    と判断し、対象外とした。フォント**種類**（`fontFamily.sans`、
+    システムフォントスタック）は元から`tailwind.config.mjs`1箇所に
+    完全集約済みで、追加対応は不要だった。
+  - **角丸（roundness）**：`borderRadius.card`（`14px`）が唯一の
+    カスタム丸みトークンで、既に`tailwind.config.mjs`1箇所に集約
+    済み。`rounded-[...]`のような任意値によるroundness直書きが
+    無いこと（`grep`で0件）を確認済みのため、追加対応は不要だった。
+  - **CMS管理画面（`public/admin/editor-components.js`・
+    `index.html`）自身のUI配色・リッチテキストのマーカー/囲い枠色
+    スウォッチ**：これらはサイトの訪問者向けページ（`src/`配下）の
+    デザインとは無関係な、管理画面自体の内部UIまたはコンテンツ
+    編集者へ提示する固定の色選択肢であり、「テーマ変更で全ページに
+    反映される」対象ではないため意図的に対象外とした（過去セッション
+    で既に同じ理由により確定済みの区分）。
+- **`public/admin/preview.js`側の追従**：`ContactField`のinputClass・
+  必須バッジ、SNS配色（`SNS_STYLE`）の対になる箇所を、
+  `src/`側と全く同じクラス名（`border-formBorder`/`bg-required`/
+  `bg-sns-*`）へ更新した。プレビューiframeは本番ビルドの実CSSを
+  そのまま流し込む方式（7章参照）のため、`src/**/*.astro`側で
+  一度でも参照されているクラス名であればTailwindのJITが確実に
+  生成し、プレビュー側でも同じ配色になる。
+- **検証**：
+  1. `npm run build`（16ページ・エラー0件）・`npx astro check`
+     （0エラー・0警告）を確認。
+  2. ビルド後の`dist/index.html`に埋め込まれたCSSを検査し、新設した
+     CSS変数（`--color-secondary`/`--color-form-border`等）と
+     Tailwindユーティリティ（`.bg-sns-facebook`/`.bg-required`/
+     `.text-error`/`.bg-sns-instagram`等）が期待どおり生成されて
+     いることを確認。
+  3. **本番ページの実機`getComputedStyle()`比較**（見た目が変更前と
+     完全に一致することの最も直接的な証拠）：トップページの
+     `text-secondary`・`<footer>`背景・`#back-to-top`の文字色、
+     SNSアイコン6種（LINE/Instagram/X/Facebook/YouTube/TikTok）の
+     背景色・グラデーション・アイコン色、`/contact`ページの
+     エラーメッセージ色・必須バッジ色・入力欄枠線色、トップページ
+     「制作の流れ」のコネクター矢印色を、それぞれ移設前の16進数値と
+     1px単位で完全一致することを確認した（例：Instagramグラデーション
+     `rgb(245,133,41)→rgb(221,42,123)→rgb(81,91,212)` = `#f58529`/
+     `#dd2a7b`/`#515bd4`と厳密一致）。
+  4. ローカルCMS（`npm run dev`＋`cms:proxy`）で「サイト全体設定」
+     プレビューのSNSアイコン、「下層ページ編集＞お問い合わせ・
+     ご予約」プレビューの必須バッジ・入力欄枠線の各色を同様に
+     `getComputedStyle()`で検査し、本番と完全に一致することを確認した。
+  5. 検証中に、この検証とは無関係な既知の軽微な問題（`npm run dev`が
+     `products.astro`/`Works.astro`内の「下部`<script>`参照」という
+     コメント文中の`<script>`という文字列をViteの依存事前スキャンが
+     誤って実タグと誤認しエラーログを出す、本番ビルドには影響しない
+     pre-existingな表示上の問題）を発見したが、本タスクの変更とは
+     無関係かつ機能的な支障が無いことを確認した上で、別タスクとして
+     切り出した（このセクションでは対応していない）。

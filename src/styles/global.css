@@ -32,6 +32,58 @@
       （tailwind.config.mjs の colors.footer.bg）から参照する。
     */
     --color-footer-bg: #27314f;
+
+    /*
+      以下はテーマカラー（primary）とは独立した固定トークン
+      （[data-theme="..."]では上書きしない＝どのテーマ色でも共通の値）。
+      2026-09、Phase 3設計トークン化：ContactField.astro/Contact.astro/
+      Flow.astro/SnsIcons.astro等に直書きされていたカラーコードを、
+      他の値と同じ「CSS変数として:rootに集約する」方式に統一した
+      （tailwind.config.mjs の対応するcolorsエントリ参照）。
+
+      あわせて、以前は tailwind.config.mjs に生の16進数カラーコードを
+      直書きしていた secondary/surface/ink/accent も、同じ理由でここへ
+      移設した（値そのものは一切変更していないため、見た目・computed
+      styleは変更前と完全に同一）。これにより「サイトの色に関する値は
+      すべてこの:rootブロック（と、テーマ切替で上書きされるprimary系のみ
+      [data-theme]ブロック）に集約されている」という単一の原則になり、
+      案件の恒久的なブランドカラー変更もこのファイルの値を書き換える
+      だけで完結する（tailwind.config.mjs 側は var() 参照のみを持ち、
+      直接編集する必要が無くなった）。
+    */
+    /* 濃紺のセカンダリカラー（見出し・フッター等の地色）。中立色のため
+       テーマカラー切替の対象外。 */
+    --color-secondary: #12203f;
+    --color-secondary-light: #3d4658;
+    --color-secondary-dark: #0f1e3d;
+    /* LINE公式ブランドカラー。第三者ブランドの色のためテーマ非連動。 */
+    --color-accent: #06c755;
+    /* サーフェス（背景）系の中立色。 */
+    --color-surface: #ffffff;
+    --color-surface-muted: #f5f7fb;
+    --color-surface-border: #e7eaf2;
+    --color-surface-band: #e5e7eb;
+    /* 本文・補足テキストの文字色（中立色）。 */
+    --color-ink: #12203f;
+    --color-ink-soft: #5b6472;
+    --color-ink-faint: #646b7b;
+    /* フォーム入力欄の枠線色（surface.borderとは意図的に別トーン） */
+    --color-form-border: #dbdfe8;
+    /* フォーム「必須」バッジの背景色 */
+    --color-required: #c62828;
+    /* お問い合わせフォーム送信エラーメッセージの文字色／背景色 */
+    --color-error-text: #b3261e;
+    --color-error-bg: #fce8e6;
+    /* 「制作の流れ」ステップ間コネクター矢印の色 */
+    --color-flow-connector: #c3cbe0;
+    /* 各SNSの公式ブランドカラー（第三者ブランドの色のため固定値。
+       accentのLINEカラーと同じ考え方。9.6章参照） */
+    --color-sns-facebook: #1877f2;
+    --color-sns-youtube: #ff0000;
+    --color-sns-tiktok: #010101;
+    --color-sns-instagram-from: #f58529;
+    --color-sns-instagram-via: #dd2a7b;
+    --color-sns-instagram-to: #515bd4;
   }
 
   [data-theme='red'] {
@@ -137,6 +189,23 @@
 @layer components {
   .faq-arrow {
     transition: transform 0.15s ease;
+  }
+
+  /*
+    Instagram公式ブランドカラーは単色ではなくグラデーションのため、
+    tailwind.config.mjs の colors.sns.* のようなフラットな色トークンには
+    できない。開始/経由/終了の3色を --color-sns-instagram-* として
+    :root に集約し、このユーティリティクラス1つで組み立てることで、
+    SnsIcons.astro / preview.js のいずれも同じクラス名を指定するだけで
+    済むようにしている（2026-09、Phase 3）。
+  */
+  .bg-sns-instagram {
+    background: linear-gradient(
+      45deg,
+      var(--color-sns-instagram-from),
+      var(--color-sns-instagram-via) 50%,
+      var(--color-sns-instagram-to)
+    );
   }
 
   dialog#privacy-dialog {
