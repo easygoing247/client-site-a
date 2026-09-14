@@ -565,7 +565,20 @@
             );
           }),
           navCta.label && navCta.href
-            ? h('a', { href: navCta.href, onClick: closeNav, className: 'block px-5 py-[14px] text-[15px] font-bold text-primary' }, navCta.label)
+            ? h(
+                'div',
+                { className: 'px-5 py-4' },
+                h(
+                  'a',
+                  {
+                    href: navCta.href,
+                    onClick: closeNav,
+                    className:
+                      'flex items-center justify-center gap-2 text-white font-bold text-[15px] px-6 py-[14px] rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-[0_8px_20px_-6px_rgba(var(--color-primary-rgb),0.55)]',
+                  },
+                  navCta.label
+                )
+              )
             : null
         )
     );

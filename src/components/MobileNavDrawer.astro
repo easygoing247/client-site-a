@@ -6,6 +6,12 @@
 // デスクトップナビと対になるブレイクポイント（lg:hidden）を使う。
 // ヘッダーの横並び行（flex row）の“外側”に、幅100%の兄弟要素として配置する
 // こと（PC表示で高さ0のまま横幅だけ確保してレイアウトを崩すのを防ぐため）。
+// CTAボタン（ctaLabel/ctaHref）は他の項目（テキストリンク＋下線区切り）とは
+// 見た目を分け、Header.astro のデスクトップCTA・BackToTop.astro と同じ
+// 「primary→primary-dark のグラデーション塗り＋pill形状＋primaryカラーの
+// ドロップシャドウ」の目立つボタンスタイルにしている（2026-09。色は
+// テーマカラーのCSS変数 `--color-primary` 系に連動するため、デザイン
+// テーマ設定を切り替えれば自動的に追従する）。
 // ============================================================================
 interface NavItem {
   label: string;
@@ -33,9 +39,14 @@ const { items, ctaLabel, ctaHref } = Astro.props;
     ))
   }
   {ctaLabel && ctaHref && (
-    <a href={ctaHref} class="mobile-nav-link block px-5 py-[14px] text-[15px] font-bold text-primary">
-      {ctaLabel}
-    </a>
+    <div class="px-5 py-4">
+      <a
+        href={ctaHref}
+        class="mobile-nav-link flex items-center justify-center gap-2 text-white font-bold text-[15px] px-6 py-[14px] rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-[0_8px_20px_-6px_rgba(var(--color-primary-rgb),0.55)]"
+      >
+        {ctaLabel}
+      </a>
+    </div>
   )}
 </nav>
 
