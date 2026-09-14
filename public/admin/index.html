@@ -18,7 +18,7 @@
       設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
       新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
     -->
-    <link href="./config.yml?v=20260914g" type="text/yaml" rel="cms-config-url" />
+    <link href="./config.yml?v=20260914h" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -673,14 +673,14 @@
       使い続ける事例が確認できたため、明示的なバージョン付きURLで
       確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260914g"></script>
+    <script src="./preview.js?v=20260914h"></script>
     <!--
       本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
       補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
       テキスト配置の追加ツール（CMS.registerEditorComponent）。
       preview.js と同じ理由でCMS初期化前のこの位置に置く。
     -->
-    <script src="./editor-components.js?v=20260914g"></script>
+    <script src="./editor-components.js?v=20260914h"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -2824,7 +2824,7 @@
           input.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        var SLUG_AUTOFILL_COLLECTIONS = ['works', 'news'];
+        var SLUG_AUTOFILL_COLLECTIONS = ['works', 'news', 'newsCategories'];
 
         function wireTitleToSlugAutoFill() {
           try {

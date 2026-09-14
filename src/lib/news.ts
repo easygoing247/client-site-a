@@ -7,16 +7,30 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 
 export type NewsEntry = CollectionEntry<'news'>;
 
-export const NEWS_CATEGORY_LABELS: Record<string, string> = {
-  info: 'お知らせ',
-  blog: 'ブログ',
-  event: 'イベント',
-  works: '実績紹介',
-};
+/**
+ * カテゴリの slug（newsCategories コレクションのファイル名）→表示名の対応表を
+ * ビルド時に取得する。一覧・詳細ページはこの結果を `newsCategoryLabel()` /
+ * `collectNewsCategories()` へ渡して使う（2026-09、カテゴリの動的管理化に伴い
+ * 旧・固定4択の NEWS_CATEGORY_LABELS を置き換えた）。
+ */
+export async function getNewsCategoryMap(): Promise<Record<string, string>> {
+  const categories = await getCollection('newsCategories');
+  const map: Record<string, string> = {};
+  for (const entry of categories) {
+    if (entry.data.title) map[entry.id] = entry.data.title;
+  }
+  return map;
+}
 
-export function newsCategoryLabel(category: string | undefined): string | undefined {
+/**
+ * カテゴリslugを表示名へ変換する。`labelMap` に存在しないslug（カテゴリが
+ * 削除された後も記事側に値が残っている場合など）は、素のslugをそのまま
+ * 表示するのではなく「カテゴリ無し」として扱う（安全側のフォールバック。
+ * 存在しない識別子をそのまま訪問者に見せないため）。
+ */
+export function newsCategoryLabel(category: string | undefined, labelMap: Record<string, string>): string | undefined {
   if (!category) return undefined;
-  return NEWS_CATEGORY_LABELS[category] ?? category;
+  return labelMap[category];
 }
 
 /**
@@ -66,18 +80,21 @@ export async function getPublishedNews(): Promise<NewsEntry[]> {
 }
 
 /**
- * 記事一覧に実際に使われているカテゴリを、既定の並び順（お知らせ→ブログ→
- * イベント→実績紹介）で返す（一覧ページのカテゴリフィルター用）。
+ * 記事一覧に実際に使われているカテゴリを、表示名の五十音・アルファベット順で
+ * 返す（一覧ページのカテゴリフィルター用）。`labelMap` に無いカテゴリ（削除済み
+ * カテゴリを指す記事が残っている場合等）は、フィルターボタン自体を出さない
+ * （該当記事は「すべて」フィルターでのみ表示される、安全側のフォールバック）。
  */
-export function collectNewsCategories(posts: NewsEntry[]): { value: string; label: string }[] {
+export function collectNewsCategories(
+  posts: NewsEntry[],
+  labelMap: Record<string, string>,
+): { value: string; label: string }[] {
   const present = new Set<string>();
   for (const p of posts) {
     if (p.data.category) present.add(p.data.category);
   }
-  const ordered = Object.keys(NEWS_CATEGORY_LABELS).filter((v) => present.has(v));
-  // 既定リストに無いカテゴリ（将来追加分）も後ろに拾う
-  for (const v of present) {
-    if (!ordered.includes(v)) ordered.push(v);
-  }
-  return ordered.map((value) => ({ value, label: NEWS_CATEGORY_LABELS[value] ?? value }));
+  return Array.from(present)
+    .filter((value) => labelMap[value])
+    .map((value) => ({ value, label: labelMap[value] }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'ja'));
 }

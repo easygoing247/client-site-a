@@ -11,7 +11,7 @@ import Button from '../../components/Button.astro';
 import StickyContactBar from '../../components/StickyContactBar.astro';
 import BackToTop from '../../components/BackToTop.astro';
 import { site } from '../../lib/site';
-import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate } from '../../lib/news';
+import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate, getNewsCategoryMap } from '../../lib/news';
 
 export async function getStaticPaths() {
   const posts = await getPublishedNews();
@@ -20,7 +20,8 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await post.render();
-const category = newsCategoryLabel(post.data.category);
+const categoryLabels = await getNewsCategoryMap();
+const category = newsCategoryLabel(post.data.category, categoryLabels);
 const home = site.productPage.breadcrumbHome || 'トップ';
 ---
 

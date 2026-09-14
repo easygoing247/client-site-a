@@ -6,7 +6,7 @@
 // 最新記事を newsSection.count 件、コンパクトなリスト形式で表示する。
 // ============================================================================
 import { site } from '../lib/site';
-import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate } from '../lib/news';
+import { getPublishedNews, getPublicSlug, newsCategoryLabel, formatNewsDate, getNewsCategoryMap } from '../lib/news';
 import Button from './Button.astro';
 
 interface Props {
@@ -18,6 +18,7 @@ const { muted = false } = Astro.props;
 const section = site.newsSection ?? {};
 const count = Number(section.count) > 0 ? Math.floor(Number(section.count)) : 3;
 const posts = (await getPublishedNews()).slice(0, count);
+const categoryLabels = await getNewsCategoryMap();
 ---
 
 {
@@ -35,7 +36,7 @@ const posts = (await getPublishedNews()).slice(0, count);
 
         <ul class="list-none m-0 p-0 border-t border-surface-border">
           {posts.map((post) => {
-            const category = newsCategoryLabel(post.data.category);
+            const category = newsCategoryLabel(post.data.category, categoryLabels);
             return (
               <li class="border-b border-surface-border">
                 <a

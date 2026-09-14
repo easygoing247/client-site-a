@@ -93,7 +93,14 @@ const news = defineCollection({
       image: image().optional(),
       imageAlt: z.string().optional(),
       publishedAt: cmsDateOptional,
-      category: z.enum(['info', 'blog', 'event', 'works']).optional(),
+      // カテゴリは newsCategories コレクション（下記）の各エントリの
+      // ファイル名（＝slug）を指す自由文字列。以前は固定4択の z.enum() だったが、
+      // 管理画面からカテゴリを自由に追加・編集・削除できるようにするため
+      // （2026-09）、動的な relation ウィジェットの選択値をそのまま受け付ける
+      // 型に変更した。存在しないカテゴリを指す値が残っても（カテゴリ削除後の
+      // 記事等）ビルドは落とさず、表示側（src/lib/news.ts の newsCategoryLabel）
+      // が安全にフォールバックする。
+      category: z.string().optional(),
       summary: z.string().optional(),
       // 記事の固定表示（トップ／一覧の最上部への固定）。複数の記事を固定
       // した場合の並び順は pinOrder（数値が小さいほど上）で決める。
@@ -106,4 +113,23 @@ const news = defineCollection({
     }),
 });
 
-export const collections = { works, news };
+// お知らせのカテゴリ管理（2026-09追加）。
+// 1カテゴリ = src/content/newsCategories/*.yaml（type: 'data'、frontmatterのみ・
+// 本文なし）。ファイル名（entry.id）がそのままカテゴリの識別子（slug）になり、
+// news コレクションの `category` フィールド（relation ウィジェット、
+// value_field: "{{slug}}"）が保存する値と一致する。運用者は「お知らせ
+// カテゴリ管理」コレクションから自由に追加・編集・削除できる（詳細は
+// public/admin/config.yml の newsCategories コレクション定義・
+// src/lib/news.ts の getNewsCategoryMap() を参照）。
+const newsCategories = defineCollection({
+  type: 'data',
+  schema: z.object({
+    title: z.string().optional(),
+    // ファイル名（＝カテゴリslug）を組み立てるためだけの入力用フィールド。
+    // works/news の urlSlug と全く同じ理由・同じ運用（フロントエンドの
+    // 表示・ロジックからは参照しない、public/admin/config.yml 参照）。
+    urlSlug: z.string().optional(),
+  }),
+});
+
+export const collections = { works, news, newsCategories };

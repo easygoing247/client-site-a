@@ -4558,3 +4558,98 @@ B-8/B-10/C-12（小粒な改善）を実装した。
 `public/admin/editor-components.js`・`public/admin/index.html`の変更に
 伴い、キャッシュバスター（9.24参照）を`20260914f`→`20260914g`へ
 更新した（`preview.js`は本ラウンドでも変更したため同様に更新）。
+
+### 9.58 「お知らせ」カテゴリの動的管理化（固定4択→CMSからの自由な追加・編集・削除）（2026-09-14）
+
+- **課題**：`news`コレクションの`category`フィールドは
+  `widget: select`の固定4択（`info`/`blog`/`event`/`works`）で、
+  `src/content/config.ts`側も`z.enum([...])`でこの4値に固定していた。
+  運用者が新しいカテゴリ（例：「採用情報」）を使いたい場合、
+  コード側の変更（enumの追加・config.ymlのoptions追加）が必須で、
+  CMS単体では完結しなかった。
+- **設計**：`works.order`（9.9・9.26-B参照）で既に確立している
+  「`relation`ウィジェットは、選択肢が独立したファイル＝folder
+  コレクションのエントリである場合にのみ機能する」という制約
+  （9.31-B参照）を踏まえ、カテゴリ自体を新規のfolderコレクション
+  **「お知らせカテゴリ管理」**（`name: newsCategories`）として
+  独立させた。
+  - **データ形式**：Astro Content Collectionsの`type: 'data'`
+    （frontmatterのみ・本文を持たない、JSON/YAML専用のコレクション
+    種別。Markdown本文が不要なシンプルなレコードに向く）を採用。
+    1カテゴリ＝`src/content/newsCategories/*.yaml`（例：
+    `info.yaml` → `{ title: "お知らせ", urlSlug: "info" }`）。
+    ファイル名（＝`entry.id`）がそのままカテゴリの内部識別子
+    （slug）になり、`news.category`が保存する値と一致する
+    （`works`/`news`の`urlSlug`と全く同じ設計。ファイル名は
+    `config.yml`側の`slug: "{{fields.urlSlug}}"`で明示的に組み立てる。
+    フィールド名を意図的に`title`/`urlSlug`にしたのは、9.40〜9.47で
+    確立済みの「タイトル入力→ローマ字スラグ自動変換」
+    （`SLUG_AUTOFILL_COLLECTIONS`）・「urlSlug空欄時のランダム採番」
+    （`URLSLUG_COLLECTIONS`）の両安全策を、対象コレクション名を配列に
+    1件追加するだけでそのまま再利用するため——新しいロジックを一切
+    書かずに済んだ）。
+  - **`news.category`フィールド**：`widget: select`（固定options）から
+    `widget: relation`（`collection: "newsCategories"`、
+    `value_field: "{{slug}}"`、`display_fields: ["title"]`）へ変更。
+    運用者は「お知らせカテゴリ管理」からカテゴリを追加・編集・削除
+    でき、記事側は常に最新の一覧から選べる。
+  - **既存データの移行**：旧固定4択と完全に対応する4ファイル
+    （`info.yaml`/`blog.yaml`/`event.yaml`/`works.yaml`、
+    `title`は旧`NEWS_CATEGORY_LABELS`のラベルをそのまま踏襲）を
+    シードとして追加。既存記事の`category: blog`等の値はファイル名
+    （slug）と完全一致するため、コンテンツ側のfrontmatter変更は
+    一切不要で、実サイトの表示は移行前後で変化しない（実機で
+    「ブログ」カテゴリの既存記事を開き、relationフィールドに
+    「ブログ」が正しく事前選択されていることを確認済み）。
+  - **`src/content/config.ts`**：`news.category`を`z.enum([...])`から
+    `z.string().optional()`へ変更（動的な値を受け付けるため）。
+    新規`newsCategories`データコレクションを追加し、
+    `export const collections`に加えた。
+- **表示側（存在しないカテゴリへの安全なフォールバック）**：
+  `src/lib/news.ts`の`newsCategoryLabel()`を、固定マップ参照から
+  「`getNewsCategoryMap()`（`getCollection('newsCategories')`から
+  slug→titleのRecordを構築）の結果を引数で受け取る」形に変更した。
+  **`labelMap`に存在しないカテゴリ値（カテゴリを削除した後も記事側に
+  古い値が残っているケース等）は、素のslug文字列をそのまま表示するの
+  ではなく「カテゴリ無し」（`undefined`）として扱う**——存在しない
+  内部識別子をそのまま訪問者に見せないための安全側のフォールバック
+  （該当記事はカテゴリバッジ無しで表示されるだけで、ビルドが落ちる・
+  ページが表示できなくなる等の実害は起きない）。同様に
+  `collectNewsCategories()`（一覧ページのカテゴリ絞り込みボタン一覧）も
+  `labelMap`に無い値は候補から除外する（該当記事は「すべて」フィルター
+  でのみ表示される）。呼び出し側（`src/components/News.astro`・
+  `src/pages/news/index.astro`・`src/pages/news/[slug].astro`）は、
+  いずれも`await getNewsCategoryMap()`を呼んでから
+  `newsCategoryLabel(category, labelMap)`/
+  `collectNewsCategories(posts, labelMap)`に渡す形に統一した。
+- **CMSライブプレビューの追従**：`public/admin/preview.js`の
+  `NewsPreview`が参照していた固定`NEWS_CATEGORY_LABELS`オブジェクトを
+  廃止し、新設の`src/pages/news-categories.json.ts`
+  （`works-titles.json.ts`と同じ「ビルド時静的生成データを同一
+  オリジンからfetchする」パターン、9.33参照）から取得する
+  `newsCategoryLabels`変数に置き換えた。プレビュー側は本番側ほど
+  厳密なフォールバックを必要としないため（編集者向けの参考表示のため）、
+  未取得・未知の値の場合は素のslugをそのまま表示するだけの簡易
+  フォールバックにしている。
+- **安全策の再利用**：`preview.js`の`URLSLUG_COLLECTIONS`・
+  `index.html`の`SLUG_AUTOFILL_COLLECTIONS`（いずれも配列で対象
+  コレクション名を列挙するだけの設計、9.35/9.40-F/9.41参照）に
+  `'newsCategories'`を追加しただけで、urlSlug空欄時のランダム採番・
+  タイトル→ローマ字スラグ自動変換の両方がこの新コレクションにも
+  そのまま適用される（新規ロジックの実装は不要だった）。
+- **実機検証**：`npm run dev`＋`npm run cms:proxy`のローカル環境で
+  「お知らせカテゴリ管理」を開き、既存4カテゴリ（ブログ／イベント／
+  お知らせ／実績紹介）が一覧に正しく表示されることを確認。続けて
+  既存記事「サンプル投稿」を開き、カテゴリのrelationドロップダウンに
+  同じ4件が選択肢として表示され、保存済みの値「ブログ」が正しく
+  事前選択されていること、右側プレビューにも「ブログ」バッジが
+  正しく表示されていることを確認した。`npm run build`後の
+  `dist/news/index.html`・`dist/news-categories.json`を直接確認し、
+  カテゴリ名（「実績紹介」等）・絞り込みボタンが正しく出力されている
+  ことも確認済み。
+- **検証**：`npm run build`（15ページ・エラー0件）・`npx astro check`
+  （0エラー・0警告）を確認。`config.yml`は`js-yaml`で構文検証し、
+  `newsCategories`コレクションの定義・`news.category`の
+  `relation`フィールド定義がいずれも意図どおりであることを確認した。
+  `config.yml`/`preview.js`を変更したため、キャッシュバスターを
+  `20260914h`へ更新した。

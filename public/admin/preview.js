@@ -169,7 +169,7 @@
   // これなら `urlSlug` フィールドが一度も触れられていなくても、
   // 「works / news エントリの保存である」という事実さえ分かれば
   // 確実に値を検査・補正できる。
-  var URLSLUG_COLLECTIONS = ['works', 'news'];
+  var URLSLUG_COLLECTIONS = ['works', 'news', 'newsCategories'];
 
   window.CMS.registerEventListener({
     name: 'preSave',
@@ -2594,7 +2594,22 @@
   // ==========================================================================
   // お知らせ 記事詳細（src/pages/news/[slug].astro）
   // ==========================================================================
-  var NEWS_CATEGORY_LABELS = { info: 'お知らせ', blog: 'ブログ', event: 'イベント', works: '実績紹介' };
+  // カテゴリは newsCategories コレクションで動的に管理されるため（2026-09）、
+  // 固定マップの代わりに /news-categories.json（ビルド時静的生成、
+  // src/pages/news-categories.json.ts）を取得して使う。取得完了前・取得失敗時は
+  // 素のslug文字列をそのまま表示する（プレビュー限定の軽微なフォールバックで、
+  // 本番ページ側の安全なフォールバック＝newsCategoryLabel とは要件が異なる）。
+  var newsCategoryLabels = {};
+  fetch('/news-categories.json')
+    .then(function (res) {
+      return res.json();
+    })
+    .then(function (map) {
+      newsCategoryLabels = map || {};
+    })
+    .catch(function () {
+      /* ローカルでのCMS単体確認時等、取得できなくてもプレビュー自体は表示させる */
+    });
 
   function formatNewsDateForPreview(value) {
     if (!value) return '';
@@ -2604,7 +2619,7 @@
   }
 
   var NewsPreview = makePagePreview(function (h, data, getAsset, widgetFor) {
-    var category = data.category ? NEWS_CATEGORY_LABELS[data.category] || data.category : '';
+    var category = data.category ? newsCategoryLabels[data.category] || data.category : '';
     var dateText = formatNewsDateForPreview(data.publishedAt);
     var eyecatchUrl = assetUrl(getAsset, data.image);
     return h(
