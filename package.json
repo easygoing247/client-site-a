@@ -4,14 +4,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/build-config.js",
     "dev": "astro dev",
     "start": "astro dev",
-    "prebuild": "node scripts/build-config.js",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "build:config": "node scripts/build-config.js",
+    "type-check": "astro check",
     "cms:proxy": "decap-server"
   },
   "dependencies": {
@@ -19,7 +17,6 @@
     "@astrojs/tailwind": "^5.1.2",
     "astro": "^4.16.0",
     "js-yaml": "^4.1.0",
-    "remark-breaks": "^4.0.0",
     "sharp": "^0.33.5",
     "tailwindcss": "^3.4.13"
   },
@@ -27,7 +24,6 @@
     "@astrojs/check": "^0.9.10",
     "@types/js-yaml": "^4.0.9",
     "decap-server": "^3.11.0",
-    "kuromoji": "^0.1.2",
     "typescript": "^5.9.3"
   }
 }

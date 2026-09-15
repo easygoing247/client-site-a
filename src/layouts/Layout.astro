@@ -1,0 +1,154 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import '../styles/global.css';
+import { site } from '../lib/site';
+import { resolveImageOrNull } from '../lib/images';
+import { siteSettings } from '../lib/siteSettings';
+import { orderedSnsLinks } from '../lib/sns';
+import SmoothScroll from '../components/SmoothScroll.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** OGP/Twitterカード用の画像（省略時は site.company.ogImage を使用） */
+  image?: ImageMetadata;
+}
+
+const { title = site.company.siteName, description = site.company.description, image } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+
+// OGP画像はSNS側のクローラーがそのまま読み込める絶対URLの静的ファイルである
+// 必要があるため、astro:assets の getImage() で1200x630のJPGに最適化した上で
+// Astro.site と結合して絶対URL化する。どちらの画像も未設定の場合はOGP画像
+// 自体を出力しない（画像なしでもtitle/description等は機能する）。
+const ogImageSource = image ?? resolveImageOrNull(site.company.ogImage);
+const optimizedOgImage = ogImageSource
+  ? await getImage({ src: ogImageSource, width: 1200, height: 630, format: 'jpg' })
+  : null;
+const ogImageURL = optimizedOgImage ? new URL(optimizedOgImage.src, Astro.site).toString() : null;
+
+// ============================================================================
+// 構造化データ（JSON-LD、schema.org「LocalBusiness」）。
+// Google等の検索結果でのリッチリザルト表示・ナレッジパネル反映を狙い、
+// サイト全体で共通の組織情報を全ページ共通で出力する（ページ固有の内容は
+// 含めないため、URLは各ページのcanonicalURLではなく常にサイトのトップURL
+// を指す＝schema.orgの組織情報としての一般的な扱い方に合わせている）。
+// 値が未入力（空文字）のフィールドはJSON-LDとして不正確な情報を出力しない
+// よう省略し、有効なフィールドのみで組み立てる。
+// ロゴはOGP画像と同様、astro:assets経由で絶対URL化する（入力がSVGの場合は
+// astro:assetsの画像サービスが自動的にformat指定を無視してsvgのまま返す
+// 仕様のため、変換エラーにはならない）。
+// ============================================================================
+const logoImageSource = resolveImageOrNull(site.company.logo);
+const optimizedLogoImage = logoImageSource ? await getImage({ src: logoImageSource, width: 512 }) : null;
+const logoImageURL = optimizedLogoImage ? new URL(optimizedLogoImage.src, Astro.site).toString() : null;
+
+const sameAsUrls = orderedSnsLinks()
+  .map((sns) => sns.href)
+  .filter((href): href is string => !!href && href !== '#');
+
+const { postalCode, address } = site.access.store;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: site.company.name,
+  url: Astro.site ? Astro.site.toString() : undefined,
+  ...(logoImageURL && { logo: logoImageURL }),
+  ...(ogImageURL && { image: ogImageURL }),
+  ...(description && { description }),
+  ...(site.contact.phone && { telephone: site.contact.phone }),
+  ...(site.contact.email && { email: site.contact.email }),
+  ...((postalCode || address) && {
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'JP',
+      ...(postalCode && { postalCode }),
+      ...(address && { streetAddress: address }),
+    },
+  }),
+  ...(sameAsUrls.length > 0 && { sameAs: sameAsUrls }),
+};
+---
+
+<!doctype html>
+<html lang="ja" data-theme={siteSettings.theme}>
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      viewport-fit=cover：iPhoneのノッチ・ホームインジケーター等の安全域
+      （Safe Area）情報をCSSのenv(safe-area-inset-*)で取得可能にするために
+      必要（2026-09、画面下部固定バーStickyContactBar.astroの安全域対応で
+      追加）。既定（cover未指定）のままだと非対応環境と同様env()は常に0を
+      返すため、この指定が無いとStickyContactBar側の余白調整が一切効かない。
+      通常のコンテンツ配置（bodyの背景色等）には影響しない。
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {title && <title>{title}</title>}
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- OGP（Facebook / LINE 等） -->
+    <meta property="og:type" content="website" />
+    {site.company.siteName && <meta property="og:site_name" content={site.company.siteName} />}
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:url" content={canonicalURL} />
+    {title && <meta property="og:title" content={title} />}
+    {description && <meta property="og:description" content={description} />}
+    {ogImageURL && (
+      <>
+        <meta property="og:image" content={ogImageURL} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        {/* 画像専用のalt文言は管理項目として持っていないため、titleを代替として使う
+            （画像の内容そのものの説明ではないが、無指定より検索エンジン・SNS
+            クローラーへの情報量が増えるための実務上のフォールバック）。 */}
+        {title && <meta property="og:image:alt" content={title} />}
+      </>
+    )}
+
+    <!-- Twitter（X）カード -->
+    <meta name="twitter:card" content="summary_large_image" />
+    {title && <meta name="twitter:title" content={title} />}
+    {description && <meta name="twitter:description" content={description} />}
+    {ogImageURL && (
+      <>
+        <meta name="twitter:image" content={ogImageURL} />
+        {title && <meta name="twitter:image:alt" content={title} />}
+      </>
+    )}
+
+    <!--
+      フォントは Google Fonts 等の外部CDNを使わず、OS標準搭載のシステム
+      フォントのみで表示する（font-sans の定義は tailwind.config.mjs 参照）。
+      これにより、フォント関連の外部ネットワークリクエストが完全になくなり、
+      レンダリングブロッキング要因を根本から排除している。
+      <link rel="preconnect"> や Google Fonts の <link rel="stylesheet">・
+      @import は意図的に使用していない。
+    -->
+
+    <meta name="generator" content={Astro.generator} />
+
+    <!--
+      構造化データ（JSON-LD、schema.org「LocalBusiness」）。
+      `{JSON.stringify(structuredData)}` のような通常のAstroテンプレート式
+      （子要素として展開）だとAstroが自動でHTMLエスケープしてしまい、
+      JSON文字列中の `&` 等が `&amp;` に変換されて<script>内の生テキストの
+      まま残ってしまう（scriptタグの中身はHTMLエンティティとして解釈されない
+      ため、これは正しいJSONとして壊れる）。そのためset:htmlでエスケープ
+      せずに書き込む必要がある。set:html自体はテンプレートインジェクション
+      （動的HTML挿入）向けの機能でXSS観点の注意が必要なAPIだが、ここで
+      書き込む内容はsiteInfo.yml由来の信頼できるビルド時データのみ
+      （エンドユーザー入力を含まない）であることに加え、JSON文字列中の
+      すべての `<` 文字をUnicodeエスケープ（<）に置換することで、
+      `</script>` という文字列によって<script>タグが意図せず早期終了する
+      （＝以降のHTMLがscriptタグの外側として誤って解釈される）事態を
+      防いでいるため安全。
+    -->
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(structuredData).replace(/</g, '\\u003c')} />
+  </head>
+  <body class="bg-surface overflow-x-hidden">
+    <slot />
+    <SmoothScroll />
+  </body>
+</html>
