@@ -8,17 +8,17 @@
       ため、拡大・縮小を禁止する（本体サイトのLayout.astroには影響しない、
       このファイル内だけの設定）。
     -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!--
+      viewport-fit=cover：iPhoneのホームインジケーター等の安全域（Safe Area）を
+      CSSのenv(safe-area-inset-*)で取得可能にするために必要（2026-09、
+      画面最下部の制作クレジットフッター#cms-credit-footerの安全域対応で追加）。
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <title>管理画面 | Decap CMS</title>
     <meta name="robots" content="noindex, nofollow" />
-    <!--
-      config.yml を明示的にバージョン付きURLで指定する（cms-config-url）。
-      無指定でもDecapは同じディレクトリのconfig.ymlを自動検出するが、
-      その場合クエリ文字列でのキャッシュバスターを付けられない。
-      設定変更のたびに ?v= の数字を上げ、閲覧者側の古いキャッシュが
-      新しいコレクション定義（フィールド追加等）を反映しない事故を防ぐ。
-    -->
-    <link href="./config.yml?v=20260914i" type="text/yaml" rel="cms-config-url" />
     <!--
       Decap CMS 関連スクリプトはこのページのみで読み込む（本体サイトへは絶対に混入させない）。
       本番公開後のアクセス制限は Cloudflare Access 側で行うこと（CLAUDE.md 参照）。
@@ -37,6 +37,22 @@
       body {
         overflow-x: hidden;
         max-width: 100%;
+      }
+
+      /*
+        画面最下部の制作クレジットフッター（#cms-credit-footer、高さ48px、
+        position:fixed）を追加したことに伴い、通常のドキュメントフロー画面
+        （799px超のPC幅でのコレクション一覧・ダッシュボード等、bodyが
+        スクロールコンテナになる場合）の最終コンテンツがフッターの下に
+        隠れないよう、bodyにpadding-bottomを持たせる。
+        （799px以下のスマホ幅ではhtml/body自体がoverflow-y:hiddenのため
+        この余白は効かないが、その代わりエントリ編集画面の実際のスクロール
+        コンテナである[class*="ControlPaneContainer"]側に別途
+        padding-bottomを設定して対応している。下記参照。）
+        安全域（env(safe-area-inset-bottom)）ぶんも同様に加算している。
+      */
+      body {
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
       }
 
       /*
@@ -90,7 +106,10 @@
         display: none;
         position: fixed;
         right: 16px;
-        bottom: 16px;
+        /* 画面最下部の制作クレジットフッター（高さ48px＋隙間8px、および
+           iPhone等の安全域ぶん）の上に重ならないようオフセットしている
+           （下の#cms-credit-footer参照）。 */
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px));
         width: 52px;
         height: 52px;
         border-radius: 999px;
@@ -114,7 +133,9 @@
         display: none;
         position: fixed;
         right: 16px;
-        bottom: 78px;
+        /* #cms-quick-nav-btn（bottom: 72px, height: 52px）の上端 + 隙間10px
+           （安全域ぶんも#cms-quick-nav-btnと同じ加算をしている） */
+        bottom: calc(134px + env(safe-area-inset-bottom, 0px));
         width: min(78vw, 320px);
         max-height: 60vh;
         overflow-y: auto;
@@ -176,29 +197,6 @@
       }
 
       /*
-        上のViewControlsを見た目だけヘッダー右側（ToolbarSubSectionLast付近）
-        へ寄せるための固定配置。以前は targetWrapper.appendChild() でDOM上
-        物理的に付け替えていたが、この要素はDecap本体（React）が生成・管理
-        するノードのため、後から編集画面をアンマウントする際にReact側は
-        「元の親要素の子である」という内部参照のまま removeChild しようと
-        し、実際の親（我々が appendChild で差し替えた側）と食い違って
-        `NotFoundError: Failed to execute 'removeChild' ...` が発生する
-        ことがあった。特に「公開して新規作成」はエディタ全体を一旦
-        アンマウントしてから真っさらな新規フォームを再マウントする、より
-        大きな作り直しを伴うため、このタイミングで例外が起きると
-        画面遷移そのものが失敗し、直前の編集画面に留まってしまう
-        （「公開して複製する」は既存フォームを流用する軽い更新のため
-        同じ経路を通らず、症状が出にくかったと考えられる）。
-        DOM上の親子関係には一切手を加えず、CSSのposition:fixedのみで
-        見た目の位置を再現することで、Reactのアンマウント処理と衝突しない
-        ようにする（下部の<script> relocateViewControls() 参照）。
-      */
-      [class*='ViewControls'].cms-view-controls-pinned {
-        position: fixed !important;
-        z-index: 1001 !important;
-      }
-
-      /*
         「プレビューのチェック」テキストボタン（RefreshPreviewButton）は
         クリックしても目に見える反応がなく、実質的に不要なため非表示にする
         （React管理下のノードのため、DOM上から物理的に削除するとReact側の
@@ -212,244 +210,26 @@
       }
 
       /*
-        編集フォーム最下部の余白確保。
-        クイックナビ（左下部のメニューアイコン／メニュー、#cms-quick-nav-btn
-        ／#cms-quick-nav-menu）は画面幅を問わず position:fixed で常に
-        画面下部に重なって表示されるため、フォーム自体の余白がゼロだと
-        最後の項目（入力欄・スイッチ等）がこのボタンの下に隠れてしまい、
-        スクロールしてもタップ・入力ができない事故につながる。
-        実際にスクロールしているコンテナ（PC幅は
-        [class*="ControlPaneContainer"] 自身、スマホ幅は
-        [class*="EditorContainer"] だが、そのスクロール可能領域は
-        .SplitPane > .Pane1 > ControlPaneContainer の高さに連動する
-        ＝9.7章参照）に直接 padding-bottom を持たせることで、画面幅に
-        関わらず1箇所の指定で最下部の余白を確保できる。
-        Decap本体（emotion）がこのクラスへ自前の padding を動的に注入して
-        おり、その <style> タグはこのファイルの静的な <style> より後に
-        DOM挿入される＝詳細度が同じ場合はDecap側が後勝ちしてしまうため、
-        !important で確実に上書きする（このファイル内の他の箇所と同じ理由・
-        同じ対策）。
+        編集フォーム最下部の余白確保（画面最下部の制作クレジットフッター
+        #cms-credit-footer対策）。
+        エントリ編集画面で実際にスクロールしているコンテナは、PC幅（799px超）
+        では[class*="ControlPaneContainer"]自身、スマホ幅（799px以下）では
+        [class*="EditorContainer"]（自前のタッチスクロール処理、下部の
+        <script>参照）だが、そのスクロール可能領域は
+        .SplitPane > .Pane1 > ControlPaneContainer の高さに連動するため、
+        ここに直接padding-bottomを持たせることで画面幅に関わらず1箇所の
+        指定で最下部の余白を確保できる（フォーム最後の項目が固定フッターの
+        下、および同じく画面下部固定の#cms-quick-nav-btn（下記参照。
+        フッター追加に伴いbottom位置を72pxへ引き上げ済み）の下に隠れて
+        タップ・入力できなくなる事故を防ぐ）。
+        Decap本体（emotion）がこのクラスへ自前のpaddingを動的に注入して
+        おり、その<style>タグはこのファイルの静的な<style>より後にDOM
+        挿入される＝詳細度が同じ場合はDecap側が後勝ちしてしまうため、
+        !importantで確実に上書きする。
+        安全域（env(safe-area-inset-bottom)）ぶんも同様に加算している。
       */
       [class*='ControlPaneContainer'] {
-        padding-bottom: 90px !important;
-      }
-
-      /*
-        プレビュー領域のデバイス幅切替（PC／タブレット／スマホ）。
-        当初はPane2内部のiframeにだけ固定幅を与えて中央寄せする方式で
-        実装したが、「フォームとプレビューを区切る境界線（Resizer）は
-        動かず、プレビューだけが自分の中で縮む」見た目になり、実際の
-        デバイス幅シミュレーションとしては直感的でなかった。
-        そのため、react-split-pane が Pane1/Pane2 に与える幅そのものを
-        （.SplitPane に付与する data-cms-device 属性経由で）上書きし、
-        境界線自体が右へ動いてプレビューの表示幅ちょうどに収まる方式に
-        変更した。react-split-pane 自身が Pane1/Pane2 へ設定する幅は
-        インラインstyle（!importantなし）のため、こちらの!important指定が
-        常に優先される。PC（無指定）に戻すとインラインstyleがそのまま
-        効き、ユーザーが手動でResizerをドラッグして幅調整する従来の
-        動作もそのまま使える（Resizerのmousedown/touchstartで自動的に
-        PCへ戻す処理をJS側に実装し、強制幅とドラッグ操作が競合して
-        「ドラッグしても見た目が動かない」体験にならないようにしている）。
-      */
-      /*
-        ⚠️【2026-09 削除】以前はここに`transition: flex-basis 0.2s ease,
-        width 0.2s ease;`を指定し、PC/タブレット/スマホボタンの切替時に
-        Pane1/Pane2の幅がなめらかにスライドするようにしていたが、実機
-        検証の結果、この0.2秒の遷移時間が原因で「手動で管理画面自体の
-        ブラウザウィンドウ幅を伸縮させた際、特定の中間幅でプレビューの
-        表示が崩れる（デバイス幅切替ボタンが消える／プレビューが極端に
-        狭いフォーム欄に押しつぶされたような見た目になる）」不具合を
-        引き起こしていたことが判明した。
-        原因：`relocateDeviceToolbar()`/`relocateViewControls()`は
-        `window`の`resize`イベントで即座に`getBoundingClientRect()`を
-        使って位置を再計算するが、このCSSトランジションが有効だと、
-        resizeイベント発火時点ではPane1/Pane2の実際のレイアウトが
-        まだ「遷移アニメーションの途中」であり、取得される座標が
-        最終値ではなく中間値になってしまう。この2つの関数は
-        `MutationObserver`（他の操作に伴うDOM変化）でも再計算される
-        設計のため、CMSの背景処理（9.33-A参照）によって偶然すぐに
-        再計算されるとほぼ気づかれないが、それが起きるまでの間
-        （実機計測で1〜2秒程度）は誤った位置のまま描画され続け、
-        「プレビューが消えた・壊れた」ように見えていた。
-        CSSトランジション自体を削除して幅の変更を即座（無遷移）に
-        することで、resizeイベント発火時点で既に最終レイアウトが
-        確定しているようにし、この同期ズレを構造的に無くした
-        （PC/タブレット/スマホボタンクリック時のなめらかな遷移演出は
-        失われるが、実機検証で「スナップして即座に切り替わる」動作に
-        なるだけで、機能的な支障は無い）。
-      */
-      /*
-        ⚠️ 当初 `flex: 0 0 375px !important` のようなショートハンドで
-        flex-basis を直接指定していたが、実機検証で computed width が
-        常に0になる（インラインstyleに !important 付きで同じ値を
-        直接セットしても再現する＝react-split-pane固有の問題ではなく
-        flex-basisショートハンドの解決自体が失敗する）不具合を確認した。
-        `flex: none !important`（flex-basis: auto 相当）で明示的な
-        width指定を有効化し、width/min-width をそれぞれ !important で
-        指定する方式に変更したところ確実に反映されることを確認済み。
-        min-widthも同時に!importantで固定しないと、flexアイテムの既定
-        min-width:auto（内容に応じた自動値）と衝突して縮む場合がある
-        ため、Pane2側は幅と同じ値を指定している。
-      */
-      .SplitPane[data-cms-device='tablet'] > .Pane1 {
-        flex: none !important;
-        width: calc(100% - 768px) !important;
-        min-width: 0 !important;
-        max-width: none !important;
-      }
-      .SplitPane[data-cms-device='tablet'] > .Pane2 {
-        flex: none !important;
-        width: 768px !important;
-        min-width: 768px !important;
-        max-width: none !important;
-      }
-      .SplitPane[data-cms-device='mobile'] > .Pane1 {
-        flex: none !important;
-        width: calc(100% - 375px) !important;
-        min-width: 0 !important;
-        max-width: none !important;
-      }
-      .SplitPane[data-cms-device='mobile'] > .Pane2 {
-        flex: none !important;
-        width: 375px !important;
-        min-width: 375px !important;
-        max-width: none !important;
-      }
-      /*
-        「PC」選択時：react-split-pane既定の50/50分割（両ペイン
-        `flex: 1 1 0%`）だと、Pane2（プレビュー）の実測幅がタブレット
-        固定値の768pxを下回る場合があり（例：ウィンドウ幅1400pxで
-        698px）、「PC表示のほうがタブレット表示より狭い」不具合の
-        原因になっていた。さらにこの768px未満という狭さが、実サイト
-        側のStickyContactBarが持つ`md:hidden`（Tailwind既定のmd
-        ブレークポイント=768px）を「768px未満だから表示する」に
-        正しく反応させてしまい、「PC表示なのに画面下部固定バーが
-        出る」不具合にもつながっていた（サイト側のレスポンシブ判定
-        自体は正しく、プレビュー幅が狭すぎたことが根本原因）。
-        tablet/mobileと同じ`!important`パターンで、フォーム側
-        （Pane1）に無理のない固定幅（400px）を、プレビュー側
-        （Pane2）に残り全幅を与える。一般的なデスクトップ幅
-        （1200px以上）であれば、Pane2は自然に1000px前後を確保でき、
-        タブレット・スマホ双方のブレークポイントを安全に上回る。
-      */
-      .SplitPane[data-cms-device='pc'] > .Pane1 {
-        flex: none !important;
-        width: 400px !important;
-        min-width: 400px !important;
-        max-width: none !important;
-      }
-      .SplitPane[data-cms-device='pc'] > .Pane2 {
-        flex: none !important;
-        width: calc(100% - 400px) !important;
-        min-width: 0 !important;
-        max-width: none !important;
-      }
-      .Pane2 iframe {
-        width: 100% !important;
-        height: 100% !important;
-      }
-
-      /*
-        デバイス幅切替ボタン（PC／タブレット／スマホ）。プレビュー枠には
-        一切重ねず、独立した要素としてdocument.bodyへ追加し、position:fixedで
-        座標を直接指定する（Decap本体・React管理下のノードへは物理的な
-        子要素追加・親付け替えを一切行わない。9)節のViewControls移設と
-        同じ理由）。
-        【2026-09・配置場所を変更】以前は画面最上部のメインヘッダー内
-        （[class*="ToolbarSectionMeta"]＝「サイトを表示」リンク＋
-        アカウントアイコンのすぐ左）に配置していたが、画面幅が狭い
-        （実測850px前後）場合、メインヘッダーの「公開する」「エントリを
-        削除」ボタンとこのツールバーの表示領域が重なり、クリックできなく
-        なる不具合が繰り返し報告された。実機調査の結果、「プレビュー
-        表示を切り替える」「スクロール同期を切り替える」ボタン
-        （[class*="ViewControls"]）を囲む行が、メインヘッダーとは別の、
-        画面幅いっぱいの独立した行（サブヘッダー行、メインヘッダーの
-        すぐ下）として常に描画されている（9)節で試みていた
-        「ViewControls自体をメインヘッダー内へposition:fixedで
-        ピン留めする」処理が、現在のDecapバージョンでは対象
-        （[class*="ToolbarSubSectionLast"]）が常に幅0のため実質的に
-        何もしていない＝ViewControlsは常にこのサブヘッダー行に留まる
-        ことを実機確認済み）ことが判明したため、デバイス幅切替ボタンの
-        配置先をこのサブヘッダー行の【右端】に変更した
-        （relocateDeviceToolbar()参照）。メインヘッダーのボタン群とは
-        完全に別の行になるため、画面幅を問わず重複が原理的に発生しない。
-        以前はプレビューiframeの右上に直接重ねて配置していたが、
-        サイトのハンバーガーメニュー（多くの場合ヘッダー右上に配置）と
-        座標が重なり、クリックがこのツールバーに奪われてiframe側の
-        ハンバーガーボタンを押せなくなる不具合があったため、現在の
-        ヘッダー外（サブヘッダー行）配置に変更した経緯がある。
-      */
-      #cms-device-toolbar {
-        display: none;
-        position: fixed;
-        z-index: 9000;
-        gap: 2px;
-        padding: 4px;
-        background: #fff;
-        border: 1px solid #d8dbe2;
-        border-radius: 8px;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-      }
-      #cms-device-toolbar.visible {
-        display: flex;
-      }
-      #cms-device-toolbar button {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        border: none;
-        background: transparent;
-        color: #4b5468;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 6px 9px;
-        border-radius: 6px;
-        cursor: pointer;
-        line-height: 1;
-        white-space: nowrap;
-      }
-      #cms-device-toolbar button svg {
-        flex: none;
-        stroke: currentColor;
-      }
-      #cms-device-toolbar button.active {
-        background: #eef2ff;
-        color: #1e40af;
-      }
-
-      /*
-        Decap本体が既定で描画する「サイトを表示」リンク（[class*="AppHeaderSiteLink"]。
-        `site_url`/`display_url`をそのままテキスト表示する仕様のため
-        "https://master-template-multi.easygoing247.workers.dev"のような長い
-        文字列になり、ツールバー右側（デバイス幅切替ボタン・公開ボタン等と
-        同じ行）を大きく占有していた。実機検証で、画面幅800〜1000px程度
-        まで狭めると、この長いリンクに押し出された左側の要素（本コレクション
-        名・保存状態バッジ）の残り幅が足りなくなり、代わりに右寄せで固定
-        位置に置いている「デバイス幅切替ボタン」（#cms-device-toolbar、
-        本ファイル7.5節）が「公開する」ボタンと重なってクリックできなくなる
-        不具合を確認した（2026-09）。
-        Decap自身が生成するこの<a>要素（href/target="_blank"は既に本体が
-        正しく設定済み）のテキストノードだけをCSSで視覚的に置き換える
-        （font-size:0で元のテキストを潰し、::beforeで短い文言に差し替える）。
-        React管理下のDOM構造・クリック挙動には一切手を加えないため、
-        9)節のViewControls移設等と同様に安全な手法。
-        ⚠️ この規則は「default（メディアクエリ無し）」の位置に置くこと。
-        実機スマホ幅（799px以下）ではこのリンク自体を完全非表示にする
-        既存ルール（後述 @media (max-width: 799px) 内）が引き続き優先
-        されるべきで、CSSの詳細度が同じ場合は後に書かれた規則が勝つため、
-        このルールは必ずそのメディアクエリより「前」に置く。
-      */
-      [class*='AppHeaderSiteLink'] {
-        font-size: 0 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 4px !important;
-        white-space: nowrap !important;
-      }
-      [class*='AppHeaderSiteLink']::before {
-        content: 'サイトを表示 ↗';
-        font-size: 13px;
-        font-weight: 700;
+        padding-bottom: calc(146px + env(safe-area-inset-bottom, 0px)) !important;
       }
 
       @media (max-width: 799px) {
@@ -474,55 +254,6 @@
         [class*='EditorContainer'] {
           min-width: 0 !important;
           width: 100% !important;
-        }
-
-        /*
-          スマホでヘッダー左側の「◯◯のエントリを作成中」「保存済／公開済」が
-          極端に狭い幅（実測14px）へ押し込まれ、1文字ずつ縦積みになって
-          見切れる・下の編集領域に被る不具合の修正。
-          原因：右側の [class*="ToolbarSectionMeta"]（本番サイトURLリンク
-          "master-template-multi.easygoing247.workers.dev" ＋ アカウント
-          アイコン）が幅400px超を占有し、左側の
-          [class*="ToolbarSectionBackLink"] を圧迫していた。
-          → URLリンクはスマホでは非表示（アカウントメニューは残す）、
-            左側セクションに伸長を許可し、テキストは縮小＋省略記号で1行に収める。
-        */
-        [class*='ToolbarSectionBackLink'] {
-          flex: 1 1 auto !important;
-          min-width: 0 !important;
-          max-width: 66% !important;
-          overflow: hidden !important;
-        }
-        /* BackArrow の隣、BackCollection / BackStatus を包む無名 div */
-        [class*='ToolbarSectionBackLink'] > div:not([class*='BackArrow']) {
-          min-width: 0 !important;
-          flex: 1 1 auto !important;
-          display: flex !important;
-          flex-direction: column !important;
-          justify-content: center !important;
-          align-items: flex-start !important;
-          overflow: hidden !important;
-          height: auto !important;
-        }
-        [class*='BackCollection'] {
-          font-size: 11px !important;
-          line-height: 1.35 !important;
-          max-width: 100% !important;
-          white-space: nowrap !important;
-          overflow: hidden !important;
-          text-overflow: ellipsis !important;
-        }
-        [class*='BackStatus'] {
-          font-size: 10px !important;
-          line-height: 1.2 !important;
-          white-space: nowrap !important;
-        }
-        [class*='ToolbarSectionMeta'] {
-          flex: 0 0 auto !important;
-          min-width: 0 !important;
-        }
-        [class*='AppHeaderSiteLink'] {
-          display: none !important;
         }
 
         /*
@@ -581,28 +312,6 @@
         }
 
         /*
-          本文（markdownウィジェット）のSlateエディタ本体（[data-slate-editor]）
-          へのタッチスワイプを、ブラウザ自身のcontentEditable用ジェスチャー
-          （テキスト選択・慣性スクロール等）に奪われる前に、必ずJS側の
-          自前タッチスクロール処理（touchstart/touchmove、上記
-          isTouchScrollExempt参照）へ渡すための保険。`touch-action: pan-y`
-          により、横方向のジェスチャーやブラウザ既定の複雑な処理を無効化し、
-          縦方向のパン操作であることを先に宣言しておく（`{ passive: false }`
-          で登録している自前のtouchmoveリスナーがpreventDefaultで主導権を
-          握れるようにするため）。囲い枠・吹き出し等のvoidブロック内の
-          個別要素（アイコン画像・装飾用のバッジ等）にも同様に適用し、
-          非インタラクティブな装飾要素がジェスチャーを奪わないようにする。
-        */
-        [data-slate-editor] {
-          touch-action: pan-y;
-        }
-        [data-slate-void='true'] img,
-        [data-slate-void='true'] mark,
-        [data-slate-void='true'] > div {
-          touch-action: pan-y;
-        }
-
-        /*
           左右分割レイアウトを解除し、フォームのみを全幅表示する。
           .SplitPane の height:auto は一見不要に見えるが、これを外すと
           .SplitPane 自身が持つ inline の overflow:hidden ＋ 固定高さ（100%）
@@ -658,44 +367,141 @@
           display: none !important;
         }
       }
+
+      /*
+        管理画面フッター：制作クレジット＋サポート窓口（LINE／Webフォーム）。
+        画面最下部に常時固定表示する（高さは全画面幅で48pxに固定し、他の
+        固定要素の位置計算を単純に保つ）。
+        既存の「編集フォーム最下部の余白確保」（[class*='ControlPaneContainer']
+        のpadding-bottom）・クイックナビ（#cms-quick-nav-btn/menu）は、
+        このフッターの高さ(48px)+隙間(8px)ぶんだけ位置・余白を上へ
+        ずらして重ならないようにしている（このファイル内の該当箇所を参照）。
+        ⚠️ iPhoneのホームインジケーター等の安全域（Safe Area）ぶん、下部
+        パディングにenv(safe-area-inset-bottom)を加算している（2026-09）。
+        固定height指定のままだと安全域ぶんの余白でクレジット文言・ボタンが
+        上へ押し縮められてしまうため、height→min-heightに変更して
+        パディング増加分だけ box が自然に伸びるようにした。これに連動して、
+        #cms-quick-nav-btn/menuのbottom・[class*='ControlPaneContainer']の
+        padding-bottomにも同じenv()をcalc()で加算している（該当箇所参照）。
+      */
+      #cms-credit-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
+        min-height: 48px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 16px env(safe-area-inset-bottom, 0px);
+        background: #1e293b;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.28);
+        font-family:
+          -apple-system,
+          BlinkMacSystemFont,
+          'Hiragino Kaku Gothic ProN',
+          'Hiragino Sans',
+          Meiryo,
+          sans-serif;
+      }
+
+      #cms-credit-footer .cms-credit-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 12px;
+        line-height: 1.3;
+        color: #cbd5e1;
+      }
+
+      #cms-credit-footer .cms-credit-actions {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      #cms-credit-footer .cms-credit-actions a {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffffff;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      /*
+        LINEグリーン（#06c755）は彩度・明度が高く、白文字でも他方の
+        ボタン（青地）に比べてコントラストが弱く見えやすいため、この
+        ボタンだけごく薄い黒のtext-shadowで縁取りして背景色との
+        コントラストを補強する（背景色自体はLINE公式ブランドカラーの
+        ため変更しない）。
+      */
+      #cms-credit-footer .cms-credit-actions a.cms-credit-line {
+        background: #06c755;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+      }
+
+      #cms-credit-footer .cms-credit-form {
+        background: #3b82f6;
+      }
+
+      @media (max-width: 480px) {
+        #cms-credit-footer {
+          padding: 0 8px;
+          gap: 6px;
+        }
+
+        #cms-credit-footer .cms-credit-text {
+          font-size: 10px;
+        }
+
+        #cms-credit-footer .cms-credit-actions a {
+          padding: 6px 9px;
+          font-size: 11px;
+        }
+      }
     </style>
   </head>
   <body>
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <!--
-      バージョンは意図的に固定（キャレット範囲 ^3.0.0 にしない）。unpkg は
-      semver 範囲をリクエスト毎に解決するため、範囲指定のままだと配信される
-      実体バージョンが無告知で変わり得る（再現性が無く、退行版に当たっても
-      気付けない）。実際に「公開して新規作成／公開して複製する」を実行しても
-      フォームが新規作成画面へ遷移せず旧エントリの画面に留まる不具合が
-      発生したため、スラッグ生成まわりの改善（フルネームでの特殊文字対応・
-      テンプレート文字列でのフィルタ対応等）を含む最新安定版へ明示的に
-      固定した。更新時は https://github.com/decaporg/decap-cms/releases を
-      確認し、この行のバージョンとコメントの日付を両方更新すること。
-      （固定日: 2026-09。当時の最新安定版 3.16.2）
+      制作クレジット・サポート窓口フッター（画面最下部固定）。
+      Decap CMS本体（React管理下のDOM）とは独立した静的要素のため、
+      <body>直下の兄弟要素として配置しても再マウント時の競合は起きない
+      （#cms-quick-nav-btn等、JSで動的生成する既存の固定要素と違い、
+      内容が常に固定でReactの状態を必要としないため、素のHTMLで記述する）。
     -->
-    <script src="https://unpkg.com/decap-cms@3.16.2/dist/decap-cms.js"></script>
+    <div id="cms-credit-footer">
+      <div class="cms-credit-text">System Developed &amp; Supported by 合同会社ドーンメディア</div>
+      <div class="cms-credit-actions">
+        <!-- 要置き換え：実際のLINE公式アカウントの相談用URLに差し替えること -->
+        <a class="cms-credit-line" href="https://lin.ee/YOUR_LINE_ID" target="_blank" rel="noopener noreferrer">
+          💬 LINEで相談
+        </a>
+        <!-- 要置き換え：実際のお問い合わせフォームURLに差し替えること -->
+        <a class="cms-credit-form" href="https://your-domain.com/contact/" target="_blank" rel="noopener noreferrer">
+          ✉️ Webフォームで相談
+        </a>
+      </div>
+    </div>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
     <!--
       「サイト全体設定」「デザインテーマ設定」のリアルタイムプレビュー
       テンプレート（CMS.registerPreviewTemplate）。decap-cms.js が公開する
       window.h / window.createClass / window.CMS を使うため、
       本体スクリプトの読み込み直後・かつCMSの初期化前にこの位置で読み込む。
-      ⚠️ クエリ文字列のバージョン（?v=YYYYMMDDN）は意図的なキャッシュ
-      バスターで、このファイルを更新するたびに数字を上げること。
-      Cloudflareの静的アセット配信自体は `cache-control: max-age=0,
-      must-revalidate` で毎回検証される設定だが、閲覧者側のブラウザ
-      キャッシュ（特にモバイルSafari等）がこれを無視して古いJSを
-      使い続ける事例が確認できたため、明示的なバージョン付きURLで
-      確実に新しいファイルを取得させる。
     -->
-    <script src="./preview.js?v=20260914i"></script>
-    <!--
-      本文リッチテキストエディタ（widget: markdown）の拡張：日本語化の
-      補完（CMS.registerLocale）と、動画埋め込み・囲い枠・吹き出し・
-      テキスト配置の追加ツール（CMS.registerEditorComponent）。
-      preview.js と同じ理由でCMS初期化前のこの位置に置く。
-    -->
-    <script src="./editor-components.js?v=20260914i"></script>
+    <script src="./preview.js"></script>
     <script>
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', (user) => {
@@ -751,31 +557,15 @@
           return document.querySelector('[class*="ControlPaneContainer"]');
         }
 
-        // Decapのエディター画面は、画面幅によって実際にスクロールしている
-        // コンテナが異なる。
-        // ・PC幅（800px以上）：[class*="ControlPaneContainer"]（フォーム側の
-        //   ペイン自体）が overflow-y:auto でネイティブにスクロールする
-        //   （プレビュー追従スクロール（syncPreviewScroll）が同要素の
-        //   scrollイベントを見ているのと同じコンテナ）。
-        // ・スマホ幅（799px以下）：ドロップダウンの選択肢がクリップされない
-        //   よう [class*="ControlPaneContainer"] 自体は overflow:visible!important
-        //   に上書きしているため、代わりに [class*="EditorContainer"] を
-        //   overflow:hiddenのまま自前でscrollTop操作する独自スクロール実装
-        //   になっている。
-        // ネイティブの scrollIntoView() ではどちらの実装でもスクロールしない
-        // ため、実際にスクロールするコンテナを探して scrollTop を書き換える。
-        // 単に「scrollHeightがclientHeightより大きい」だけで判定すると、
-        // PC幅でも [class*="EditorContainer"] 側にわずかな内部差分（数十px、
-        // ツールバー領域の丸め誤差等）があり誤検出してしまう
-        // （overflow-y:hiddenのまま実際には自前スクロールに使われていない
-        // ダミーの余白のため、scrollTopを書き換えても画面上は一切動かない）。
-        // overflow-y が visible な要素は scrollTop を書き換えても効果が無い
-        // （スクロール可能領域を持たない）ため候補から除外し、それ以外で
-        // 実際にオーバーフローしている最初の候補を採用することで、PC幅・
-        // スマホ幅のどちらでも正しいコンテナを取り違えないようにする。
+        // Decapのエディター画面は独自のスクロール実装（[class*="EditorContainer"]を
+        // overflow:hiddenにし、scrollTopをJSから直接操作する方式）になっており、
+        // ネイティブの scrollIntoView() ではスクロールしない。実際にスクロールする
+        // コンテナを探して、その scrollTop を書き換える。
+        // クラス名の一致だけでなく「実際にスクロール可能（scrollHeightが
+        // clientHeightより大きい）」ことも確認し、Decap本体側の細かなバージョン
+        // 差異があっても正しいコンテナを取り違えないようにする。
         function findScrollContainer() {
           var candidates = [
-            document.querySelector('[class*="ControlPaneContainer"]'),
             document.querySelector('[class*="EditorContainer"]'),
             document.querySelector('.Pane1'),
             document.scrollingElement,
@@ -783,9 +573,7 @@
           ];
           for (var i = 0; i < candidates.length; i++) {
             var el = candidates[i];
-            if (!el) continue;
-            if (getComputedStyle(el).overflowY === 'visible') continue;
-            if (el.scrollHeight - el.clientHeight > 4) return el;
+            if (el && el.scrollHeight - el.clientHeight > 4) return el;
           }
           return null;
         }
@@ -852,36 +640,6 @@
           // フォーム操作要素・ドラッグ並び替えハンドル・クイックナビUI・
           // プルダウンの選択肢・モーダル内は、それぞれ本来の操作を優先し、
           // 自前スクロールの対象外とする。
-          // ⚠️【重要な既知の落とし穴・2段階で判明】
-          // 第1段階（旧: `[contenteditable]`）：値を問わずマッチする
-          // ため、囲い枠・吹き出し等のvoidブロック（`contenteditable=
-          // "false"`）まで誤って除外していた。`[contenteditable="true"]`
-          // に限定して修正済みだったが、これだけでは不十分だった。
-          // 第2段階（本修正）：`[contenteditable="true"]`は本文
-          // （markdownウィジェット）の**Slateエディタ本体そのもの**
-          // （`[data-slate-editor]`、本文中の通常のテキスト全体を
-          // 包む要素）にも付与されている。これを除外リストに残したままだと、
-          // 「本文入力エリア内の、装飾コンポーネントではない普通のテキスト
-          // 部分」を指で直接スワイプしても自前スクロールが一切発動せず、
-          // かつスクロールを担う祖先`[class*="EditorContainer"]`は
-          // `overflow:hidden`のためネイティブスクロールも発生しない
-          // （＝ツールバー等の外枠部分をスワイプすればスクロールするのに、
-          // 本文のテキスト部分の上だとスクロールできない、という報告と
-          // 一致）。
-          // `[contenteditable="true"]`を除外リストから完全に外し、
-          // 本文のテキスト部分も自前スクロールの対象に含める。これが
-          // カーソル位置指定（タップ）を壊さない理由：`touchmove`側の
-          // 処理（下記）は`TOUCH_MOVE_THRESHOLD`（6px）を超える移動が
-          // あった場合のみ`preventDefault`してスクロールを開始する設計に
-          // なっており、指を動かさない単純なタップ（＝カーソルを置く
-          // 操作）はこの閾値を超えないため`touchmove`側で一切介入せず、
-          // `touchend`後のブラウザ標準のクリック処理でカーソル位置は
-          // 従来どおり正しく設定される。長押しからのテキスト選択
-          // ドラッグ操作とは弁別しきれない場合があり得るが、本UIは
-          // あくまで管理画面の編集フォームであり、スクロールできない
-          // 致命的な不具合を放置するより、稀なテキスト選択操作との
-          // トレードオフを許容する方針とする（本文以外のフォーム要素
-          // でも同じ閾値ベースの判定が既に使われており、一貫した設計）。
           return !!(
             target.closest &&
             target.closest(
@@ -889,6 +647,7 @@
                 'input',
                 'textarea',
                 'select',
+                '[contenteditable]',
                 '[class*="DragIconContainer"]',
                 '#cms-quick-nav-btn',
                 '#cms-quick-nav-menu',
@@ -1128,7 +887,7 @@
           features: '選ばれる理由',
           services: 'サービス',
           flow: '制作の流れ',
-          products: '商品一覧',
+          products: '商品一覧（竹/松プラン）',
           works: '実績',
           plans: '料金プラン',
           faq: 'FAQ',
@@ -1144,7 +903,7 @@
           features: '選ばれる3つの理由',
           services: 'サービス・事業内容',
           flow: 'ご相談から納品までの流れ',
-          products: '商品一覧',
+          products: '商品・プラン一覧',
           works: '実績・活用事例',
           plans: '料金プラン',
           faq: 'よくある質問',
@@ -1456,31 +1215,23 @@
         //    ボタン（ViewControls）を、プレビューペイン右上のフローティング
         //    表示から、画面最上部のヘッダーバー内、非表示にした
         //    「プレビューのチェック」ボタンが元あった場所（アカウント
-        //    アイコン側の区切り線のすぐ左＝ToolbarSubSectionLast付近）へ
-        //    "見た目だけ" 寄せる。
-        //
-        //    【重要・過去の実装からの変更点】
-        //    以前は targetWrapper.appendChild(viewControls) でDOM上
-        //    物理的に付け替えていたが、この要素はDecap本体（React）が
-        //    生成・管理するノードであり、物理的な再親付けは危険だと判明
-        //    した：Reactは内部のFiberツリーで「元の親の子である」という
-        //    参照を保持し続けるため、後で編集画面をアンマウントする際に
-        //    その元の親に対して removeChild しようとし、実際の親（我々が
-        //    appendChildで差し替えた側）と食い違って
-        //    `NotFoundError: Failed to execute 'removeChild' on 'Node'...`
-        //    が発生し得る。これが起きるとReactのアンマウント処理自体が
-        //    失敗し、「公開して新規作成」（エディタ全体を一旦アンマウント
-        //    してから真っさらな新規フォームを再マウントする、大きな
-        //    作り直しを伴う操作）が画面遷移しないまま直前の編集画面に
-        //    留まってしまう不具合の原因になっていた（「公開して複製する」
-        //    は既存フォームを流用する軽い更新のため同じ経路を通らず、
-        //    症状が出にくかったと考えられる）。
-        //    そのため、DOM上の親子関係には一切手を加えず、CSSの
-        //    position:fixed（`.cms-view-controls-pinned`。<style>参照）＋
-        //    ToolbarSubSectionLast の getBoundingClientRect() から算出した
-        //    座標を直接指定することで、見た目だけをヘッダー内にあるように
-        //    再現する。ToolbarContainer は常にビューポート上部に固定表示
-        //    されるため、mutation・タイマーで再計算しても問題ない。
+        //    アイコン側の区切り線のすぐ左＝ToolbarSubSectionLast内）へ
+        //    移動する。
+        //    CSSのposition指定を打ち消すだけではDOM上の位置（プレビュー
+        //    ペインの内側）自体は変わらずヘッダーには表示できないため、
+        //    実際のDOMノードをヘッダー側のコンテナへ移動させる。
+        //    Reactが生成・管理しているノードをそのまま別の場所へ
+        //    appendChild/insertBeforeで移動させても、React内部の参照は
+        //    そのノードを指し続けるため、以降の再レンダー・イベント処理は
+        //    移動先でも問題なく機能する（クイックナビボタンをdocument.body
+        //    直下へ配置しているのと同じ手法）。
+        //    エントリ編集画面への出入りのたびにこの要素は再生成される
+        //    ため、MutationObserverで継続的に検知して移動し続ける。
+        //    ToolbarSubSectionLast は「プレビューのチェック」ボタンの
+        //    ラッパー（ToolbarSubSectionFirst-ToolbarSubSectionLast）を
+        //    指す。ToolbarSectionMainの1番目の子要素（公開状態バッジ）は
+        //    "ToolbarSubSectionFirst"のみでLastを含まないため、
+        //    [class*="ToolbarSubSectionLast"]で一意に絞り込める。
         // ==================================================================
         var lastViewControlsNode = null;
         function relocateViewControls() {
@@ -1498,424 +1249,16 @@
             applyScrollSyncIcon();
           }
           var targetWrapper = document.querySelector('[class*="ToolbarSubSectionLast"]');
-          if (!targetWrapper) {
-            viewControls.classList.remove('cms-view-controls-pinned');
-            viewControls.style.top = '';
-            viewControls.style.left = '';
-            return;
-          }
-          var rect = targetWrapper.getBoundingClientRect();
-          if (rect.width === 0 && rect.height === 0) return; // 非表示中は計算しない
-          viewControls.classList.add('cms-view-controls-pinned');
-          // ToolbarSubSectionLast の右端に沿わせ、縦方向は中央に揃える
-          // （appendChildで最後の子として並んでいた頃の見た目に近づける）。
-          var controlsRect = viewControls.getBoundingClientRect();
-          viewControls.style.left = Math.max(0, rect.right - controlsRect.width) + 'px';
-          viewControls.style.top = rect.top + (rect.height - controlsRect.height) / 2 + 'px';
+          if (!targetWrapper) return;
+          if (viewControls.parentElement === targetWrapper) return;
+          targetWrapper.appendChild(viewControls);
         }
 
         var viewControlsObserver = new MutationObserver(function () {
           relocateViewControls();
         });
         viewControlsObserver.observe(document.body, { childList: true, subtree: true });
-        window.addEventListener('resize', relocateViewControls);
         relocateViewControls();
-
-        // ==================================================================
-        // 7.5) プレビュー領域のデバイス幅切替（PC／タブレット／スマホ）ボタン。
-        //    <style>内の #cms-device-toolbar / .SplitPane[data-cms-device] と
-        //    対になる実装。ボタン自体はDecap（React）管理下のノードには
-        //    一切追加せず、document.bodyへの独立した要素として追加し、
-        //    position:fixedで「プレビュー表示を切り替える」「スクロール
-        //    同期を切り替える」ボタン（[class*="ViewControls"]）を囲む
-        //    サブヘッダー行の右端に並べて表示する（2026-09、メインヘッダー
-        //    の「公開する」「エントリを削除」ボタンとの重複を解消するため
-        //    ここへ変更。プレビューiframeには一切重ねない＝サイト側の
-        //    ハンバーガーボタン等のクリックを奪わないため）。
-        //    幅の変更自体は.SplitPane側のCSS（data-cms-device属性）が
-        //    Pane1/Pane2の実際の分割幅を書き換える方式のため、切替を
-        //    繰り返してもスクロール不能や管理画面のフリーズは起きない。
-        // ==================================================================
-        var DEVICE_ICONS = {
-          pc: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"></rect><path d="M8 20h8M12 16v4"></path></svg>',
-          tablet:
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="1.8"></rect><path d="M11.5 18.5h1"></path></svg>',
-          mobile:
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="1.8"></rect><path d="M11.5 18h1"></path></svg>',
-        };
-        var currentPreviewDevice = 'pc';
-        var deviceToolbar = document.createElement('div');
-        deviceToolbar.id = 'cms-device-toolbar';
-        var DEVICE_OPTIONS = [
-          { device: 'pc', label: 'PC' },
-          { device: 'tablet', label: 'タブレット' },
-          { device: 'mobile', label: 'スマホ' },
-        ];
-        DEVICE_OPTIONS.forEach(function (opt) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.innerHTML = DEVICE_ICONS[opt.device] + '<span>' + opt.label + '</span>';
-          btn.dataset.device = opt.device;
-          btn.addEventListener('click', function () {
-            applyPreviewDevice(opt.device);
-          });
-          deviceToolbar.appendChild(btn);
-        });
-        document.body.appendChild(deviceToolbar);
-
-        function applyPreviewDevice(device) {
-          currentPreviewDevice = device;
-          var splitPane = document.querySelector('.SplitPane');
-          // 【重要】「PC」もtablet/mobileと全く同じ「data-cms-device属性
-          // ＋ CSSの!important」方式に統一した（旧実装は属性を外して
-          // react-split-pane既定の50/50分割任せにしていたが、その既定値
-          // だとPane2＝プレビューの実測幅がタブレット固定値768pxを下回る
-          // 場合があり＝「PCの方がタブレットより狭い」不具合、かつその
-          // 狭さ（768px未満）が実サイト側StickyContactBarの`md:hidden`
-          // を「768px未満だから表示する」に正しく反応させてしまい＝
-          // 「PC表示なのに画面下部固定バーが出る」不具合にもつながって
-          // いた。詳細はCSS側の`[data-cms-device='pc']`ルールのコメント
-          // 参照）。react-split-pane自身のinline style任せにする「無指定」
-          // 状態は、Resizerを手動ドラッグしている間だけ使う
-          // （下記のdocument.addEventListener('mousedown'/'touchstart')参照）。
-          if (splitPane) splitPane.setAttribute('data-cms-device', device);
-          Array.prototype.forEach.call(deviceToolbar.querySelectorAll('button'), function (btn) {
-            btn.classList.toggle('active', btn.dataset.device === device);
-          });
-          // Pane1の実際の幅が変わるため、それに連動するクイックナビ
-          // ボタンの位置（updateNavButtonPosition、2)節）も再計算する。
-          if (typeof updateNavButtonPosition === 'function') updateNavButtonPosition();
-          updateStickyBarPreviewVisibility();
-        }
-
-        // ==================================================================
-        // 7.5b) 画面下部固定バー（お問い合わせショートカット）を、プレビューが
-        //    「PC」表示のときだけ非表示にする。実サイト側は`md:hidden`
-        //    （768px未満で表示）というCSSのみでこれを制御しているため、
-        //    通常はプレビューiframeの実測幅がタブレット/スマホプリセットの
-        //    幅（768px/375px未満）になれば自動的に表示される。しかし、
-        //    管理画面のウィンドウ自体が狭い場合（例：フォーム側Pane1に
-        //    固定400pxを割いた上でウィンドウ幅が1100px未満など）、
-        //    「PC」プリセット選択中でもPane2の実測幅が768pxを下回り、
-        //    CSSのメディアクエリだけでは「PC表示なのに固定バーが出る」
-        //    ケースが起こり得る。そのため、CSSのビューポート判定に加えて
-        //    「今どのデバイスプリセットが選択されているか」という
-        //    アプリケーション側の意図を直接反映させる二重の安全策として、
-        //    プレビューiframe内の該当要素をJSで明示的に表示/非表示する。
-        // ==================================================================
-        function updateStickyBarPreviewVisibility() {
-          var pane2 = document.querySelector('.Pane2');
-          var iframe = pane2 && pane2.querySelector('iframe');
-          var doc = null;
-          try {
-            doc = iframe && iframe.contentDocument;
-          } catch (e) {
-            doc = null;
-          }
-          if (!doc) return;
-          var bar = doc.querySelector('[aria-label="お問い合わせショートカット"]');
-          if (!bar) return;
-          bar.style.display = currentPreviewDevice === 'pc' ? 'none' : '';
-        }
-        applyPreviewDevice('pc');
-        // `.SplitPane`はReactが非同期に描画するため、上のスクリプト実行
-        // 時点ではまだDOMに存在せず、直後のapplyPreviewDevice('pc')が
-        // 属性を設定できない（＝何もしない）まま終わってしまうことが
-        // ある。エントリ切替時のhashchangeリスナー（後述）で毎回PCへ
-        // 戻す運用のため通常は問題にならないが、管理画面を開いた直後の
-        // 最初の1回だけこの取りこぼしが起きるため、`.SplitPane`が
-        // 実際にDOMへ現れるのを監視し、そのタイミングで現在選択中の
-        // デバイス（自由ドラッグ中＝nullの場合は何もしない）を
-        // 改めて適用する。
-        var splitPaneDeviceObserver = new MutationObserver(function () {
-          var splitPane = document.querySelector('.SplitPane');
-          if (!splitPane || !currentPreviewDevice) return;
-          if (splitPane.getAttribute('data-cms-device') !== currentPreviewDevice) {
-            splitPane.setAttribute('data-cms-device', currentPreviewDevice);
-          }
-        });
-        splitPaneDeviceObserver.observe(document.body, { childList: true, subtree: true });
-
-        // 幅を強制している最中に手動でResizerをドラッグしても、!important
-        // 指定が常に勝ってしまい見た目が一切動かず「壊れた」ように見える
-        // ため、ドラッグ開始を検知した時点で強制を解除し、react-split-pane
-        // 自身のドラッグ処理に幅の制御を返す。
-        // ⚠️ 「PC」もtablet/mobileと同じ`!important`方式になったため
-        // （上記参照）、以前の「currentPreviewDevice !== 'pc' の時だけ
-        // 解除」という条件のままだと、PC表示中にResizerをドラッグしても
-        // 何も反応しなくなってしまう（既にPCなので条件に一致しない）。
-        // デバイスの種類を問わず、Resizerのドラッグ開始を検知したら
-        // 必ずdata-cms-device属性そのものを外して自由なドラッグに戻す
-        // （＝どのプリセットからでも手動リサイズを開始できる）。
-        function releaseDeviceWidthLock() {
-          var splitPane = document.querySelector('.SplitPane');
-          if (splitPane) splitPane.removeAttribute('data-cms-device');
-          currentPreviewDevice = null;
-          Array.prototype.forEach.call(deviceToolbar.querySelectorAll('button'), function (btn) {
-            btn.classList.remove('active');
-          });
-        }
-        document.addEventListener(
-          'mousedown',
-          function (e) {
-            if (e.target && e.target.classList && e.target.classList.contains('Resizer')) {
-              releaseDeviceWidthLock();
-            }
-          },
-          true
-        );
-        document.addEventListener(
-          'touchstart',
-          function (e) {
-            if (e.target && e.target.classList && e.target.classList.contains('Resizer')) {
-              releaseDeviceWidthLock();
-            }
-          },
-          true
-        );
-
-        function relocateDeviceToolbar() {
-          var pane2 = document.querySelector('.Pane2');
-          // 【2026-09・基準を変更】以前はヘッダー右側の「本番URLリンク＋
-          // アカウントアイコン」を包む[class*="ToolbarSectionMeta"]を
-          // 基準にしていたが、メインヘッダーの「公開する」「エントリを
-          // 削除」ボタンと重なる不具合があったため、「プレビュー表示を
-          // 切り替える」「スクロール同期を切り替える」ボタンを囲む
-          // [class*="ViewControls"]の行（メインヘッダーとは別の、
-          // 画面幅いっぱいのサブヘッダー行）を基準にするよう変更した
-          // （<style>内の同名クラスに対するコメント参照）。
-          // ただし将来Decap本体の内部構造が変わり、9)節の
-          // relocateViewControls()が実際にViewControls自体を
-          // メインヘッダー内へposition:fixedでピン留めできるように
-          // なった場合（`cms-view-controls-pinned`クラスが付与されて
-          // いる場合）は、ViewControlsはもうサブヘッダー行には存在しない
-          // ため、その場合だけ旧来どおりViewControls自体（＝ヘッダー内に
-          // 固定表示されている）のすぐ左に配置するようフォールバックする。
-          var viewControls = document.querySelector('[class*="ViewControls"]');
-          var pinned = !!viewControls && viewControls.classList.contains('cms-view-controls-pinned');
-          var visible =
-            !!pane2 &&
-            !!viewControls &&
-            getComputedStyle(pane2).display !== 'none' &&
-            pane2.getBoundingClientRect().width > 0;
-          if (visible) {
-            var checkRect = viewControls.getBoundingClientRect();
-            visible = pinned || checkRect.width > 0;
-          }
-          deviceToolbar.classList.toggle('visible', visible);
-          if (!visible) return;
-          var anchorRect = viewControls.getBoundingClientRect();
-          var toolbarRect = deviceToolbar.getBoundingClientRect();
-          var left = pinned
-            ? anchorRect.left - toolbarRect.width - 10 // ヘッダー内固定時：ViewControlsの左隣
-            : anchorRect.right - toolbarRect.width - 12; // 通常時：サブヘッダー行の右端
-          var top = anchorRect.top + (anchorRect.height - toolbarRect.height) / 2;
-          deviceToolbar.style.left = Math.max(8, left) + 'px';
-          deviceToolbar.style.top = Math.max(8, top) + 'px';
-          // プレビューiframe自体が再読み込み（エントリ切替・保存後の
-          // 再描画等）された場合もこの関数が呼ばれるタイミングで
-          // 都度チェックし直す（＝新しいdocumentに対して再適用する）。
-          updateStickyBarPreviewVisibility();
-        }
-
-        var deviceToolbarObserver = new MutationObserver(relocateDeviceToolbar);
-        deviceToolbarObserver.observe(document.body, { childList: true, subtree: true });
-        window.addEventListener('resize', relocateDeviceToolbar);
-        relocateDeviceToolbar();
-
-        // 念のための保険：上記のCSSトランジション削除で本質的な原因は
-        // 解消したが、ブラウザ自身のレイアウト再計算（reflow）が
-        // resizeイベントの発火より遅れるケースが万一残っていても
-        // 対応できるよう、少し遅らせてから再度位置合わせする
-        // （ViewControlsの位置もPane1/Pane2の幅に連動するため同時に行う）。
-        var resizeSettleTimer = null;
-        window.addEventListener('resize', function () {
-          clearTimeout(resizeSettleTimer);
-          resizeSettleTimer = setTimeout(function () {
-            relocateDeviceToolbar();
-            relocateViewControls();
-          }, 250);
-        });
-
-        // エントリを切り替えた際、直前のデバイス幅選択を持ち越して
-        // 「なぜかスマホ幅のまま」と混乱させないよう、都度PCへ戻す。
-        window.addEventListener('hashchange', function () {
-          applyPreviewDevice('pc');
-          relocateDeviceToolbar();
-        });
-
-        // ==================================================================
-        // 7.6) .SplitPane（＝Pane1・Pane2・プレビューiframeの高さの基準）が
-        //    実際に見えているビューポート高さを超えてしまう既知の不具合の
-        //    修正。実機検証で、.SplitPane自身のgetBoundingClientRect().top
-        //    （画面上端からの実際のオフセット。ヘッダー・公開状態バッジ等の
-        //    構成により可変）と、Decap本体がheight計算に使っている想定
-        //    オフセットがズレるケースを確認した（例：top=118pxなのに
-        //    height=834px、window.innerHeight=900pxだと
-        //    118+834=952 > 900 で下端が52px分あふれる）。
-        //    Pane2・その中のiframeはSplitPaneの高さにflexで追従するため、
-        //    この差分がそのまま「画面下部固定バーのプレビューが、実際の
-        //    ブラウザウィンドウの下端より外側（スクロールしても
-        //    見えない領域）に描画される」不具合として現れていた
-        //    （position:fixedはiframe自身のビューポート＝iframeの高さを
-        //    基準に計算されるため、iframeが必要以上に高くなると、
-        //    その分だけ固定バーの実際の画面上の位置も下にずれる）。
-        //    .SplitPane自身の高さを「実際に見えている残り高さ
-        //    （window.innerHeight - 自身のtop座標）」に強制的に一致させる
-        //    ことで、Pane2・iframeもその高さに収まり、常にウィンドウ内に
-        //    固定バーが表示されるようにする。
-        //    ⚠️【重要な既知の落とし穴】この処理は「PC幅でデバイス幅切替
-        //    ボタン（PC/タブレット/スマホ）を使ってプレビューだけを
-        //    スマホ幅シミュレーションする」場合にのみ必要な処理であり、
-        //    管理画面自体を実機のスマホ（実際の狭いビューポート）で
-        //    開いている場合に適用すると、別の重大な不具合を引き起こす
-        //    ことを実機検証で確認した：スマホ幅では
-        //    `[class*='ControlPaneContainer']` に `overflow: visible
-        //    !important`（本ファイル該当箇所参照。react-selectの
-        //    ドロップダウンが祖先のoverflowで見切れないようにするため
-        //    必須）が指定されており、これにより本来22000px超あるフォーム
-        //    全体の実コンテンツは「見た目には全部描画されるが、祖先要素の
-        //    レイアウト計算上の高さには反映されない」状態になる。この状態で
-        //    `.SplitPane` の高さを本処理がwindow.innerHeight基準の固定値
-        //    （例:746px）に強制すると、実際にスクロールを担う祖先
-        //    `[class*='EditorContainer']`（overflow:hidden、9.7章の自前
-        //    タッチスクロール実装の対象）の`scrollHeight`もこの固定値
-        //    近辺（実測+66px程度）に押し込まれてしまい、フォーム最下部
-        //    まで実質スクロールできなくなる（＝「スマホで編集画面を開くと
-        //    スクロールできない」不具合の直接の原因）。
-        //    対策：実機のスマホ幅（既存の`@media (max-width: 799px)`と
-        //    同じ799px基準）では、この処理を完全にスキップする（＝スマホ
-        //    幅時点で`.SplitPane`にプレビュー用の高さ強制は不要——スマホ
-        //    幅ではそもそもプレビューPane2は非表示のため、9.25が対象とした
-        //    「プレビューiframeが画面外に出る」問題自体が発生しない）。
-        //    ウィンドウ幅がPC幅↔スマホ幅をまたいでリサイズされた場合に
-        //    備え、スマホ幅に該当する場合は以前このJSが設定した強制値も
-        //    明示的に解除する（PC幅のまま残り続けて悪影響が出るのを防ぐ）。
-        // ==================================================================
-        function fixSplitPaneHeight() {
-          var splitPane = document.querySelector('.SplitPane');
-          if (!splitPane) return;
-          if (window.matchMedia('(max-width: 799px)').matches) {
-            splitPane.style.removeProperty('height');
-            splitPane.style.removeProperty('max-height');
-            return;
-          }
-          var top = splitPane.getBoundingClientRect().top;
-          if (top < 0) return; // スクロール等で一時的に負値になる場合は何もしない
-          var available = window.innerHeight - top;
-          if (available <= 0) return;
-          splitPane.style.setProperty('height', available + 'px', 'important');
-          splitPane.style.setProperty('max-height', available + 'px', 'important');
-        }
-        var splitPaneHeightObserver = new MutationObserver(fixSplitPaneHeight);
-        splitPaneHeightObserver.observe(document.body, { childList: true, subtree: true });
-        window.addEventListener('resize', fixSplitPaneHeight);
-        fixSplitPaneHeight();
-
-        // ==================================================================
-        // 7.7) files コレクションの一覧（サイドバーのリスト／カード表示）が
-        //    各ファイルの `summary` テンプレートを無視し、常に config.yml の
-        //    静的な `label` を表示してしまう既知の制限（CLAUDE.md 9.25参照。
-        //    `window.CMS` の公開APIにはこの一覧表示を上書きする手段が
-        //    一切無いことを確認済み）への対処。
-        //    実機調査の結果、Decap CMS本体（React + Redux）のReact Fiberを
-        //    辿ると、公開APIには出てこないReduxストア本体（`store.getState()`）
-        //    に到達できることを確認した。ここから読み取れる
-        //    `entries.entities['<collection>.<slug>'].data`は、各エントリの
-        //    「実際に保存されている最新のフィールド値」そのもの（今まさに
-        //    編集中の未保存値ではない）であり、これを使って一覧の見出し
-        //    テキスト（`<h2>`要素）だけを書き換える。
-        //    安全性：(a) 参照は`store.getState()`のみで、`dispatch`は一切
-        //    行わない（Reduxの状態を変更しない、純粋な読み取り専用アクセス）。
-        //    (b) 書き換え対象は一覧画面の`<h2>`内の「見出しテキストの
-        //    文字ノード」のみで、実際の編集フォーム（Slateのcontent
-        //    editable領域）には一切触れない——過去に確認された
-        //    execCommand経由のcontentEditable直接操作によるデータ破損
-        //    （CLAUDE.md 9.22参照）とは全く異なるリスク特性で、この処理が
-        //    保存データを壊すことは構造上あり得ない。
-        //    (c) 対象フィールド名`pageName`をハードコードで
-        //    決め打ちにせず、`data.has('pageName')`で判定する
-        //    （既存のurlSlug自動採番と同じ、9.3の設計方針を踏襲）ため、
-        //    将来「pageName」フィールドを持つ別のfilesコレクションを
-        //    追加した場合も自動的に適用される。
-        //    ⚠️ React Fiberの内部プロパティ名（`__reactContainer$...`）や
-        //    Reduxストアの内部データ構造はdecap-cms本体・Reactの
-        //    バージョンアップで変わり得る非公開実装詳細のため、
-        //    見つからない場合は静かに諦める（例外を投げない）実装にして
-        //    あり、万一動かなくなっても一覧に静的なlabelが表示される
-        //    （＝今までの挙動に戻るだけ）という安全側に倒れる設計にしている。
-        // ==================================================================
-        function findDecapReduxStore() {
-          if (window.__cmsReduxStore) return window.__cmsReduxStore;
-          try {
-            var root = document.getElementById('nc-root');
-            if (!root) return null;
-            var key = Object.keys(root).find(function (k) {
-              return k.indexOf('__reactContainer') === 0;
-            });
-            if (!key) return null;
-            var found = null;
-            var visited = 0;
-            (function walk(fiber) {
-              if (!fiber || found || visited > 50000) return;
-              visited++;
-              try {
-                if (fiber.memoizedProps && fiber.memoizedProps.store && typeof fiber.memoizedProps.store.getState === 'function') {
-                  found = fiber.memoizedProps.store;
-                  return;
-                }
-              } catch (e) {}
-              walk(fiber.child);
-              if (!found) walk(fiber.sibling);
-            })(root[key]);
-            if (found) window.__cmsReduxStore = found;
-            return found;
-          } catch (e) {
-            return null;
-          }
-        }
-
-        function patchFilesCollectionListLabels() {
-          try {
-            var store = findDecapReduxStore();
-            if (!store) return;
-            var state = store.getState();
-            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
-            if (!entities) return;
-            var links = document.querySelectorAll('a[href*="/entries/"]');
-            links.forEach(function (a) {
-              var m = (a.getAttribute('href') || '').match(/#\/collections\/([^/]+)\/entries\/([^/]+)/);
-              if (!m) return;
-              var entry = entities.get(m[1] + '.' + m[2]);
-              if (!entry) return;
-              var data = entry.get ? entry.get('data') : null;
-              if (!data || typeof data.get !== 'function' || !data.has('pageName')) return;
-              var pageName = data.get('pageName');
-              if (typeof pageName !== 'string' || !pageName.trim()) return;
-              var heading = a.querySelector('h2');
-              if (!heading) return;
-              for (var i = 0; i < heading.childNodes.length; i++) {
-                var node = heading.childNodes[i];
-                if (node.nodeType === Node.TEXT_NODE) {
-                  if (node.textContent !== pageName) node.textContent = pageName;
-                  break;
-                }
-              }
-            });
-          } catch (e) {}
-        }
-        var filesListLabelObserver = new MutationObserver(patchFilesCollectionListLabels);
-        filesListLabelObserver.observe(document.body, { childList: true, subtree: true });
-        window.addEventListener('hashchange', patchFilesCollectionListLabels);
-        (function watchStoreForListLabels() {
-          var store = findDecapReduxStore();
-          if (store) {
-            store.subscribe(patchFilesCollectionListLabels);
-            patchFilesCollectionListLabels();
-          } else {
-            setTimeout(watchStoreForListLabels, 500);
-          }
-        })();
 
         // ==================================================================
         // 8) スクロール同期（Scroll Sync）機能の実装。
@@ -2003,49 +1346,27 @@
           return null;
         }
 
-        // すべてのコレクション（サイト全体設定／商品一覧／下層ページ／
-        // お知らせ）で共通のプレビュー追従スクロール。
-        //  (A) サイト全体設定 … フォームの大項目ラベルとプレビューの
-        //      <section id="..."> が1対1に対応するため、編集中セクションの
-        //      見出し位置へスナップする（従来どおりの精度重視の同期）。
-        //  (B) それ以外（プレビューが1枚の連続ページ）… 対応する section id が
-        //      無いので、フォーム側のスクロール進捗率をプレビュー側へ比例
-        //      適用して追従させる（編集位置に応じてプレビューも同じ割合の
-        //      位置まで移動する）。
         function syncPreviewScroll() {
           if (!scrollSyncEnabled) return;
           var previewDoc = getPreviewDocument();
           if (!previewDoc) return;
-          var controlPane = document.querySelector('[class*="ControlPaneContainer"]');
-          if (!controlPane) return;
-          var scrollEl = previewDoc.scrollingElement || previewDoc.documentElement;
-          if (!scrollEl) return;
-
-          // (A) セクション単位のピンポイント同期
           var key = findActiveSectionKey();
-          if (key) {
-            var target = previewDoc.getElementById(key);
-            if (target) {
-              var headerEl = previewDoc.querySelector('header');
-              var headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
-              // section要素自体ではなく内側の子要素（見出しブロック）を基準に
-              // することで、見出しがヘッダー直下に収まる位置を正確に計算できる。
-              var contentEl = target.firstElementChild || target;
-              var targetTop = contentEl.getBoundingClientRect().top + scrollEl.scrollTop;
-              scrollEl.scrollTop = Math.max(0, targetTop - headerHeight - 12);
-              return;
-            }
-          }
-
-          // (B) スクロール進捗率による比例同期
-          var formMax = controlPane.scrollHeight - controlPane.clientHeight;
-          var viewportH = previewDoc.documentElement ? previewDoc.documentElement.clientHeight : 0;
-          var previewMax = scrollEl.scrollHeight - viewportH;
-          if (formMax <= 0 || previewMax <= 0) return;
-          var ratio = controlPane.scrollTop / formMax;
-          if (ratio < 0) ratio = 0;
-          if (ratio > 1) ratio = 1;
-          scrollEl.scrollTop = Math.round(ratio * previewMax);
+          if (!key) return;
+          var target = previewDoc.getElementById(key);
+          if (!target) return;
+          var headerEl = previewDoc.querySelector('header');
+          var headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+          // 各セクションは <section id="..."> 自身の内側にpy-16分の
+          // 上パディングを持ち、見出しブロックはその内側（1番目の子要素）
+          // から始まる。section要素自体ではなくこの内側の子要素を基準に
+          // することで、見出しがヘッダー直下にぴったり収まる位置を
+          // 正確に計算できる（サイト本体側のSmoothScroll.astroと
+          // 同じ考え方）。
+          var contentEl = target.firstElementChild || target;
+          var scrollEl = previewDoc.scrollingElement || previewDoc.documentElement;
+          var targetTop = contentEl.getBoundingClientRect().top + scrollEl.scrollTop;
+          var destination = Math.max(0, targetTop - headerHeight - 12);
+          scrollEl.scrollTop = destination;
         }
 
         document.addEventListener(
@@ -2117,974 +1438,7 @@
             applyScrollSyncIcon();
           }, 500);
         });
-
-        // ==================================================================
-        // 9) 「公開して新規作成」実行後にフォームが空欄へリセットされない
-        //    不具合の補正。
-        //
-        //    調査の結果（ローカルバックエンドで実機検証済み）：
-        //    ・「公開して新規作成」を押すと git への保存自体は正しく行われる
-        //      （persistEntry・postSaveイベントは正常に発火する）。
-        //    ・しかし、既存エントリの編集画面（#/collections/<name>/entries/
-        //      <slug>）から実行した場合、Decap側は保存後に
-        //      `#/collections/<name>/new` へのルート遷移を行わない
-        //      （ハッシュが変化しないまま同じ編集画面に留まる）ことを
-        //      複数回の実機検証で確認した。既に `/new` 画面にいる状態から
-        //      実行した場合はハッシュの見た目上の変化こそないが、その場合も
-        //      Reduxの内部状態はリセットされず直前の入力値が残り続ける。
-        //      （「公開して複製する」は同じ経路でも正しく `/new` へ遷移し、
-        //      複製元の内容がプリセットされる＝これは仕様どおりの正しい
-        //      動作なので対象外とする。）
-        //    ・`/new` へブラウザの通常のページ読み込み（リロード）で
-        //      直接アクセスすると、Reduxが初期状態から組み立てられるため
-        //      必ず空欄になることを確認済み。
-        //    → Decap側の「新規作成」アクションが期待通りに遷移・リセットを
-        //      行わないため、保存完了（postSaveイベント）を検知した時点で
-        //      このスクリプト側から確実に `#/collections/<name>/new` へ
-        //      ページの再読み込みを行うことで補正する。
-        //
-        //    メニュー項目のクリックだけでは保存完了のタイミングが分からず、
-        //    postSaveイベントだけでは「どのボタンで保存されたか」が
-        //    分からないため、両方を組み合わせる：クリック時にコレクション名を
-        //    ハッシュから読み取って控えておき、postSave発火時にそのコレクション
-        //    の `/new` へ強制的に遷移し直す。
-        // ==================================================================
-        var pendingCreateNewCollection = null;
-        document.addEventListener(
-          'click',
-          function (e) {
-            var node = e.target;
-            var text = '';
-            for (var i = 0; i < 6 && node; i++) {
-              text = (node.textContent || '').trim();
-              if (text) break;
-              node = node.parentElement;
-            }
-            if (!/^公開して新規作成/.test(text)) return;
-            var m = location.hash.match(/^#\/collections\/([^/]+)/);
-            pendingCreateNewCollection = m ? m[1] : null;
-          },
-          true
-        );
-        // ==================================================================
-        // 10) 画面を移動せず連続して「公開する」を実行すると、2回目以降
-        //     ボタンが不活性のまま復帰しない不具合の補正。
-        //
-        //     Decap CMS（旧Netlify CMS）には、boolean／selectウィジェットを
-        //     含むエントリで「値を変更→公開→続けて値を変更」すると、
-        //     公開ボタンの活性判定（内部の差分検知）が壊れたままになる
-        //     既知の不具合報告がある（decaporg/decap-cms#6202）。
-        //     ローカル環境（local_backend、文字列／真偽値／選択肢の各
-        //     ウィジェットで複数パターン）では再現しなかったが、実運用
-        //     （GitHub連携・ネットワーク遅延あり）では発生しうるとして
-        //     報告されたため、発生条件を問わず確実に解消できるよう、
-        //     上の「公開して新規作成」と同じ考え方・同じ手法（postSave
-        //     検知＋location.reload()でReduxの内部状態を必ずクリーンな
-        //     状態から組み立て直す）を、通常の「公開する」実行後にも
-        //     適用する。
-        //
-        //     安全性：postSaveが発火する時点で直前の変更はすべて
-        //     git（ローカルでは decap-server）へ保存済みであり、
-        //     未保存の入力は存在しない。そのためリロードしても
-        //     入力中のデータを失うことはない（＝「保存が終わった
-        //     瞬間」だけを狙ってリロードするのがポイントで、その後の
-        //     新しい入力を検知してからリロードする設計にはしていない。
-        //     後者だと、検知後にリロードするまでの間に入力された
-        //     未保存の変更を巻き込んで消してしまう恐れがあるため）。
-        //     スクロール位置だけはリロードで失われると体験を損なうため、
-        //     リロード直前に編集フォームのスクロール位置を
-        //     sessionStorage へ退避し、再読み込み後に復元する
-        //     （フォームのスクロールコンテナ特定は9.7章のscroll-sync系と
-        //     同じ findScrollContainer() を再利用する）。
-        // ==================================================================
-        function saveScrollPositionForReload() {
-          try {
-            var container = findScrollContainer();
-            if (container) {
-              sessionStorage.setItem('cms-publish-reload-scroll', String(container.scrollTop));
-            }
-          } catch (e) {
-            // sessionStorageが使えない環境（プライベートブラウズ等）では
-            // スクロール位置の復元だけ諦め、リロード自体は続行する。
-          }
-        }
-
-        function restoreScrollPositionAfterReload() {
-          var saved;
-          try {
-            saved = sessionStorage.getItem('cms-publish-reload-scroll');
-            if (saved !== null) sessionStorage.removeItem('cms-publish-reload-scroll');
-          } catch (e) {
-            return;
-          }
-          if (saved === null || saved === undefined) return;
-          var target = parseFloat(saved);
-          if (!isFinite(target) || target <= 0) return;
-          var attempts = 0;
-          var timer = setInterval(function () {
-            attempts++;
-            var container = findScrollContainer();
-            // エントリ本体（フォーム）が実際にマウントされ、スクロール
-            // 可能になるまで待ってから復元する。20回（約4秒）試みても
-            // 復元できなければ諦める（別エントリへ直接アクセスした場合等）。
-            if (container && container.scrollHeight - container.clientHeight > 4) {
-              container.scrollTop = target;
-              clearInterval(timer);
-            } else if (attempts > 20) {
-              clearInterval(timer);
-            }
-          }, 200);
-        }
-
-        window.CMS.registerEventListener({
-          name: 'postSave',
-          handler: function () {
-            if (pendingCreateNewCollection) {
-              var collectionName = pendingCreateNewCollection;
-              pendingCreateNewCollection = null;
-              // postSave発火の直後はDecap自身の後続処理（トースト表示等）が
-              // まだ進行中のため、わずかに待ってから遷移・リロードする。
-              setTimeout(function () {
-                location.hash = '#/collections/' + collectionName + '/new';
-                location.reload();
-              }, 300);
-              return;
-            }
-            // 通常の「公開する」実行後（＝新規作成への遷移を伴わない場合）。
-            saveScrollPositionForReload();
-            setTimeout(function () {
-              location.reload();
-            }, 300);
-          },
-        });
-        window.addEventListener('load', restoreScrollPositionAfterReload);
-
-        // ==================================================================
-        // 11) メディアライブラリ（既定のアセットピッカー）の横スクロール
-        //     解消・5列グリッド調整（後述14章のCSS）を適用する対象を
-        //     絞り込むため、開いているモーダルのうち `input[type="file"]`
-        //     を持つもの（＝メディアライブラリ本体、他の確認ダイアログ等
-        //     ではない）にだけ目印クラスを付与する。
-        // ==================================================================
-        function tagOpenMediaLibraryModal() {
-          try {
-            var modals = document.querySelectorAll('[class*="StyledModal"]');
-            for (var i = 0; i < modals.length; i++) {
-              if (modals[i].querySelector('input[type="file"]') && !modals[i].classList.contains('cms-is-media-library')) {
-                modals[i].classList.add('cms-is-media-library');
-              }
-            }
-          } catch (e) {}
-        }
-        var mediaLibraryModalTagObserver = new MutationObserver(tagOpenMediaLibraryModal);
-        mediaLibraryModalTagObserver.observe(document.body, { childList: true, subtree: true });
-
-        // ==================================================================
-        // 12) 「サイト全体設定 ＞ 実績 ＞ 表示順序」リストの各行に、
-        //     選択中の実績の「タイトル」を表示する。
-        //
-        //     config.yml の summary（"{{fields.item}}"）は、relation
-        //     ウィジェットが保存するvalue_field（＝URL用識別子/slug）を
-        //     そのまま表示するのが限界（Decap公式のmoustacheテンプレートは
-        //     そのフィールド自身の値しか参照できず、他コレクションの
-        //     エントリを検索して埋め込む機能を持たない）。ここでは
-        //     9.26-Bと同じ「Reduxストアの読み取り専用参照」の手法で、
-        //     `works.<slug>` エントリの`title`フィールドへ実際にアクセス
-        //     できる場合はそちらへ表示を差し替える。
-        //
-        //     ただしReduxの`entities`は、そのコレクション（today's
-        //     セッションで一度も開いていない実績エントリ）が未ロードの
-        //     ままだと参照できない（9.26-B・9.32-Bと同じ制約）。その
-        //     ためRedux参照が失敗した場合のみ、`works-titles.json`
-        //     （src/pages/works-titles.json.ts、ビルド時に全実績の
-        //     slug→titleを静的生成したもの）へフォールバックする
-        //     （9.32-Bのメディアメタデータと同じ「本番公開済みデータの
-        //     流用」パターン）。
-        //
-        //     置換前の生のslug文字列は`data-cms-order-slug`属性に
-        //     保持しておく——一度置換した後に再度このパッチ関数が走った
-        //     際、既にタイトルへ書き換え済みのtextContentを「slugだ」と
-        //     誤認して再解決してしまうのを防ぐため。
-        // ==================================================================
-        var cmsWorksTitleCache = null;
-        var cmsWorksTitleFetching = false;
-
-        function getWorksTitleFromRedux(slug) {
-          try {
-            var store = findDecapReduxStore();
-            if (!store) return null;
-            var state = store.getState();
-            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
-            if (!entities) return null;
-            var entry = entities.get('works.' + slug);
-            if (!entry) return null;
-            var data = entry.get ? entry.get('data') : null;
-            if (!data || typeof data.get !== 'function') return null;
-            var title = data.get('title');
-            return typeof title === 'string' && title.trim() ? title : null;
-          } catch (e) {
-            return null;
-          }
-        }
-
-        function loadWorksTitleMapOnce(callback) {
-          if (cmsWorksTitleCache) {
-            callback(cmsWorksTitleCache);
-            return;
-          }
-          if (cmsWorksTitleFetching) return;
-          cmsWorksTitleFetching = true;
-          fetch('/works-titles.json')
-            .then(function (res) {
-              return res.ok ? res.json() : {};
-            })
-            .then(function (json) {
-              cmsWorksTitleCache = json || {};
-              cmsWorksTitleFetching = false;
-              callback(cmsWorksTitleCache);
-            })
-            .catch(function () {
-              cmsWorksTitleCache = {};
-              cmsWorksTitleFetching = false;
-            });
-        }
-
-        function patchWorksOrderListLabels() {
-          try {
-            var orderFieldEl = document.querySelector('[id^="order-field-"]');
-            if (!orderFieldEl || !orderFieldEl.closest('[id^="works-field-"]')) return;
-            var labels = orderFieldEl.querySelectorAll('[class*="NestedObjectLabel"]');
-            if (!labels.length) return;
-            labels.forEach(function (labelEl) {
-              var slug = labelEl.getAttribute('data-cms-order-slug');
-              if (!slug) {
-                slug = (labelEl.textContent || '').trim();
-                if (!slug) return;
-                labelEl.setAttribute('data-cms-order-slug', slug);
-              }
-              var reduxTitle = getWorksTitleFromRedux(slug);
-              if (reduxTitle) {
-                if (labelEl.textContent !== reduxTitle) labelEl.textContent = reduxTitle;
-                return;
-              }
-              loadWorksTitleMapOnce(function (map) {
-                var title = map[slug];
-                if (title && labelEl.textContent === slug) {
-                  labelEl.textContent = title;
-                }
-              });
-            });
-          } catch (e) {}
-        }
-
-        // ⚠️ MutationObserver（document.body全体監視）は使わない：実機検証で
-        // 「サイト全体設定」エントリ画面自体が、常時バックグラウンドで
-        // 秒間十数回程度のDOM変化（スクロール同期・クイックナビ等、他の
-        // 既存機能が持つ定期処理由来）を起こしていることを確認しており、
-        // ここで textContent を書き換える処理をdocument.body監視の
-        // MutationObserverに直結すると、その書き換え自体が新たな
-        // mutationとして観測されて再度ハンドラを呼び、さらに書き換えが
-        // 起きる…という共鳴的なループに陥り、実機でタブが完全に応答
-        // 不能になることを確認した（`patchFilesCollectionListLabels`
-        // 9.26-Bが同じ手法でも問題ないのは、そちらは「下層ページ編集」
-        // 一覧画面のような書き換え対象が見つからない場面が大半で、
-        // 実際にDOM書き込みが起きないため共鳴が発生しないため。今回は
-        // 「サイト全体設定」エントリ内での書き換えが常に発生するため
-        // 事情が異なる）。そのため、mutationに反応する方式ではなく、
-        // 一定間隔（1秒）でポーリングする方式に変更し、書き換えイベント
-        // 自体が次の呼び出しの引き金にならないようにしている。
-        patchWorksOrderListLabels();
-        setInterval(patchWorksOrderListLabels, 1000);
-        window.addEventListener('hashchange', patchWorksOrderListLabels);
-
-        // ==================================================================
-        // 19) 「実績・活用事例作成」コレクションの一覧画面を、実サイトの
-        //     表示順（`Works.astro`と全く同じロジック）に連動させる。
-        //
-        //     Decap CMSの`sortable_fields`／既定ソートは、あくまで
-        //     「そのコレクション自身が持つフィールド」でしか並び替え
-        //     できない公開APIで、他のエントリ（`siteInfo.yml`の
-        //     `works.order`のような、別コレクションが持つ手動
-        //     キュレーションリスト）を参照して並び替える機能は
-        //     存在しない（`works.order`をrelationウィジェットの
-        //     `list`として実装しているのも、9.9で確立した「Decap側に
-        //     こうした動的ソート機能が無いための代替策」だったことを
-        //     踏まえると、一覧画面側だけを見た目上連動させる場合も
-        //     同様にDecapの外側でJSにより実現するほかない）。
-        //
-        //     実装：一覧の`<ul>`はflexレイアウト
-        //     （`display:flex`、実機確認済み）で`<li>`を横並びに
-        //     並べているため、各`<li>`へCSSの`order`プロパティを
-        //     設定するだけで、実際のDOM順序を変更せずに見た目の
-        //     並び順だけを制御できる（`style.order`の変更は
-        //     `attributes`ミューテーションであり、本ファイルの
-        //     MutationObserverはいずれも`{childList, subtree}`のみを
-        //     監視して`attributes`を監視していないため、9.33-Aで
-        //     発見した「自分の書き換えが自分のObserverを再度呼び出す」
-        //     共鳴ループの対象にもならない＝安全）。
-        //     並び順の算出は9.26-Bと同じ「Reduxストアの読み取り専用
-        //     参照」を使い、`Works.astro`の実際のソートロジック
-        //     （表示順序リストを優先→そこに無い実績は`publishedAt`
-        //     降順）をそのままJSに移植して再現する。
-        //     実機検証で、一覧画面を開いた時点で`works`コレクションの
-        //     全エントリ（サムネイル・タイトル表示のため）と
-        //     `settings.siteInfo`（既定の起動画面のため）の両方が
-        //     Reduxに読み込み済みであることを確認済みのため、静的JSON
-        //     へのフォールバックは設けていない（万一どちらかが未読込の
-        //     場合は、既定のDecap表示順のまま＝安全側に倒れる）。
-        // ==================================================================
-        // 「サイト全体設定」エントリがReduxに未ロードの場合（このセッションで
-        // 一度も開いていない場合）に備えたフォールバック。works-titles.json
-        // と同じ「ビルド時静的生成データをfetchする」パターン
-        // （src/pages/works-order.json.ts）。Reduxから取得できた場合は
-        // 常にそちらを優先し、取得できなかった場合のみこのキャッシュを使う。
-        var cmsWorksOrderCache = null;
-        var cmsWorksOrderFetching = false;
-
-        function loadWorksOrderOnce(callback) {
-          if (cmsWorksOrderCache) {
-            callback(cmsWorksOrderCache);
-            return;
-          }
-          if (cmsWorksOrderFetching) return;
-          cmsWorksOrderFetching = true;
-          fetch('/works-order.json')
-            .then(function (res) {
-              return res.ok ? res.json() : [];
-            })
-            .then(function (json) {
-              cmsWorksOrderCache = Array.isArray(json) ? json : [];
-              cmsWorksOrderFetching = false;
-              callback(cmsWorksOrderCache);
-              // 取得完了時点で既に一覧画面が開いていれば、フォールバック
-              // データを反映した並び順で即座に再描画する。
-              applyWorksListOrder();
-            })
-            .catch(function () {
-              cmsWorksOrderCache = [];
-              cmsWorksOrderFetching = false;
-            });
-        }
-
-        // Reduxに「サイト全体設定」エントリがロード済みかどうかを判定する
-        // （ロード自体は試みたが `order` が未入力で空配列、というケースと
-        // 「そもそもエントリ自体が無い」ケースを区別するため）。
-        function getSiteInfoEntryFromRedux() {
-          try {
-            var store = findDecapReduxStore();
-            if (!store) return null;
-            var state = store.getState();
-            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
-            return (entities && entities.get('settings.siteInfo')) || null;
-          } catch (e) {
-            return null;
-          }
-        }
-
-        function getSiteWorksOrderList() {
-          try {
-            var siteInfo = getSiteInfoEntryFromRedux();
-            if (!siteInfo) {
-              // Reduxに未ロード：静的JSONへのフォールバックを非同期で
-              // 開始しつつ（結果は次回の再描画で反映される）、今回は
-              // キャッシュ済みならそれを、無ければ空配列を返す。
-              if (cmsWorksOrderCache) return cmsWorksOrderCache;
-              loadWorksOrderOnce(function () {});
-              return [];
-            }
-            var data = siteInfo.get('data');
-            var works = data && data.get('works');
-            var order = works && works.get('order');
-            if (!order || typeof order.toJS !== 'function') return [];
-            // 各項目は `{ item: "slug" }` というオブジェクト（2026-09、
-            // Task 2。Decap CMSの delete ボタン不具合対応で配列要素形式を
-            // 変更した。src/lib/site.ts のコメント参照）。
-            return order
-              .toJS()
-              .map(function (entry) {
-                return entry && entry.item;
-              })
-              .filter(function (s) {
-                return s && String(s).trim();
-              });
-          } catch (e) {
-            return [];
-          }
-        }
-
-        function computeWorksDisplayOrder() {
-          try {
-            var store = findDecapReduxStore();
-            if (!store) return null;
-            var state = store.getState();
-            var entities = state && state.entries && state.entries.get && state.entries.get('entities');
-            if (!entities) return null;
-            var orderList = getSiteWorksOrderList();
-            var allSlugs = [];
-            entities.keySeq().toJS().forEach(function (k) {
-              if (k.indexOf('works.') === 0) allSlugs.push(k.slice('works.'.length));
-            });
-            if (!allSlugs.length) return null;
-            var seen = {};
-            var ordered = [];
-            orderList.forEach(function (slug) {
-              if (allSlugs.indexOf(slug) !== -1 && !seen[slug]) {
-                ordered.push(slug);
-                seen[slug] = true;
-              }
-            });
-            var remaining = allSlugs.filter(function (s) {
-              return !seen[s];
-            });
-            // 個別記事側の数値「表示順」フィールドは9.38で廃止した
-            // ため、Works.astroと同じく公開日の新しい順のみで並べる。
-            remaining.sort(function (a, b) {
-              var da = entities.get('works.' + a).get('data');
-              var db = entities.get('works.' + b).get('data');
-              var pa = da.get('publishedAt') ? new Date(da.get('publishedAt')).getTime() : 0;
-              var pb = db.get('publishedAt') ? new Date(db.get('publishedAt')).getTime() : 0;
-              return pb - pa;
-            });
-            return ordered.concat(remaining);
-          } catch (e) {
-            return null;
-          }
-        }
-
-        function applyWorksListOrder() {
-          try {
-            if (!/^#\/collections\/works(\?|$)/.test(location.hash)) return;
-            var list = document.querySelector('main ul[class*="CardsGrid"]');
-            if (!list) return;
-            var orderArr = computeWorksDisplayOrder();
-            if (!orderArr) return;
-            var items = list.querySelectorAll(':scope > li');
-            items.forEach(function (li) {
-              var a = li.querySelector('a[href*="/collections/works/entries/"]');
-              if (!a) return;
-              var m = (a.getAttribute('href') || '').match(/\/entries\/([^/?]+)/);
-              var slug = m ? decodeURIComponent(m[1]) : null;
-              var idx = slug ? orderArr.indexOf(slug) : -1;
-              li.style.order = idx >= 0 ? String(idx) : '9999';
-            });
-          } catch (e) {}
-        }
-
-        var worksListOrderObserver = new MutationObserver(applyWorksListOrder);
-        worksListOrderObserver.observe(document.body, { childList: true, subtree: true });
-        window.addEventListener('hashchange', applyWorksListOrder);
-        (function watchStoreForWorksListOrder() {
-          var store = findDecapReduxStore();
-          if (store) {
-            store.subscribe(applyWorksListOrder);
-            applyWorksListOrder();
-          } else {
-            setTimeout(watchStoreForWorksListOrder, 500);
-          }
-        })();
-
-        // ==================================================================
-        // 21) タイトル入力からURL用識別子（slug）へのヘボン式ローマ字
-        //     自動変換（9.40）。
-        //
-        //     対象：「お知らせ投稿」「実績・活用事例作成」の`title`→
-        //     `urlSlug`フィールド（config.ymlのpattern: ^[a-z0-9-]+$）。
-        //     `preSave`（9.3）は空欄のまま保存された場合にランダムな
-        //     識別子で穴埋めするだけの安全策で、入力中のリアルタイム
-        //     補完は行っていなかった。ここでは「タイトル入力のたびに、
-        //     まだ手で編集されていないurlSlugへローマ字変換した値を
-        //     自動反映する」補助機能を追加する。
-        //
-        //     漢字の読み変換について：ひらがな・カタカナ→ローマ字の
-        //     変換表（下記KANA_ROMAJI）は静的な文字対応表のみで実現できる
-        //     が、漢字の読み（音訓・熟字訓）を機械的に一意特定するには
-        //     形態素解析＋辞書（kuromoji等、数MB規模の辞書データを含む）
-        //     が必要で、この管理画面の軽量なJS構成（外部ライブラリを
-        //     読み込まない既存方針に近い形を維持したい）にはそぐわない。
-        //     そのため本機能は「ひらがな・カタカナ部分のみヘボン式で
-        //     変換し、漢字・記号など変換できない文字はハイフンとして
-        //     除去する」設計にした（例：「ご挨拶」→「挨拶」部分は漢字の
-        //     ため除去され「go」のみ残る、「今年もお世話になりました」の
-        //     ような漢字混じりタイトルは断片的なローマ字になる）。
-        //     あくまで「叩き台の自動入力」であり、要件どおり保存前に
-        //     手動で微調整できる（このフィールドへユーザーが一度でも
-        //     直接入力すると、以後はそのエントリでは自動上書きを止める）。
-        // ==================================================================
-        var KANA_DIGRAPHS = {
-          きゃ: 'kya', きゅ: 'kyu', きょ: 'kyo',
-          しゃ: 'sha', しゅ: 'shu', しょ: 'sho',
-          ちゃ: 'cha', ちゅ: 'chu', ちょ: 'cho',
-          にゃ: 'nya', にゅ: 'nyu', にょ: 'nyo',
-          ひゃ: 'hya', ひゅ: 'hyu', ひょ: 'hyo',
-          みゃ: 'mya', みゅ: 'myu', みょ: 'myo',
-          りゃ: 'rya', りゅ: 'ryu', りょ: 'ryo',
-          ぎゃ: 'gya', ぎゅ: 'gyu', ぎょ: 'gyo',
-          じゃ: 'ja', じゅ: 'ju', じょ: 'jo',
-          びゃ: 'bya', びゅ: 'byu', びょ: 'byo',
-          ぴゃ: 'pya', ぴゅ: 'pyu', ぴょ: 'pyo',
-          ぢゃ: 'ja', ぢゅ: 'ju', ぢょ: 'jo',
-          キャ: 'kya', キュ: 'kyu', キョ: 'kyo',
-          シャ: 'sha', シュ: 'shu', ショ: 'sho',
-          チャ: 'cha', チュ: 'chu', チョ: 'cho',
-          ニャ: 'nya', ニュ: 'nyu', ニョ: 'nyo',
-          ヒャ: 'hya', ヒュ: 'hyu', ヒョ: 'hyo',
-          ミャ: 'mya', ミュ: 'myu', ミョ: 'myo',
-          リャ: 'rya', リュ: 'ryu', リョ: 'ryo',
-          ギャ: 'gya', ギュ: 'gyu', ギョ: 'gyo',
-          ジャ: 'ja', ジュ: 'ju', ジョ: 'jo',
-          ビャ: 'bya', ビュ: 'byu', ビョ: 'byo',
-          ピャ: 'pya', ピュ: 'pyu', ピョ: 'pyo',
-          ファ: 'fa', フィ: 'fi', フェ: 'fe', フォ: 'fo',
-          ティ: 'ti', ディ: 'di', トゥ: 'tu', ドゥ: 'du',
-          ウィ: 'wi', ウェ: 'we', ウォ: 'wo',
-          チェ: 'che', シェ: 'she', ジェ: 'je',
-        };
-        var KANA_SINGLE = {
-          あ: 'a', い: 'i', う: 'u', え: 'e', お: 'o',
-          か: 'ka', き: 'ki', く: 'ku', け: 'ke', こ: 'ko',
-          さ: 'sa', し: 'shi', す: 'su', せ: 'se', そ: 'so',
-          た: 'ta', ち: 'chi', つ: 'tsu', て: 'te', と: 'to',
-          な: 'na', に: 'ni', ぬ: 'nu', ね: 'ne', の: 'no',
-          は: 'ha', ひ: 'hi', ふ: 'fu', へ: 'he', ほ: 'ho',
-          ま: 'ma', み: 'mi', む: 'mu', め: 'me', も: 'mo',
-          や: 'ya', ゆ: 'yu', よ: 'yo',
-          ら: 'ra', り: 'ri', る: 'ru', れ: 're', ろ: 'ro',
-          わ: 'wa', を: 'o', ん: 'n',
-          が: 'ga', ぎ: 'gi', ぐ: 'gu', げ: 'ge', ご: 'go',
-          ざ: 'za', じ: 'ji', ず: 'zu', ぜ: 'ze', ぞ: 'zo',
-          だ: 'da', ぢ: 'ji', づ: 'zu', で: 'de', ど: 'do',
-          ば: 'ba', び: 'bi', ぶ: 'bu', べ: 'be', ぼ: 'bo',
-          ぱ: 'pa', ぴ: 'pi', ぷ: 'pu', ぺ: 'pe', ぽ: 'po',
-          ア: 'a', イ: 'i', ウ: 'u', エ: 'e', オ: 'o',
-          カ: 'ka', キ: 'ki', ク: 'ku', ケ: 'ke', コ: 'ko',
-          サ: 'sa', シ: 'shi', ス: 'su', セ: 'se', ソ: 'so',
-          タ: 'ta', チ: 'chi', ツ: 'tsu', テ: 'te', ト: 'to',
-          ナ: 'na', ニ: 'ni', ヌ: 'nu', ネ: 'ne', ノ: 'no',
-          ハ: 'ha', ヒ: 'hi', フ: 'fu', ヘ: 'he', ホ: 'ho',
-          マ: 'ma', ミ: 'mi', ム: 'mu', メ: 'me', モ: 'mo',
-          ヤ: 'ya', ユ: 'yu', ヨ: 'yo',
-          ラ: 'ra', リ: 'ri', ル: 'ru', レ: 're', ロ: 'ro',
-          ワ: 'wa', ヲ: 'o', ン: 'n',
-          ガ: 'ga', ギ: 'gi', グ: 'gu', ゲ: 'ge', ゴ: 'go',
-          ザ: 'za', ジ: 'ji', ズ: 'zu', ゼ: 'ze', ゾ: 'zo',
-          ダ: 'da', ヂ: 'ji', ヅ: 'zu', デ: 'de', ド: 'do',
-          バ: 'ba', ビ: 'bi', ブ: 'bu', ベ: 'be', ボ: 'bo',
-          パ: 'pa', ピ: 'pi', プ: 'pu', ペ: 'pe', ポ: 'po',
-        };
-        var KANA_SMALL_TSU = { っ: true, ッ: true };
-
-        function kanaToRomaji(input) {
-          var out = '';
-          var chars = Array.from(String(input || ''));
-          for (var i = 0; i < chars.length; i++) {
-            var ch = chars[i];
-            var next = chars[i + 1];
-            var pair = next ? ch + next : null;
-            if (pair && KANA_DIGRAPHS[pair]) {
-              out += KANA_DIGRAPHS[pair];
-              i++;
-              continue;
-            }
-            if (KANA_SMALL_TSU[ch]) {
-              // 促音（っ/ッ）：直後の子音を重ねる。次の1文字（または
-              // 直後が拗音の場合はその変換結果）の先頭子音を複製する。
-              var followingPair = next && chars[i + 2] ? next + chars[i + 2] : null;
-              var followingRomaji = (followingPair && KANA_DIGRAPHS[followingPair]) || (next && KANA_SINGLE[next]) || '';
-              var firstConsonant = followingRomaji.replace(/^([^aiueo]).*$/, '$1');
-              if (firstConsonant && firstConsonant !== followingRomaji) out += firstConsonant;
-              continue;
-            }
-            if (ch === 'ー') {
-              // 長音記号：直前の母音を繰り返す（無ければ何もしない）。
-              var lastVowelMatch = out.match(/([aiueo])[^aiueo]*$/);
-              if (lastVowelMatch) out += lastVowelMatch[1];
-              continue;
-            }
-            if (KANA_SINGLE[ch]) {
-              out += KANA_SINGLE[ch];
-              continue;
-            }
-            // 変換できない文字（漢字・記号・半角英数字など）はそのまま
-            // 残す（半角英数字はslugifyステップでそのまま使われ、それ
-            // 以外はハイフンに正規化される）。
-            out += ch;
-          }
-          return out;
-        }
-
-        // ==================================================================
-        // 21b) 漢字を含むタイトルの正しいローマ字変換（kuromoji.js、2026-09）。
-        //
-        //     ひらがな・カタカナだけの静的な文字対応表では、漢字の読み
-        //     （音訓・熟字訓）を一意に特定できない（例：「私」は文脈に
-        //     関わらず必ず「わたし」と読むわけではなく、機械的な変換
-        //     表では原理的に対応不可能）。これには形態素解析＋辞書が
-        //     必要なため、軽量なkuromoji.js（IPADIC辞書同梱）をCDN経由で
-        //     遅延読み込みする。
-        //
-        //     読み込みタイミング：管理画面の全画面で無条件に読み込むと
-        //     辞書データ（gzip圧縮で合計十数MB、初回ビルド時に分割
-        //     ダウンロード）が無駄になるため、実際に「お知らせ投稿」
-        //     「実績・活用事例作成」の編集画面を開いたときにのみ
-        //     バックグラウンドで読み込みを開始する（`wireTitleToSlugAutoFill`
-        //     から呼び出す）。読み込み中にユーザーがタイトルを入力した
-        //     場合は、まず`kanaToRomaji`（ひらがな・カタカナのみ対応、
-        //     漢字はハイフン化）による即時の暫定変換を反映し、辞書の
-        //     読み込みが完了した時点で、現在表示中のタイトル値を使って
-        //     正しい読みベースの変換に「格上げ」する（ユーザーが既に
-        //     手動でurlSlugを編集していた場合は上書きしない＝既存の
-        //     「手動編集を上書きしない」原則をそのまま踏襲）。
-        //
-        //     失敗時（CDN到達不能等）は例外を握りつぶし、暫定変換
-        //     （ひらがな・カタカナのみ）のまま動作を継続する（安全側の
-        //     フォールバック。機能が完全に止まることはない）。
-        // ==================================================================
-        // kuromoji.js本体・辞書の読み込みと形態素解析は、メインスレッドを
-        // 一切ブロックしないよう専用のWeb Worker（public/admin/
-        // kuromoji-worker.js）上で実行する（2026-09、9.45）。
-        //
-        // 9.44までの経緯：当初はメインスレッドで直接kuromoji.jsを読み込み・
-        // 実行していたが、辞書構築処理（gzip圧縮された数MB規模のバイナリ
-        // 辞書の解凍・パース、ダブル配列Trieの構築）が本質的にCPUバウンドな
-        // 重い処理であるため、9.44で「一覧画面では読み込みを開始しない」
-        // よう起動タイミングを絞ってもなお、実際にエントリ編集画面を開いた
-        // 直後や、タイトル入力のたびに走る`tokenize()`自体がメインスレッドを
-        // 占有し、その間UIの描画・入力操作が応答不能になる問題が残っていた。
-        // Web Workerはメインスレッドとは完全に別のスレッドで動作するため、
-        // ここでどれだけ重い処理をしてもメインスレッド（＝画面の描画・
-        // 入力）は理論上一切ブロックされない。
-        //
-        // Workerとのやり取りは非同期（postMessage/onmessage）になるため、
-        // タイトル入力のたびに以下の2段階で結果を反映する：
-        //   1. 即座に、ひらがな・カタカナのみの静的変換表（kanaToRomaji、
-        //      同期・軽量）による暫定スラグを反映する（漢字はハイフン化）。
-        //   2. 裏でWorkerへ形態素解析を依頼し、結果が返ってきた時点で
-        //      （その間にユーザーが手動編集やタイトルの再入力をしていな
-        //      ければ）読みベースの正しいスラグへ「格上げ」する。
-        // Workerの生成・辞書読み込みに失敗した場合（CDN到達不能等）は、
-        // 例外を握りつぶして1.の暫定変換のみで動作を継続する（安全側の
-        // フォールバック）。
-        var kuromojiWorker = null;
-        var kuromojiWorkerFailed = false;
-        var kuromojiRequestId = 0;
-        var kuromojiPendingRequests = {};
-
-        function getKuromojiWorker() {
-          if (kuromojiWorker || kuromojiWorkerFailed) return kuromojiWorker;
-          try {
-            kuromojiWorker = new Worker('./kuromoji-worker.js?v=20260913r');
-            kuromojiWorker.onmessage = function (e) {
-              var data = e.data || {};
-              var pending = kuromojiPendingRequests[data.id];
-              if (!pending) return;
-              delete kuromojiPendingRequests[data.id];
-              pending(data.error ? null : data.readings);
-            };
-            kuromojiWorker.onerror = function () {
-              kuromojiWorkerFailed = true;
-              kuromojiWorker = null;
-              // 待機中の依頼はすべて「解決できなかった」ものとして
-              // 片付ける（暫定変換のまま据え置かれる）。
-              Object.keys(kuromojiPendingRequests).forEach(function (id) {
-                var cb = kuromojiPendingRequests[id];
-                delete kuromojiPendingRequests[id];
-                cb(null);
-              });
-            };
-          } catch (e) {
-            kuromojiWorkerFailed = true;
-            kuromojiWorker = null;
-          }
-          return kuromojiWorker;
-        }
-
-        // タイトルの形態素解析結果（単語ごとの読み）をWorker経由で非同期に
-        // 取得する。取得できない場合（Worker未対応・読み込み失敗等）は
-        // `callback(null)`を呼ぶ（＝呼び出し側でkanaToRomajiによる暫定
-        // 変換にフォールバックする）。
-        function requestTitleReadingTokens(title, callback) {
-          var worker = getKuromojiWorker();
-          if (!worker || !title) {
-            callback(null);
-            return;
-          }
-          var id = ++kuromojiRequestId;
-          kuromojiPendingRequests[id] = callback;
-          try {
-            worker.postMessage({ type: 'tokenize', id: id, title: title });
-          } catch (e) {
-            delete kuromojiPendingRequests[id];
-            callback(null);
-          }
-        }
-
-        function slugifyRomaji(romaji) {
-          return romaji
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '')
-            .replace(/-{2,}/g, '-');
-        }
-
-        // ひらがな・カタカナのみの同期・軽量な暫定変換（漢字等はslugify
-        // 段階でハイフン化される）。Workerからの応答を待たずに即座に
-        // 反映するための1段階目。
-        function fallbackTitleToSlug(title) {
-          return slugifyRomaji(kanaToRomaji(title || ''));
-        }
-
-        // kuromojiの形態素解析結果（単語配列）から、単語境界をハイフンで
-        // 保持したスラグを組み立てる（`私は学生です`→
-        // `watashi-ha-gakusei-desu`）。読み全体を1本の文字列として連結
-        // してからローマ字化すると単語の切れ目が失われ可読性が落ちるため、
-        // 単語単位で変換してから連結する。
-        function readingTokensToSlug(readingTokens) {
-          var parts = readingTokens
-            .map(function (reading) {
-              return slugifyRomaji(kanaToRomaji(reading));
-            })
-            .filter(function (part) {
-              return part;
-            });
-          return parts.join('-').replace(/-{2,}/g, '-');
-        }
-
-        // Reactの管理下にある<input>へ、Reactのイベントハンドラが正しく
-        // 検知できる形で値を書き込む（直接 .value に代入するだけでは
-        // Reactの内部トラッキングをすり抜けて表示が更新されない・保存
-        // 内容に反映されないため、ネイティブのsetterを経由してから
-        // 'input'イベントを発火させる必要がある。React管理下のフォーム
-        // 要素を外部から操作する際の定石）。
-        function setReactInputValue(input, value) {
-          var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-          setter.call(input, value);
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        var SLUG_AUTOFILL_COLLECTIONS = ['works', 'news', 'newsCategories'];
-
-        function wireTitleToSlugAutoFill() {
-          try {
-            var m = location.hash.match(/^#\/collections\/([^/]+)/);
-            var collectionName = m ? m[1] : null;
-            if (!collectionName || SLUG_AUTOFILL_COLLECTIONS.indexOf(collectionName) === -1) return;
-            var titleWrap = document.querySelector('[id^="title-field-"]');
-            var slugWrap = document.querySelector('[id^="urlSlug-field-"]');
-            // タイトル・urlSlugの両方のフィールドが存在する画面（＝
-            // エントリの新規作成・編集画面）でのみ配線する。一覧画面には
-            // これらのフィールドが存在しないため、ここで自然に除外される
-            // （9.44参照。WorkerはメインスレッドをブロックしないためGPU/
-            // CPU負荷の観点では一覧画面で動いても実害は小さくなったが、
-            // 無駄なリクエストを避けるため引き続きこのスコープを維持する）。
-            if (!titleWrap || !slugWrap) return;
-            var titleInput = titleWrap.tagName === 'INPUT' ? titleWrap : titleWrap.querySelector('input');
-            var slugInput = slugWrap.tagName === 'INPUT' ? slugWrap : slugWrap.querySelector('input');
-            if (!titleInput || !slugInput) return;
-            if (titleInput.dataset.cmsSlugAutofillWired) return;
-            titleInput.dataset.cmsSlugAutofillWired = '1';
-
-            // 既にurlSlugへ値が入っている状態で開いた場合（既存エントリの
-            // 編集等）は、その時点の値を「最後の自動入力値」として扱う
-            // ことで、無関係な既存の手動入力を上書きしないようにする。
-            var lastAutoSlug = slugInput.value || '';
-
-            slugInput.addEventListener('input', function () {
-              if (slugInput.dataset.cmsSlugAutofilling === '1') {
-                delete slugInput.dataset.cmsSlugAutofilling;
-                return;
-              }
-              // ユーザー自身がurlSlugを直接編集した＝以後は自動上書きを
-              // 停止する（「手動で微修正できる」という要件を満たす）。
-              lastAutoSlug = null;
-            });
-
-            function applySlugFromCurrentTitle() {
-              if (lastAutoSlug === null) return;
-              if (slugInput.value !== '' && slugInput.value !== lastAutoSlug) return;
-              var title = titleInput.value;
-
-              // 1段階目：ひらがな・カタカナのみの同期・軽量な暫定変換を
-              // 即座に反映する（メインスレッドを一切ブロックしない）。
-              var fallbackSlug = fallbackTitleToSlug(title);
-              if (fallbackSlug !== slugInput.value) {
-                slugInput.dataset.cmsSlugAutofilling = '1';
-                setReactInputValue(slugInput, fallbackSlug);
-                lastAutoSlug = fallbackSlug;
-              }
-
-              // 2段階目：Worker上での形態素解析結果が届いたら、漢字も
-              // 正しく読み解決された、より良いスラグへ格上げする。
-              requestTitleReadingTokens(title, function (readingTokens) {
-                if (!readingTokens) return;
-                // 応答が届くまでの間にユーザーが手動編集した、または
-                // タイトルを変更した場合は、この（もう古い）結果を
-                // 適用しない。
-                if (lastAutoSlug === null) return;
-                if (titleInput.value !== title) return;
-                if (slugInput.value !== fallbackSlug && slugInput.value !== lastAutoSlug) return;
-                var betterSlug = readingTokensToSlug(readingTokens);
-                if (!betterSlug || betterSlug === slugInput.value) return;
-                slugInput.dataset.cmsSlugAutofilling = '1';
-                setReactInputValue(slugInput, betterSlug);
-                lastAutoSlug = betterSlug;
-              });
-            }
-
-            // IME（日本語入力）で漢字変換中の中間状態（例：ローマ字→
-            // ひらがな→変換候補中の文字列）に反応して`applySlugFromCurrentTitle`
-            // を何度も呼び出すと、確定前の不完全な文字列に対する無駄な
-            // Workerリクエストが大量に発生するだけでなく、変換確定直後の
-            // 呼び出しと非同期に競合する余地が増える。ネイティブの
-            // `input`イベントは`e.isComposing`で「今まさにIME変換中か」を
-            // 判定できるため、変換中は処理をスキップし、`compositionend`
-            // （変換確定）のタイミングで改めて確定後の値を処理する。
-            titleInput.addEventListener('input', function (e) {
-              if (e && e.isComposing) return;
-              applySlugFromCurrentTitle();
-            });
-            titleInput.addEventListener('compositionend', applySlugFromCurrentTitle);
-          } catch (e) {}
-        }
-
-        wireTitleToSlugAutoFill();
-        setInterval(wireTitleToSlugAutoFill, 1000);
-        window.addEventListener('hashchange', wireTitleToSlugAutoFill);
-
-        // ==================================================================
-        // 21c) お問い合わせフォーム「カスタム追加項目」の項目名（label）→
-        //      フィールドID（name、送信データ用の半角英数キー）自動変換
-        //      （2026-09、B-9）。
-        //
-        //      urlSlug自動変換（21b）と全く同じ2段階変換（ひらがな・
-        //      カタカナの同期変換を即時反映→kuromoji Workerの形態素解析
-        //      結果が届き次第、漢字を含む正しい読みへ格上げ）・同じ
-        //      「手動編集を上書きしない」仕様をそのまま流用する。異なるのは
-        //      urlSlugが単一フィールドなのに対し、`custom_fields`は
-        //      ドラッグ&ドロップで行を自由に追加・削除できる list ウィジェット
-        //      であるため、複数存在しうる行それぞれへ個別に配線する必要が
-        //      ある点。各行は `[class*="SortableListItem"]`（9.35等の
-        //      表示順序リストと同じDecap内部クラス）で囲まれているため、
-        //      その中から `label-field-*` / `name-field-*` を1組ずつ
-        //      取り出してペアリングする。
-        //      フィールドID（`name`）はハイフンではなくアンダースコアのみ
-        //      許容（`custom_fields.name`のhint参照）のため、
-        //      slugifyRomaji が生成するハイフン区切りの結果を
-        //      アンダースコアへ変換してから反映する。
-        // ==================================================================
-        function fallbackLabelToFieldName(label) {
-          return fallbackTitleToSlug(label).replace(/-/g, '_');
-        }
-
-        function readingTokensToFieldName(readingTokens) {
-          return readingTokensToSlug(readingTokens).replace(/-/g, '_');
-        }
-
-        function wireCustomFieldsNameAutoFill() {
-          try {
-            var m = location.hash.match(/^#\/collections\/pages\/entries\/contact(?:\/|$)/);
-            if (!m) return;
-            var listField = document.querySelector('[id^="custom_fields-field-"]');
-            if (!listField) return;
-            var rows = listField.querySelectorAll('[class*="SortableListItem"]');
-            rows.forEach(function (row) {
-              var labelWrap = row.querySelector('[id^="label-field-"]');
-              var nameWrap = row.querySelector('[id^="name-field-"]');
-              if (!labelWrap || !nameWrap) return;
-              var labelInput = labelWrap.tagName === 'INPUT' ? labelWrap : labelWrap.querySelector('input');
-              var nameInput = nameWrap.tagName === 'INPUT' ? nameWrap : nameWrap.querySelector('input');
-              if (!labelInput || !nameInput) return;
-              if (labelInput.dataset.cmsNameAutofillWired) return;
-              labelInput.dataset.cmsNameAutofillWired = '1';
-
-              // 既にnameへ値が入っている状態（既存項目の編集等）は、その
-              // 時点の値を「最後の自動入力値」として扱い、無関係な既存の
-              // 手動入力を上書きしないようにする。
-              var lastAutoName = nameInput.value || '';
-
-              nameInput.addEventListener('input', function () {
-                if (nameInput.dataset.cmsNameAutofilling === '1') {
-                  delete nameInput.dataset.cmsNameAutofilling;
-                  return;
-                }
-                lastAutoName = null;
-              });
-
-              function applyNameFromCurrentLabel() {
-                if (lastAutoName === null) return;
-                if (nameInput.value !== '' && nameInput.value !== lastAutoName) return;
-                var label = labelInput.value;
-
-                var fallbackName = fallbackLabelToFieldName(label);
-                if (fallbackName !== nameInput.value) {
-                  nameInput.dataset.cmsNameAutofilling = '1';
-                  setReactInputValue(nameInput, fallbackName);
-                  lastAutoName = fallbackName;
-                }
-
-                requestTitleReadingTokens(label, function (readingTokens) {
-                  if (!readingTokens) return;
-                  if (lastAutoName === null) return;
-                  if (labelInput.value !== label) return;
-                  if (nameInput.value !== fallbackName && nameInput.value !== lastAutoName) return;
-                  var betterName = readingTokensToFieldName(readingTokens);
-                  if (!betterName || betterName === nameInput.value) return;
-                  nameInput.dataset.cmsNameAutofilling = '1';
-                  setReactInputValue(nameInput, betterName);
-                  lastAutoName = betterName;
-                });
-              }
-
-              labelInput.addEventListener('input', function (e) {
-                if (e && e.isComposing) return;
-                applyNameFromCurrentLabel();
-              });
-              labelInput.addEventListener('compositionend', applyNameFromCurrentLabel);
-            });
-          } catch (e) {}
-        }
-
-        wireCustomFieldsNameAutoFill();
-        setInterval(wireCustomFieldsNameAutoFill, 1000);
-        window.addEventListener('hashchange', wireCustomFieldsNameAutoFill);
       })();
     </script>
-    <style>
-      /*
-        11) メディアライブラリの横スクロール解消・5列グリッド調整。
-
-        メディア一覧は react-virtualized の Grid（AutoSizer付き）で
-        描画されており、列数・グリッド全体の幅はモーダルの実測幅を
-        マウント時に1度だけ測定して決まる（開いている最中のリサイズには
-        追従しない。実機検証で確認済み）。カード1枚 = 280px、列間隔
-        300px（280px + 20pxガター）換算で、モーダル幅を1600px前後
-        （内側コンテンツ幅で1480〜1780pxの範囲）に確保すると、
-        常に5列（4*300+280=1480px）でぴったり収まることを実測で
-        確認済み。ワイドディスプレイ（1600px超）ではこの固定値が
-        そのまま使われ、それより狭い画面では `max-width: 96vw` により
-        比例縮小し、結果的に列数が4列・3列と自動的に減る（横スクロール
-        は発生しない）。
-
-        加えて、react-virtualized側の既知の不具合として、列幅の計算が
-        「縦スクロールバー分の幅」を差し引かずに行われるため、
-        コンテンツの行数が多く縦スクロールバーが出る状況では、列数に
-        関わらず常にスクロールバー幅（実測15px前後）ぶんだけ横方向にも
-        はみ出し、それが不要な横スクロールとして現れることを実機検証で
-        特定した（decap-cms本体側の既知の制約で、公開APIの範囲では
-        列幅計算自体は直せない）。実際のカード内容が失われるわけでは
-        なく、最終列の右端がスクロールバー幅ぶんだけ僅かに切れるだけの
-        ため、`overflow-x: hidden` で見た目上の横スクロールバー自体を
-        消してこの端数を隠す方式で対処する。
-      */
-      /* :has() でメディアライブラリのモーダル（内部に input[type=file] を
-         持つ StyledModal）だけに絞り込み、他の確認ダイアログ等の幅には
-         影響しないようにする。 */
-      [class*='StyledModal'].cms-is-media-library {
-        width: 1600px !important;
-        max-width: 96vw !important;
-      }
-      [class*='CardGridContainer'] > div > div {
-        overflow-x: hidden !important;
-      }
-    </style>
   </body>
 </html>
